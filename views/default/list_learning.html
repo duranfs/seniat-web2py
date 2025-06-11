@@ -1,0 +1,52 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<link rel="stylesheet" href="static/jqwidgets/styles/jqx.base.css" type="text/css" />
+    <link rel="stylesheet" href="static/jqwidgets/styles/jqx.summer.css" type="text/css" />
+    <script type="text/javascript" src="static/scripts/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="static/jqwidgets/jqxcore.js"></script>
+    <script type="text/javascript" src="static/jqwidgets/jqxbuttons.js"></script>
+    <script type="text/javascript" src="static/jqwidgets/jqxscrollbar.js"></script>
+    <script type="text/javascript" src="static/jqwidgets/jqxtextarea.js"></script>
+    
+<script type="text/javascript">
+        $(document).ready(function () {
+            $('#jqxTextArea').jqxTextArea({ theme: 'summer', width: 250, height: 100, placeHolder: 'Enter a sentence...' });
+            $('#jqxTextArea').jqxTextArea('val', 'jQWidgets is a comprehensive and innovative widget library built on top of the jQuery JavaScript Library. It empowers developers to deliver professional, cross-browser compatible web applications, while significantly minimizing their development time. jQWidgets contains more than 60 UI widgets and is one of the fastest growing JavaScript UI frameworks on the Web.');
+        });
+    </script>
+
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+
+
+
+<div id="jqxTextArea">
+{{=form}}
+</div>
+
+<script>
+jQuery('textarea').css({"width":"1200px", "font-size":"18px", "color":"black", "background-color":" #EECC84",  "height":"300px"});
+</script>
+
+<b>Información Existente</b>
+<br>
+{{for r in rows:}}
+[{{=A('editar',_href=URL('default','edit_learning',args=(request.args(0),r.id)))}}]
+
+{{=MARKMIN(r.body)}}
+
+<hr/>
+{{pass}}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#jqxTextArea').jqxTextArea({ theme: 'summer', width: 250, height: 100, placeHolder: 'Enter a sentence...' });
+    });
+</script>

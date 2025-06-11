@@ -1,0 +1,53 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+
+{{if basedatos:}}
+<h2>Esquemas en {{=nombre_basedatos(basedatos.id)}}</h2>
+
+<div style="text-align:left">
+  {{=A('Regresar',_href = URL('list_basedatos',args=request.args(0)),_class="btn")}}
+</div>
+
+[<a href="#nil" _class="btn" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nuevo Esquema</h2>
+{{=form}}
+</div>
+
+{{else:}}
+<h1>Todos los esquemas</h1>
+{{pass}}
+
+
+<br /><br />
+<table class="smarttable">
+<thead>
+  <tr>
+    	<th>Nombre</th>
+		<th>Base de Datos</th>
+		<th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for esquema in esquemas:}}
+
+<tr>
+<td>{{=esquema.nombre}}</td>
+<td>{{=esquema.basedatos_id.nombre}}</td>
+
+<td >
+{{=button('ver','view_esquema',esquema.id)}}
+{{=button('editar','edit_esquema',esquema.id)}}
+</td>
+
+</tr>
+{{pass}}
+</tbody>
+</table>

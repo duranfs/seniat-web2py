@@ -1,0 +1,8 @@
+{{extend 'layout.html'}}
+
+
+{{=button('edit','edit_admin_basedatos',reg_admin_bd.id)}}
+
+{{=crud.read(db.admin_basedatos,reg_admin_bd)}}
+
+

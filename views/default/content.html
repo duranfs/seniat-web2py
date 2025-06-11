@@ -1,0 +1,14 @@
+<script type="text/javascript" src="{{=URL(request.application,'static','plugin_ckeditor/js/ckeditor/ckeditor.js')}}"></script>
+{{extend 'layout.html'}}
+
+
+
+<h2> Resultado del comando </h2>
+{{=(form)}}
+
+<script type="text/javascript">
+  var ckeditor = CKEDITOR.replace('page_body', {
+  filebrowserBrowseUrl : "{{=URL(request.application, c='default', f='upload_file')}}",
+  //filebrowserUploadUrl : "{{=URL(request.application, c='default', f='upload_file')}}",
+});
+</script>

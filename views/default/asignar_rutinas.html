@@ -1,0 +1,106 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+  <h2 class="text-center my-4">Asignar Rutinas a Servidor</h2>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post">
+        <div class="form-group mb-4">
+          <label for="servidor" class="h5">Seleccione un servidor:</label>
+          <select name="servidor" id="servidor" class="form-select form-select-lg" onchange="this.form.submit()">
+            <option value="">-- Seleccionar --</option>
+            {{for servidor in servidores:}}
+            <option value="{{=servidor.id}}" {{if request.vars.servidor == str(servidor.id):}}selected{{pass}}>
+              {{=servidor.nombre}}
+            </option>
+            {{pass}}
+          </select>
+        </div>
+
+        {{if request.vars.servidor:}}
+        <div class="form-group">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <label class="h5 mb-0">Seleccione las rutinas:</label>
+            <div>
+              <button type="button" id="selectAll" class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-check-square"></i> Todas
+              </button>
+              <button type="button" id="deselectAll" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-square"></i> Ninguna
+              </button>
+            </div>
+          </div>
+          <div class="row">
+            {{for rutina in rutinas:}}
+            <div class="col-md-6 mb-2">
+              <div class="form-check">
+                <input class="form-check-input rutina-checkbox" type="checkbox" name="rutinas" value="{{=rutina.id}}" 
+                       id="rutina{{=rutina.id}}" {{if rutina.id in rutinas_asignadas:}}checked{{pass}}>
+                <label class="form-check-label" for="rutina{{=rutina.id}}">
+                  {{=rutina.nombre}}
+                </label>
+              </div>
+            </div>
+            {{pass}}
+          </div>
+        </div>
+        
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save"></i> Guardar Asignaciones
+          </button>
+        </div>
+        {{pass}}
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .card {
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 15px;
+  }
+  
+  .form-select-lg {
+    padding: 12px;
+    font-size: 1.1rem;
+  }
+  
+  .form-check-input {
+    transform: scale(1.2);
+    margin-right: 10px;
+  }
+  
+  .form-check-label {
+    font-size: 1.05rem;
+    vertical-align: middle;
+  }
+</style>
+
+<script>
+  // Mejorar la experiencia de usuario al seleccionar
+  document.getElementById('servidor').addEventListener('change', function() {
+    if(this.value) {
+      null; //this.form.submit();
+    }
+  });
+
+  // Seleccionar todas las rutinas
+  document.getElementById('selectAll').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.rutina-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = true;
+    });
+  });
+
+  // Deseleccionar todas las rutinas
+  document.getElementById('deselectAll').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('.rutina-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = false;
+    });
+  });
+</script>

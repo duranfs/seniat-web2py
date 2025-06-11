@@ -1,0 +1,31 @@
+    {{extend 'layout.html'}}
+    {{if 'message' in globals():}}
+    <h3>{{=message}}</h3>
+    {{pass}}
+    <script  type="text/javascript" src="DataTables/datatables.min.js">
+     
+    </script>
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css"/>
+     
+       <table id="person-table" class="table table-bordered table-striped" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th>First name</th>
+                    <th>Last name</th>
+                </tr>
+            </thead>
+        </table>
+    
+    <script type="text/javascript">
+    $(document).ready(function(){
+        $("#person-table").DataTable({
+            data:  {{=results}},
+            columns: [
+                { data: 'first_name' },
+                { data: 'last_name' }
+                // 'id' omitted to show that you can
+                // use only the fields you choose
+            ]
+        })
+    });
+    </script>

@@ -1,0 +1,111 @@
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+
+<style type="text/css">
+<!--
+div#tabla_uno{
+width:600px;
+position:relative;
+float: left;
+height: auto;
+margin-right: 10px;
+color: blue;
+}
+div#tabla_dos{
+width:600px;
+position:relative;
+float: left;
+height: auto;
+}
+-->
+</style>
+
+{{=script}}	
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+
+});
+</script>
+
+</head>
+<body>
+
+<h3>ESTADISTICAS DE SERVIDORES Y BASE DE DATOS</h3>
+
+
+<br />
+
+<div class="row">
+
+<div id="tabla_uno">
+<table id='list_estadisticas_tab1'  class="smarttable table-bordered table-striped " style="font-size: 12px;" >
+    <thead class="titulo" >
+		
+        <tr>
+            <th>AMBIENTE</th><th>TIPO PARAMETRO</th><th>PARAMETROS SERVIDOR</th><th>CANTIDAD</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{for esta in serv:}}
+		<tr>
+			
+			<td>{{=esta[1]}}</td>
+			<td>{{=esta[2]}}</td>
+			<td>
+				{{
+				=A(esta[3], _href=URL(r=request,c='default',f='detalle_esta',
+				args=['SERV',esta[1],esta[2],esta[3] ]))
+				}}
+			</td> 
+			<td>{{=esta[4]}}</td> 
+		</tr>
+	
+    {{pass}}
+    </tbody>
+</table>
+</div>
+
+
+
+
+
+<div id="tabla_dos">
+<table id='list_estadisticas_tab2'  class="smarttable table-bordered table-striped " style="font-size: 12px;" >
+    <thead class="titulo" >
+		
+        <tr>
+            <th>AMBIENTE</th><th>TIPO PARAMETRO</th><th>PARAMETROS BD</th><th>CANTIDAD</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{for esta in bd:}}
+		<tr>
+			
+			<td>{{=esta[1]}}</td>
+			<td>{{=esta[2]}}</td>
+			<td>
+				{{
+				=A(esta[3], _href=URL(r=request,c='default',f='detalle_esta',
+				args=['BD',esta[1],esta[2],esta[3] ]))
+				}}
+			</td> 
+			<td>{{=esta[4]}}</td> 
+		</tr>
+	
+    {{pass}}
+    </tbody>
+</table>
+</div>
+
+</div>
+
+</body>
+</html>
+
+<!--    {{for esta in r:}}
+		<tr><td>{{=esta['tipo']}}</td></tr>
+    {{pass}} -->

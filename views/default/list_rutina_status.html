@@ -1,0 +1,207 @@
+
+{{extend 'layout.html'}}
+
+
+<style>
+
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.titulo1 {
+ background-color: blue;
+ color: blue;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ box-shadow: 8px 8px 100px #10;#444;
+ background-image: linear-gradient(180deg, #fff, #ddd 10%, #ccc);
+}
+
+/* Tabla de servidores */
+.table-container {
+  overflow-x: auto;
+}
+
+#list_servidores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#list_servidores thead th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 500;
+}
+
+#list_servidores tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e1e5eb;
+  vertical-align: middle;
+}
+
+#list_servidores tbody tr:hover {
+  background-color: #f1f7fd;
+}
+
+</style>
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+   {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+
+</script>
+
+
+<h5>Lista de Rutinas / Parámetros de BD</h5>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nueva Rutina</h2>
+{{=form}}
+</div>
+
+<table  style="background-color:#DCE8FF; border-width:1px; border-color:#380E00; border-style:solid; ">
+<thead>
+<th> Estatus</th><th> Resaltado</th>
+</thead> 
+<tbody>
+<td>
+<!--
+<input class="boolean" name="hab_des" id="hab" type="radio" value="SI"/>
+<input class="boolean" name="hab_des" id="des" type="radio" value="NO"/>
+-->
+<div class="product_box2 margin_r_5" position="center">
+[<a style="color:green" href="{{=URL(r=request,c='default',f='valida_rutina',vars=dict(todos='SI'))}}">Habilitar todos</a>]<br/>
+[<a style="color:red" class="titulo1x" href="{{=URL(r=request,c='default',f='valida_rutina',vars=dict(todos='NO'))}}">Deshablitar todos</a>]<br/>
+</div>
+</td>
+<td>
+<div class="product_box2 margin_r_5" position="center">
+[<a style="color:green" class="titulo1x" href="{{=URL(r=request,c='default',f='valida_resaltado',vars=dict(todos='SI'))}}">todos SI</a>]<br/>
+[<a style="color:red" class="titulo1x" href="{{=URL(r=request,c='default',f='valida_resaltado',vars=dict(todos='NO'))}}">todos NO</a>]<br/>
+</div>
+</td>
+</tbody>
+</table>
+
+<br />
+<div class="table-container">
+<table id="list_servidores" class="table-bordered table-striped smarttable">
+<thead>
+    <tr>
+	<th>Servidor</th><th>TipoBD</th><th>Rutina/Parámetro</th>
+	<th>Descripción del Parámetro</th>
+	<th>Status</th><th>Resaltado</th><th>Accion</th>
+	 
+    </tr>    
+</thead>
+<tbody>
+{{for rutina in rutina_status:
+		status = '', (IMG(_src=URL(request.application,'static/plugin_useradmin','cancel-24.png'), 
+						_title="No Config",
+						_alt="OK"))
+		if rutina.status:
+            status = A(
+						(IMG(
+						_src=URL(request.application,'static/plugin_useradmin','flag_green.png'),
+						_href=URL(r=request,f='index',vars=dict(deshabilitar=rutina.id)),						
+						_title="Deshablitar",
+						_alt="OK")
+						) 
+			if rutina.status=='HABILITADO'
+			else 
+			
+					IMG(
+					_src=URL(request.application,'static/plugin_useradmin','cancel.png'), 
+					_alt="Down", 
+					_title="Habilitar",
+					_href=URL(r=request,f='valida_rutina',vars=dict(hab_des=rutina.id,ret=rutina.status ))
+					)
+			if rutina.status == 'DESHABILITADO'
+			else
+			
+					IMG(
+						_src=URL(request.application,'static/plugin_useradmin','accept.png'), 
+						_alt="Approve monitor", _title="Detalle"), 
+						_href=URL(r=request,f='valida_rutina',vars=dict(hab_des=rutina.id,ret=rutina.status ))
+					)
+		
+			pass
+		resaltado = '', (IMG(_src=URL(request.application,'static/plugin_useradmin','cancel-24.png'), 
+						_title="No Config",
+						_alt="OK"))
+		if rutina.resaltado:
+            resaltado = A(
+						(IMG(
+						_src=URL(request.application,'static/plugin_useradmin','flag_green.png'),
+						_href=URL(r=request,f='index',vars=dict(deshabilitar=rutina.id)),						
+						_title="No",
+						_alt="OK")
+						) 
+			if rutina.resaltado=='SI'
+			else 
+			
+					IMG(
+					_src=URL(request.application,'static/plugin_useradmin','cancel.png'), 
+					_alt="Down", 
+					_title="No",
+					_href=URL(r=request,f='valida_resaltado',vars=dict(si_no=rutina.id,res=rutina.resaltado ))
+					)
+			if rutina.resaltado == 'NO'
+			else
+			
+					IMG(
+						_src=URL(request.application,'static/plugin_useradmin','accept.png'), 
+						_alt="Si", _title="Detalle"), 
+						_href=URL(r=request,f='valida_resaltado',vars=dict(si_no=rutina.id,res=rutina.resaltado ))
+					)
+		
+			pass
+
+	}}
+
+	 <tr>
+      <td>{{=cache.ram('c%s'%rutina.servidor_id, lambda:rutina.servidor_id.nombre,100)}}</td>
+		<td>{{=cache.ram('c%s'%rutina.tipobd_id, lambda:rutina.tipobd_id.descri,10)}}</td>
+		<td>{{=rutina.rutina.nombre}}</td>
+		<td>{{=rutina.rutina.descripcion}}</td>
+
+		
+		<td align="center" >{{=status}}</td>
+		<!--<td align="center" >{{=show_status(rutina.resaltado)}}</td>-->
+		<td align="center" >{{=resaltado}}</td>
+		
+		
+		<td>
+			{{=button('editar','edit_rutina_status',rutina.id)}}
+			{{=button('ver','view_rutina_status',rutina.id)}}
+
+
+		</td>
+    </tr>
+	
+	 
+{{pass}}
+</tbody>
+</table>
+</div>
+<script>
+if(!$('input:radio[name=hab_des]:checked').val())
+			{
+				flag = false;
+				//alert('falta presionar un radio-botón');
+			}
+</script>

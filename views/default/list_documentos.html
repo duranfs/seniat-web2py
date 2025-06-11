@@ -1,0 +1,38 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<script>
+jQuery(document).ready(function(){
+    jQuery('.smarttable').dataTable(); 
+    {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+<h2>Estructura de {{=link_basedatos(basedatos)}}</h2>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nueva estructura</h2>
+{{=form}}
+</div>
+
+<br /><br />
+<table class="smarttable">
+<thead>
+  <tr>
+     <th>Creado en</th><th>por</th><th>Estructura</th><th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for doc in docs:}}
+<tr>
+<td>{{=doc.created_on}}</td>
+<td>{{=doc.created_by.first_name}} {{=doc.created_by.last_name}}</td>
+<td>{{=doc.estructura}}</td>
+
+<td>{{=button('edit','edit_documentos',doc.id)}}
+{{=button('ver','view_documentos',doc.id)}}</td>
+</tr>
+{{pass}}
+</tbody>
+</table>

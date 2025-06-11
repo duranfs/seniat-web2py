@@ -1,0 +1,91 @@
+{{extend 'layout.html'}}
+
+<h2>User Administration</h2>
+
+{{=script}}
+
+<table id="useradmin-table" class="display">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+            <th>Groups</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{for user in users:}}
+        <tr>
+            <td>{{=user.id}}</td>
+            <td>{{=user.first_name}}</td>
+            <td>{{=user.last_name}}</td>
+            <td>{{=user.email}}</td>
+            <td>
+                {{if user.registration_key == 'blocked':}}
+                    <span class="label label-important">Blocked</span>
+                {{else:}}
+                    <span class="label label-success">Active</span>
+                {{pass}}
+            </td>
+            <td>
+                {{if user.registration_key == 'blocked':}}
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="unblock_user" value="{{=user.id}}" />
+                        <button type="submit" class="btn btn-success btn-mini">
+                            <i class="icon-ok icon-white"></i> Unblock
+                        </button>
+                    </form>
+                {{else:}}
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="block_user" value="{{=user.id}}" />
+                        <button type="submit" class="btn btn-warning btn-mini">
+                            <i class="icon-ban-circle icon-white"></i> Block
+                        </button>
+                    </form>
+                {{pass}}
+                
+                <a href="{{=URL('edit_user', args=user.id)}}" class="btn btn-mini">
+                    <i class="icon-edit"></i> Edit
+                </a>
+                
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="del_user" value="{{=user.id}}" />
+                    <button type="submit" class="btn btn-danger btn-mini" onclick="return confirm('Are you sure?')">
+                        <i class="icon-trash icon-white"></i> Delete
+                    </button>
+                </form>
+            </td>
+            <td>
+                <!-- Grupos del usuario y formulario para añadir nuevos grupos -->
+                {{for membership in db(db.auth_membership.user_id==user.id).select():}}
+                    {{group = db.auth_group(membership.group_id)}}
+                    <span class="label label-info">
+                        {{=group.role}}
+                        <form method="post" style="display:inline;">
+                            <input type="hidden" name="del_usergroup" value="{{=user.id}}_{{=group.id}}" />
+                            <button type="submit" class="btn btn-mini" style="background:none;color:white;padding:0;margin-left:3px;" title="Remove group">
+                                <i class="icon-remove"></i>
+                            </button>
+                        </form>
+                    </span>
+                {{pass}}
+                
+                {{=forms_users_groups[user.id]}}
+            </td>
+        </tr>
+        {{pass}}
+    </tbody>
+</table>
+
+<h3>Create New Group</h3>
+{{=form_group}}
+
+<style>
+.btn-mini {
+    padding: 0 6px;
+    font-size: 10.5px;
+}
+</style>

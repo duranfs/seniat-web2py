@@ -1,0 +1,45 @@
+<div class="table-responsive table-container">
+  <table class="table table-hover table-striped align-middle">
+    <thead class="table-light">
+      <tr>
+        {{for col in columns:}}
+        <th>
+          {{if col == 'fecha_generacion_error':}}
+          <i class="far fa-calendar-alt me-2"></i>
+          {{elif col == 'proceso_origen_error':}}
+          <i class="fas fa-cog me-2"></i>
+          {{elif col == 'tabla_afectada_error':}}
+          <i class="fas fa-table me-2"></i>
+          {{elif col == 'mensaje_error':}}
+          <i class="fas fa-comment-dots me-2"></i>
+          {{else:}}
+          <i class="fas fa-columns me-2"></i>
+          {{pass}}
+          {{=col.replace('_', ' ').title()}}
+        </th>
+        {{pass}}
+      </tr>
+    </thead>
+    <tbody>
+      {{for row in rows:}}
+      <tr>
+        {{for i, val in enumerate(row):}}
+        <td class="{{='fecha-col' if columns[i] == 'fecha_generacion_error' else ''}} {{='mensaje-col' if columns[i] == 'mensaje_error' else ''}}">
+          {{if columns[i] == 'fecha_generacion_error' and val:}}
+          <span class="text-muted">
+            {{=val.strftime('%d/%m/%Y %H:%M:%S') if val else ''}}
+          </span>
+          {{elif columns[i] == 'mensaje_error':}}
+          <span class="d-inline-block text-truncate" style="max-width: 100%;" title="{{=val}}">
+            {{=val}}
+          </span>
+          {{else:}}
+          {{=val}}
+          {{pass}}
+        </td>
+        {{pass}}
+      </tr>
+      {{pass}}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,68 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+  
+   ///jQuery('#tab1').hide();
+});
+</script>
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 12px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+</div>
+<h2>Reporte de Novedades</h2>
+<br />
+<table class="smarttable">
+<thead>
+  <tr>
+		<th>Id</th>
+		<th>Quien Reporta</th>
+    		<th>Titulo</th>
+		<th>Fecha Inicio</th>
+		<th>Fecha Fin</th>
+		<th>Duracion</th>
+		<th>Accion</th>
+		
+  </tr>
+</thead>
+<tbody>
+{{for r in rows:}}
+
+<tr>
+<td>{{=r.id}}</td>
+<td>{{=r.guardia_id.f_quien_toca.first_name}}</td>
+<td>{{=r.title.upper()}}</td>
+<td>{{=r.start_time.strftime('%B %d, %Y -  %H:%m')}}</td>
+<td>{{=r.end_time.strftime('%B %d, %Y - %H:%m')}}</td>
+<td>{{=r.duracion}}</td>
+
+<td>
+<div class="product_box2 margin_r_5" position="center">
+[<a style="color:red" class="titulo1x" href="{{=URL(r=request,c='default',f='reporte_novedades',vars=dict(ID=r.id))}}">Detalle</a>]
+</div>
+</td>
+
+</tr>
+{{pass}}
+</tbody>
+</table>

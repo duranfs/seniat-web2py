@@ -1,0 +1,137 @@
+{{extend 'layout.html'}}
+{{=script}}
+<script>
+$(document).ready(function() { 
+    {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+	
+
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
+<script src="{{=URL('static','paging.js')}}"></script>
+<script type="text/javascript">
+            $(document).ready(function() {
+                $('#tableData').paging({limit:5});
+            });
+</script>
+
+<style type="text/css">
+.texto {font-size: 12px; font-family: 'Rock Salt', cursive; caption-side: bottom; text-align: left;  letter-spacing: 0px; text-align: center;}
+.color {font-size: 12px; color: darkgreen;}
+</style>
+
+	<legend>
+			GESTION DE ACTIVIDADES
+	</legend>
+
+[<a href="crear_actividades_sd" >Crear Actividad</a>]
+
+<br /><br />
+
+<div class="row"  >
+<table id='actividades' style = "width: 100%" class="" border="1px">
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 20%;"></col>
+	<col style="width: 8%;"></col>
+	<col style="width: 8%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	<col style="width: 5%;"></col>
+	
+	
+<thead>
+    <tr>
+    <th>ID</th>
+    <th>Principal</th>
+    <th>Consultor</th>
+	<th>Ambiente</th>
+	<th>Proyecto</th>
+	<th>Subproyecto</th>
+	<th>Servidor</th>
+	<th>BD</th>
+	<th>Actividad</th>
+	<th>Fecha Inicio</th>
+	<th>Fecha Fin</th>
+	<th>Total</th>
+	
+	<th>Incid BD</th>
+	<th>Incid Otros</th>
+	<th>Accion</th>
+    </tr>    
+</thead>
+<tbody>
+{{for f in rows:}}
+
+{{des_tipo='REMOTO'}}
+{{if f.tipo=='P':
+	des_tipo='PRESENCIAL'
+}}
+{{pass}}
+
+{{des_incid_bd=''}}
+{{if f.incid_bd=='T' or f.incid_bd=='True' or f.incid_bd or f.incid_bd==True:
+	des_incid_bd='X'
+}}
+{{pass}}
+
+{{des_incid_otros=''}}
+{{if f.incid_otros=='T' or f.incid_otros=='True' or f.incid_otros or f.incid_otros==True:
+	des_incid_otros='X'
+}}
+{{pass}}
+
+		{{var=""}}
+		{{cant=cuenta_subactividades(f.id)}}
+		{{if cant:}}
+			{{var="BITACORA"}}
+			{{color="texto color"}}
+		{{else:}}
+			{{var="---"}}
+			{{color="texto"}}
+		{{pass}}
+
+
+{{=TR(
+		TD(f.id ,_class="texto "),
+		TD(var,_class=color),
+		TD(f.analista.first_name+' '+f.analista.last_name, _class="texto"),
+		TD(f.ambiente_id ,_class="texto"),
+		TD(f.cod_proy, _class="texto"),
+		TD(f.cod_subp, _class="texto"),
+		TD(f.cod_servidor.nombre, _class="texto"),
+		TD(ds_bd(f.cod_bd), _class="texto"),
+		TD(f.descripcion, _class="texto"),
+		TD(f.fecha_inicio, _class="texto"),
+		TD(f.fecha_fin, _class="texto"),
+		TD(f.horas_laboradas, _class="texto"),
+		
+		TD(des_incid_bd, _class="texto color"),
+		TD(des_incid_otros, _class="texto color"),
+		
+		TD(
+			 A(
+                IMG(
+                    _src=URL(request.application,'static/images','edit-1.ico'),
+                    _alt="Editar",
+					_title="Editar Actividad",					
+                    _class="click imagenes",
+                    _style="border:0;width:15px;height:15px"
+					
+                ),
+                _href=URL(r=request,c='default',f='editar_actividades4',args=[f.id])
+            ))
+)}}       
+{{pass}}
+</tbody>
+</table>
+
+</div>

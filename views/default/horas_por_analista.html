@@ -1,0 +1,196 @@
+{{extend 'layout.html'}}
+{{import json}}
+
+<div class="container">
+    <h2 class="mb-3">Horas por Analista - {{=mes_actual}}</h2>
+    
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group mr-3">
+                    <label for="mes" class="mr-2">Mes:</label>
+                    <select name="mes" id="mes" class="form-control">
+                        {{for opcion in meses_disponibles:}}
+                        <option value="{{=opcion}}" {{='selected' if opcion==mes_param else ''}}>
+                            {{=opcion.replace('-', '/')}}
+                        </option>
+                        {{pass}}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="analista" class="mr-2">Analista:</label>
+                    <select name="analista" id="analista" class="form-control">
+                        <option value="">Todos</option>
+                        {{for a in analistas:}}
+                        <option value="{{=a['id']}}" {{='selected' if str(a['id'])==str(analista_id) else ''}}>
+                            {{=a['nombre']}}
+                        </option>
+                        {{pass}}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary ml-2">Filtrar</button>
+            </form>
+        </div>
+        <div class="col-md-6 text-right">
+            <h4>Total horas: {{="%.2f" % round(total_horas, 2)}}</h4>
+            <h5>{{=analista_seleccionado}}</h5>
+        </div>
+    </div>
+    
+    {{if error:}}
+    <div class="alert alert-danger">
+        <strong>Error:</strong> {{=error}}
+    </div>
+    {{else:}}
+    <!-- Gráfico por BD -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Horas por Base de Datos</h5>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="bdChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico por Ambiente -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Horas por Ambiente</h5>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="ambienteChart"></canvas>
+            </div>
+        </div>
+    </div>
+    {{pass}}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {{if not error:}}
+    // Gráfico por Base de Datos
+    var ctxBd = document.getElementById('bdChart').getContext('2d');
+    var bdChart = new Chart(ctxBd, {
+        type: 'bar',
+        data: {
+            labels: {{=XML(json.dumps(chart_bd['labels']))}},
+            datasets: [{
+                label: 'Horas trabajadas',
+                data: {{=XML(json.dumps(chart_bd['data']))}},
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Horas' },
+                    ticks: { callback: function(v) { return v.toFixed(1) + 'h'; } }
+                },
+                x: {
+                    ticks: { 
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) { return ctx.parsed.y.toFixed(2) + ' horas'; }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico por Ambiente
+    var ctxAmb = document.getElementById('ambienteChart').getContext('2d');
+    var ambChart = new Chart(ctxAmb, {
+        type: 'bar',
+        data: {
+            labels: {{=XML(json.dumps(chart_ambiente['labels']))}},
+            datasets: [
+                {
+                    label: 'Horas normales',
+                    data: {{=XML(json.dumps(chart_ambiente['normales']))}},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Horas extras',
+                    data: {{=XML(json.dumps(chart_ambiente['extras']))}},
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Horas' },
+                    ticks: { callback: function(v) { return v.toFixed(1) + 'h'; } }
+                },
+                x: {
+                    stacked: true,
+                    ticks: { 
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + 'h'; }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Redimensionar gráficos al cambiar el tamaño de la ventana
+    window.addEventListener('resize', function() {
+        bdChart.resize();
+        ambChart.resize();
+    });
+    {{pass}}
+});
+</script>
+
+<style>
+.chart-container {
+    position: relative;
+    min-height: 300px;
+}
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+.card-header {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+}
+.form-inline .form-group {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+</style>

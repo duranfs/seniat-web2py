@@ -1,0 +1,14 @@
+{{extend 'layout.html'}}
+
+<h1>{{=basedatos.nombre}}</h1>
+
+<h2>{{=cache.ram('c%s'%basedatos.tipobd_id, lambda:basedatos.tipobd_id.descri,10)}} 
+en {{=link_servidor(basedatos.servidor)}}</a></h2>
+
+{{=button('edit','edit_basedatos',basedatos.id)}}
+{{=button('logs','list_logs_basedatos',basedatos.id)}}
+{{=button('docs','list_docs',basedatos.id)}}
+
+{{=crud.read(db.basedatos,basedatos)}}
+
+{{=tag('basedatos',basedatos.id)}}

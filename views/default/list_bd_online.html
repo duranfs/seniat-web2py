@@ -1,0 +1,73 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+   ///jQuery('#tab1').hide();
+});
+</script>
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 12px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+
+
+<h1>Lista estructura de la base de datos online</h1>
+
+
+<br /><br />
+<table id="tabla" class="smarttable">
+<thead>
+  <tr>
+    	<th>Servidor</th>
+    	<th>Instancia</th>
+		<th>Tipo BD</th>
+		<th>Puerto</th>
+		<th>Usuario BD</th>
+		<th>Clave BD</th>
+		<th>Home</th>
+		<th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for basedato in basedatos:}}
+<tr>
+<td>{{=basedato.servidor.nombre}}</td>
+<td>{{=basedato.nombre}}</td>
+<td>{{=cache.ram('c%s'%basedato.tipobd_id, lambda:basedato.tipobd_id.descri,100)}}</td>
+
+<td>{{=basedato.puerto}}</td>
+<td>{{=basedato.usuario}}</td>
+<td>{{=basedato.clave}}</td>
+<td>{{=basedato.home}}</td>
+<td>
+<div class="product_box2 margin_r_5" position="center">
+[<a style="color:red" class="titulo1x" href="{{=URL(r=request,c='default',f='func_lista_bd_online_bd',\
+vars=dict(instancia=basedato.nombre, servidor=basedato.servidor, \
+usuario=basedato.usuario, clave=basedato.clave, tipobd=basedato.tipobd_id.descri, \
+home=basedato.home, puerto=basedato.puerto))}}">Listado Online</a>]
+</div>
+</td>
+</tr>
+{{pass}}
+</tbody>
+</table>

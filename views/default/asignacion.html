@@ -1,0 +1,227 @@
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+{{=script}}
+
+<style type="text/css" media="all">
+  .form_table { text-align: center; }
+  .full_width .segment_header { text-align: center !important; }
+  .q { float:none;display: inline-block; }
+  table.matrix, table.rating_ranking { margin-left:auto !important;margin-right:auto !important; }
+  
+select, option {
+    width: 300px;
+}
+
+option {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+input:invalid {
+  border: 2px dashed red;
+}
+
+input:valid {
+  border: 2px solid black;
+}
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.form-box {
+  padding: 8px; /*makes it look neat*/
+  border-radius: 4px; /*or 2px*/
+  border: 1px solid red;
+}
+
+.miDiv {
+  border: 3px outset #afc0c7;
+  background-color: #95abb4;    
+  text-align: center;
+}
+
+</style>
+
+
+
+<div id="form-wrapper" style="max-width:1400px;margin:auto;" class=" miDiv form-box">
+	<legend>
+ASIGNACIÓN DE PROYECTOS
+</legend>
+
+<form width="100%" class="well" action="" enctype="multipart/form-data" method="post">
+	<input type="hidden"  name="_formname" value="formaOPHTML"/>
+
+	<fieldset width="100%" class="table" >
+		<table class="smarttable" width="100%" class="table table-bordered table-striped">
+			<tr>
+			
+			<td colspan="1">
+					<label for="cod_proyecto">Proyecto      :</label>
+					
+					<select class="Estatico10cm generic-widget obligatorio " style=" width: 1200px;" name="cod_proyecto" id="cod_proyecto">
+						<option value=""/>
+						{{for proyecto in listaProyectos:}}
+							<option style="" value="{{=proyecto.id}}">
+								{{=show_status(proyecto.status) + ' --- ' + str(proyecto.descri)}}
+							</option>
+						{{pass}}
+					</select>
+				
+			</td>
+			</TR>
+			<TR>
+			<td colspan="1">
+					<label for="analista">Analista BD</label>
+					
+					<select class="Estatico10cm generic-widget obligatorio" name="analista" id="analista">
+						<option value=""/>
+						{{for analista in listaAnalista:}}
+							<option value="{{=analista.auth_user.id}}">
+								{{=str(analista.auth_user.first_name.upper()) + ' ' + str(analista.auth_user.last_name.upper()) }}
+							</option>
+						{{pass}}
+					</select>
+				
+			</td>
+			
+			</tr>
+			
+			<tr >
+			<td>
+					<label for="fecha_asig">Fecha Asignación</label>
+					<input class="string Estatico2cm obligatorio" name="fecha_asig" id="fecha_asig" type="date"  />
+			
+			
+					<label for="fecha_vcto">Fecha vcto</label>
+					<input class="string Estatico2cm" name="fecha_vcto" id="fecha_vcto" type="date" />
+					<label for="prioridad">Prioridad</label>
+					
+						<select id="prioridad" name="prioridad">
+							<option value="ALTA">ALTA</option>
+							<option value="MEDIA">MEDIA</option>
+							<option value="BAJA">BAJA</option>
+						</select>
+					
+					
+			</td>
+			</tr>
+			<tr>
+			
+			
+			
+			<td>
+			
+			<input name="boton-principal" class="button" type="submit" value="Asignar" />
+			</td>
+			
+			</tr>			
+		</table>	
+	</fieldset>
+</form>
+</div>
+</HTML>
+
+
+
+<script>
+$(document).ready( function() {
+    var now = new Date();
+    var month = (now.getMonth() + 1);               
+    var day = now.getDate();
+    if (month < 10) 
+        month = "0" + month;
+    if (day < 10) 
+        day = "0" + day;
+    var today = now.getFullYear() + '-' + month + '-' + day;
+    $('#fecha_asig').val(today);
+    $('#fecha_vcto').val(today);
+});
+	
+	
+		var existe = false;
+		
+	$('#cod_proyecto').change(
+		function()
+		{
+			valida_asignacion();
+		}
+	)
+	
+	$('#analista').change(
+		function()
+		{
+			valida_asignacion();
+		}
+	)
+						
+	$('form').submit
+	(
+		function()
+		{
+			
+			
+			// Validando los campos obligatorios
+		
+			flag = true;
+
+			campos=$('.obligatorio');
+			campos.each(function() 
+			{
+				if(!$(this).val())
+				{
+					//alert('validando campos obligatorio');
+					 flag = false;
+				}
+			}
+			);
+
+			if(!flag)
+			{
+				alert('Faltó llenar algún campo o tiene valor cero');
+				return false;
+			}
+			
+			valida_asignacion();
+			
+			if(existe)
+			{
+				alert('Proyecto asignado a este analista');
+				return false;
+			}
+			
+			if($(fecha_asig).val() > $(fecha_vcto).val())
+				{
+					alert('Fecha de asignacion mayor a la de vencimiento');
+					return false;
+				}
+			
+		}
+			
+	)
+	
+function valida_asignacion(){
+
+if ($('#cod_proyecto').val() && $('#analista').val()  ){
+				
+$.post("{{=URL('valida_asignacion')}}", [cod_proyecto,analista], function(result){
+				if(result=='no'){
+                    $("#resultbox").removeClass().addClass('success').text('').fadeIn(900,1);
+					existe=false;
+				} else {
+					$("#resultbox").removeClass().addClass('error').text('Proyecto ya asignado a este analista').fadeIn(900,1);
+					existe=true;}
+})
+
+}};	                  
+ 
+</script>

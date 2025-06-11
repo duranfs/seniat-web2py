@@ -1,0 +1,68 @@
+{{extend 'layout.html'}}
+{{block head}}
+	<style type="text/css">
+
+		.No_GPS .integer, .No_GPS .date, .No_GPS .string, .No_GPS .double
+		{
+			margin-right: 2cm;
+			width: 4cm;
+		}
+		
+		.No_GPS .generic-widget
+		{
+			margin-right: 2cm;
+			width: 4.4cm;
+		}
+
+		.GPS .integer, .GPS .double
+		{
+			width: 2cm;
+		}
+		
+		.GPS .generic-widget
+		{
+			width: 2.5cm;
+		}
+		
+		.Centrar
+		{
+			text-align: center;
+		}
+		
+		#enviar
+		{
+			float: left;
+		}
+
+	</style>
+{{end}}
+{{#=response.toolbar()}}
+
+<form action="" enctype="multipart/form-data" method="post">
+	<input type="hidden" name="_formname" value="formaHTML"/>
+
+	<fieldset class='No_GPS'>
+		
+		<table>
+			<tr>
+				<td>
+					<label for="indicador">indicador</label>
+					<input class="string obligatorio" name="indicador" id="indicador" type="text" value=""/>
+				</td>
+				<td class="Centrar">
+					<input class="boolean" name="cambio_clave" id="cambio_clave" type="checkbox" value="on"/>
+				</td>
+				
+				<td>
+					<label for="clave">clave</label>
+					<input class="string obligatorio" name="clave" id="clave" type="text" value=""/>
+				</td>
+			</tr>
+		</table>
+</fieldset>
+
+	<br/>
+	<br/>
+	<input type="submit" value="Enviar" class="btn" id="enviar"/>
+</form>
+{{=salida}}

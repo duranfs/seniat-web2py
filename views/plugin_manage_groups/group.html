@@ -1,0 +1,102 @@
+{{extend 'layout.html'}}
+
+<h3 class="plugin-manage-groups-h3" id="plugin-manage-groups-h3-2">{{=T("Manage group %s") % request.args[0]}}</h3>
+
+<h4 style="display: inline;" class="plugin-manage-groups-h4" id="plugin-manage-groups-h4-1">{{=T("Members")}}</h4>
+{{if members:}}
+  {{if manage_me or len(members)>1:}}
+    <span class="plugin-manage-groups-hintsep">-</span> <span class="plugin-manage-groups-hint">{{=T("click member to exclude him")}}</span>
+  {{pass}}
+
+  {{if len(members)<limit_dense:}}
+    {{li1 = XML('<li class="plugin-manage-groups-li">')}}
+    {{li2 = XML('</li>')}}
+    <ul class="plugin-manage-groups-ul">
+  {{else:}}
+    {{li1 = li2 = ''}}
+    <p>
+  {{pass}}
+  {{for member in members:}}
+    {{=li1}}{{if manage_me or member.id!=auth.user_id:}}<a href="{{=URL('delms', args=(group_id, member.id))}}">{{pass}}
+      {{if auth.settings.use_username:}}
+        {{=member.username}} {{if li1:}}{{=member.email}}{{pass}}
+      {{else:}}
+        {{=member.email}}
+      {{pass}}
+    {{if manage_me or member.id!=auth.user_id:}}</a>{{pass}}{{=li2}}
+  {{pass}}
+  {{if li1:}}
+    </ul>
+  {{else:}}
+    </p>
+  {{pass}}
+{{else:}}
+  <p class="plugin-manage-groups-info">{{=T("No members yet.")}}</p>
+{{pass}}
+
+{{if cnt_candidates:}}
+  <h4 style="display: inline;" class="plugin-manage-groups-h4" id="plugin-manage-groups-h4-2">{{=T("Add other users")}}</h4>
+  {{if hint:}}
+    <ul class="plugin-manage-groups-ambig-ul">
+    {{=T("Did you mean:")}}
+    {{for hintrow in hint:}}
+      <li class="plugin-manage-groups-ambig-li">
+        <a href="{{=URL('addms', args=(group_id, hintrow.id))}}">
+          {{if auth.settings.use_username:}}{{=hintrow.username}}{{else:}}{{=hintrow.email}}{{pass}}
+        </a>
+      </li>
+    {{pass}}
+  {{pass}}
+  </ul>
+  {{if large:}}
+    {{=large}}
+  {{else:}}
+    <span class="plugin-manage-groups-hintsep">-</span> <span class="plugin-manage-groups-hint">{{=T("click user to add him to the group")}}</span>
+
+    {{if len(users)<limit_dense:}}
+      {{li1 = XML('<li class="plugin-manage-groups-li">')}}
+      {{li2 = XML('</li>')}}
+      <ul class="plugin-manage-groups-ul">
+    {{else:}}
+      {{li1 = li2 = ''}}
+      <p>
+    {{pass}}
+    {{for user in users:}}
+      {{if not user.is_member:}}
+        {{=li1}}<a href="{{=URL('addms', args=(group_id, user.id))}}">
+          {{if auth.settings.use_username:}}{{=user.username}}{{else:}}{{=user.email}}{{pass}}
+        </a>{{=li2}}
+      {{pass}}
+    {{pass}}
+    {{if li1:}}
+      </ul>
+    {{else:}}
+      </p>
+    {{pass}}
+  {{pass}}
+{{else:}}
+  <p class="plugin-manage-groups-info">{{=T("All users are members of this group.")}}</p>
+{{pass}}
+
+<h3 style="display: inline;" class="plugin-manage-groups-h3" id="plugin-manage-groups-h3-1">{{=T("Defined groups")}}</h3>
+{{if len(groups)>1:}}
+  <span class="plugin-manage-groups-hintsep">-</span> <span class="plugin-manage-groups-hint">{{=T("click group name to switch group and manage its members")}}</span>
+{{pass}}
+
+<ul id="plugin-manage-groups-groups">
+{{for group in groups:}}
+  {{member_count = member_counts.get(group.id, 0)}}
+  {{qbold1 = XML('<b>') if member_count else ''}}
+  {{qbold2 = XML('</b>') if member_count else ''}}
+  <li class="plugin-manage-groups-group">
+    <a class="plugin-manage-groups-linkgroup" href="{{=URL(args=group.role)}}">{{=qbold1}}{{=group.role}}{{=qbold2}}</a> ({{=member_count}})
+    {{if not member_count:}}
+      - <a class="plugin-manage-groups-delgroup" href="{{=URL('delgroup', args=group.id)}}">{{=T('delete empty group')}}</a>
+    {{pass}}
+  </li>
+{{pass}}
+</ul>
+
+{{if plugins.manage_groups.create:}}
+  <p class="plugin-manage-groups-hint">{{=T("To create new group, please navigate to %s/plugin_manage_groups/group/<new_group_name>.") % request.application}}</p>
+{{pass}}

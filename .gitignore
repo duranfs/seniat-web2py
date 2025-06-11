@@ -1,0 +1,43 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de sesión
+sessions/
+
+# Archivos de caché
+cache/
+
+# Archivos de base de datos
+*.db
+*.sqlite3
+
+# Archivos de configuración local
+*.local
+
+# Archivos de entorno virtual
+venv/
+env/
+
+# Archivos de IDE
+.vscode/
+.idea/
+
+# Archivos de log
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de subida
+uploads/
+
+# Archivos compilados
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de configuración específicos del entorno
+.env 

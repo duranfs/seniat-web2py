@@ -1,0 +1,11 @@
+{{extend 'layout.html'}}
+
+<h2>{{=documento.estructura}} de {{=link_database(documento.database)}}</a></h2>
+
+{{=button('edit','edit_documentos',documento.id)}}
+{{=button('docs','list_documentos',documento.id)}}
+
+
+{{=crud.read(db.documentos,documento)}}
+
+{{=tag('documento',documento.id)}}

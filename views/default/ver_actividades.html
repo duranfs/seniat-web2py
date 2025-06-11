@@ -1,0 +1,66 @@
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+
+{{=script}}	
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+ });
+</script>
+
+
+<legend>
+			Actividades de {{=STRONG(nombre_persona(auth.user_id))}}
+</legend>
+
+
+
+{{if mis_actividades:}}
+<small>
+<div class="row">
+<table  id="ver_actividades" class="table table-bordered table-striped " style="font-size: 12px;">
+	<col style="width:10%">
+	<col style="width:50%">
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+ 
+	
+<thead>
+	<tr>
+	 <th>Proyecto</th><th>Actividad</th><th>Fecha actividad</th><th>Hora inicio</th>
+	 <th colspan="2" class="center">Horas Remotas</th>
+	 <th colspan="2" class="center">Horas Presenciales</th>
+	 <th>Tipo</th>
+	 </tr>
+  <tr>
+    <th colspan="4"></th>  <th>Horas diurnas</th><th>Horas nocturnas</th><th>Horas diurnas</th><th>Horas nocturnas</th><th>Tipo</th>
+  </tr>
+</thead>
+<tbody>
+{{for r in mis_actividades:}}
+<tr>
+<td> {{ =r.asignacion.cod_proyecto.descri }}</td>
+<td> {{ =r.actividades.descripcion }}</td>
+<td> {{=r.actividades.fecha_actividad}}</td>
+<td> {{=r.actividades.hora_inicio}}</td>
+<td> {{=r.actividades.horas_diurnas_r}}</td>
+<td> {{=r.actividades.horas_nocturnas_r}}</td>
+<td> {{=r.actividades.horas_diurnas}}</td>
+<td> {{=r.actividades.horas_nocturnas}}</td>
+<td> {{=r.actividades.tipo}}</td>
+
+</tr>
+{{pass}}
+</tbody>
+</table>
+</div></small>
+{{else:}}
+<p>No hay registros creados aun! </p>
+{{pass}}

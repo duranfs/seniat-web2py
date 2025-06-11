@@ -1,0 +1,82 @@
+proyectos                   |subproyectos                                             
+----------------------------+---------------------------------------------------
+Continuidad operativa       |Monitoreo de Gráficas                              
+Continuidad operativa       |Asesoria Sistemas/Seguridad                        
+Control de Cambios          |Aprobación por Correo                              
+Control de Cambios          |Comité                                             
+Control de Cambios          |Aprobación por chat virtual                        
+Gestión                     |Discos                                             
+Gestión                     |Backups                                            
+Gestión                     |IP                                                 
+Gestión                     |DNS                                                
+Gestión                     |Memoria                                            
+Gestión                     |Otros                                              
+Gestión                     |Actualización inventario                           
+Gestión                     |Documentación                                      
+Gestión                     |Incorporación/desincorporación Monitoreo BD        
+Gestión                     |Verificación Scripts                               
+Gestión                     |Reunión                                            
+Gestión                     |Usuarios                                           
+Mantenimiento               |Redologs/LogFiles                                  
+Mantenimiento               |Chequeo de Integridad                              
+Mantenimiento               |Configuración Ventanas del Planificador CloudContro
+Mantenimiento               |Listener/Log/trc                                   
+Mantenimiento               |Complilación de objetos                            
+Mantenimiento               |Tabla                                              
+Mantenimiento               |NFS Veritas                                        
+Mantenimiento               |Tablespaces                                        
+Mantenimiento               |Diskgroup/Filegroup                                
+Mantenimiento               |Secuencia                                          
+Mantenimiento               |Índices                                            
+Mantenimiento               |Filesystem/Disco                                   
+Mantenimiento               |Configuración Auditoria Solutor                    
+Mantenimiento               |Cambio DBID                                        
+Requerimientos              |Export/Import/RMAN                                 
+Requerimientos              |Creación BD                                        
+Requerimientos              |Eliminación BD                                     
+Requerimientos              |Pruebas                                            
+Requerimientos              |Instalación Binarios Grid                          
+Requerimientos              |Instalación Binarios Oracle                        
+Requerimientos              |Instalación Binarios MongoDB                       
+Requerimientos              |Instalación Binarios Mariadb                       
+Requerimientos              |Instalación Binarios Postgresql                    
+Requerimientos              |Instalación Binarios Sqlserver                     
+Requerimientos              |Prerequisitos                                      
+Requerimientos              |Configuración de RAC / Clúster                     
+Requerimientos              |Configuración Replicaset MongoDB                   
+Requerimientos              |Upgrade                                            
+Requerimientos              |Auditoría                                          
+Requerimientos              |Creación/Modificación de Scripts                   
+Requerimientos              |Objetos                                            
+Requerimientos              |Restauración                                       
+Requerimientos              |Migración                                          
+Revisión de Salud           |Generación de Informe y recomendaciones            
+Revisión de Salud           |Generación y análisis de reportes                  
+Verificación de BD          |Listener                                           
+Verificación de BD          |Contención registros                               
+Verificación de BD          |Conexion Fallida                                   
+Verificación de BD          |Contención indice                                  
+Verificación de BD          |Contención tabla                                   
+Verificación de BD          |Concurrencia                                       
+Verificación de BD          |Esperas CPU                                        
+Verificación de BD          |Esperas cluster                                    
+Verificación de BD          |Esperas tabla                                      
+Verificación de BD          |Esperas por Aplicación                             
+Verificación de BD          |Esperas por IO usuario                             
+Verificación de BD          |Esperas commit                                     
+Verificación de BD          |Esperas por IO system                              
+Verificación de BD          |Esperas Otros                                      
+Verificación de BD          |Backup fallidos                                    
+Verificación de BD          |Bloqueos                                           
+Verificación de BD          |Revisión Planes de Mantenimiento                   
+Verificación de BD          |Monitoreo de Gráfica                               
+Verificación de BD          |Evaluación de consultas (Explain Plan)             
+Verificación de BD          |Espacio                                            
+Verificación de BD          |Revisión de alertas                                
+Verificación de BD          |Scheduler Jobs/Crontab                             
+Verificación de BD          |Validación de Objetos                              
+Verificación de BD          |Redologs                                           
+Verificación de BD          |Memoria                                            
+Verificación de BD          |Estatus BD                                         
+Verificación de BD          |AWR/ASH/ADDM                                       
+Verificación de CloudControl|Aplicativo/OMS/Agent                               

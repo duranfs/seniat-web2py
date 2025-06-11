@@ -1,0 +1,60 @@
+{{extend 'layout.html'}}
+
+<style>
+body{
+    background-color:   #8877e1 ; #9388cd; original#40b5e1; 
+    text-align:center;
+    color: white;
+}
+body .form_wrapper{
+
+    display:inline-block;
+    background-color: #fff;
+    border-radius: 5px;
+    height: auto;
+    padding: 15px 18px;
+    margin: 10% auto;
+    margin-left: auto;
+    margin-right: auto;
+    color: #5F9EA0;
+} 
+
+form {
+    display:table;/* shrinks to fit content */
+    margin:auto;
+    color: white;
+}
+
+.content {
+  max-width: 500px;
+  margin: center;
+}
+}
+
+</style>
+
+<h2>{{=T( request.args(0).replace('_',' ').capitalize() )}}</h2>
+<div class="#content" id="web2py_user_form">
+{{if form is None or request.args(0)=='not_authorized':}}
+	<p>Usuario no autorizado, comuníquese con el administrador de la aplicación</p>
+{{else:}}
+
+  {{=form}} <img colspan="2" src="{{=URL(r=request,c='static/images',f='bd23.png')}}" style="border:0;width:1400px;height:500px"/>
+
+  {{if request.args(0)=='login':}}
+  	{{if not 'register' in auth.settings.actions_disabled:}}
+ 		 <br/>
+		  <a href="{{=URL(args='register')}}">{{=T('Register')}}</a>
+  		{{pass}}
+  	{{if not 'request_reset_password' in auth.settings.actions_disabled:}}
+  		<br/>
+  		<a href="{{=URL(args='request_reset_password')}}">{{=T('Lost Password')}}</a>
+  		{{pass}}
+  {{pass}}
+{{pass}}
+</div>
+
+<script language="javascript"><!--
+      jQuery("#web2py_user_form input:visible:enabled:first:last").focus();
+      //--></script>
+

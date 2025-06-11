@@ -1,0 +1,185 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+  
+   ///jQuery('#tab1').hide();
+});
+</script>
+
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="showcase, portfolio, free web templates, css templates" />
+    <link href="{{=URL('static','templatemo_style.css')}}" rel="stylesheet" type="text/css" />
+  </head>
+  
+
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.basedato {
+ background-color: inherit;
+ color: blue;
+ font-size: 16px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-variant : small-caps;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #10;#444;
+ 
+}
+
+</style>
+{{=form}}
+
+
+
+{{inicial=0}}
+{{control_box=0}}
+{{ancho=15}}
+{{alto=15}}
+
+{{so_inicial=True}}	
+{{so_ant=''}}
+{{serv_ant=''}}
+{{tipobd_ant=''}}
+
+{{if basedatos:}}
+ <table id="tabla" class="smarttable" >
+		 <thead>
+  <tr>
+	  <th>Sistema Operativo</th>
+	  <th>Servidor</th>
+      <th>Tipobd</th>
+	  <th>Instancia</th>
+  </tr>
+  </thead>
+  <tbody>
+{{for k, datos in enumerate(basedatos):}}
+			<!-- Tiposo-------------------------------------------------------- -->
+			{{if so_ant != datos.servidor.so_id.descri:}}
+			 <tr>
+			<td>
+				<div class="tipo margin_r_10">
+				{{=datos.servidor.so_id.descri}} 
+				{{so_ant = datos.servidor.so_id.descri}}
+				</div>
+			</td>
+			<td>
+				<span class="servidor zoom margin_r_20">
+				{{=datos.servidor.nombre}}
+				{{serv_ant = datos.servidor.nombre}}
+				</span>
+			</td>
+			<td>
+				<span class="tipo  margin_r_20">
+				{{=datos.tipobd_id.descri}}
+				</span>
+			</td>
+			<td>
+						<span class="servidor zoom margin_r_20">
+						{{=datos.nombre}}
+						</span>
+						</td>
+			</tr>
+
+			{{else:}}
+				{{if serv_ant != datos.servidor.nombre:}}
+				<tr>
+				<td>
+				<div class="tipo margin_r_10">
+				{{=datos.servidor.so_id.descri}} 
+				{{so_ant = datos.servidor.so_id.descri}}
+				</div>
+				</td>
+				<td>
+					<span class="servidor zoom margin_r_20">
+					{{=datos.servidor.nombre}}
+					{{serv_ant = datos.servidor.nombre}}
+					</span>
+				</td>
+				<td>
+					<span class="tipo  margin_r_20">
+					{{=datos.tipobd_id.descri}}
+					</span>
+				</td>
+				<td>
+						<span class="servidor zoom margin_r_20">
+						{{=datos.nombre}}
+						</span>
+						</td>
+				</tr>
+				{{else:}}
+					{{if tipobd_ant != datos.tipobd_id.descri:}}
+					<tr>
+					<td>
+				<div class="tipo margin_r_10">
+				{{=datos.servidor.so_id.descri}} 
+				{{so_ant = datos.servidor.so_id.descri}}
+				</div>
+				</td>
+				<td>
+					<span class="servidor zoom margin_r_20">
+					{{=datos.servidor.nombre}}
+					{{serv_ant = datos.servidor.nombre}}
+					</span>
+				</td>
+					<td>
+					<span class="tipo  margin_r_20">
+						{{=datos.tipobd_id.descri}}
+						{{tipobd_ant = datos.tipobd_id.descri}}
+					</span>
+					</td>
+					<td>
+						<span class="servidor zoom margin_r_20">
+						{{=datos.nombre}}
+						</span>
+						</td>
+					</tr>
+					{{else:}}
+					<tr>
+					<td>
+				<div class="tipo margin_r_10">
+				{{=datos.servidor.so_id.descri}} 
+				{{so_ant = datos.servidor.so_id.descri}}
+				</div>
+				</td>
+				<td>
+					<span class="servidor zoom margin_r_20">
+					{{=datos.servidor.nombre}}
+					{{serv_ant = datos.servidor.nombre}}
+					</span>
+				</td>
+					<td>
+					<span class="tipo  margin_r_20">
+						{{=datos.tipobd_id.descri}}
+						{{tipobd_ant = datos.tipobd_id.descri}}
+					</span>
+					</td>
+					<td>
+						<span class="servidor zoom margin_r_20">
+						{{=datos.nombre}}
+						</span>
+						</td>
+					</tr>
+					{{pass}}
+				{{pass}}
+			{{pass}}
+			<!-- ------------------------------------------------------------- -->
+
+{{pass}}
+</tbody>
+</table> 
+
+{{pass}}

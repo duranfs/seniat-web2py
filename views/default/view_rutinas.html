@@ -1,0 +1,8 @@
+{{extend 'layout.html'}}
+<h1><a>{{=rutina.nombre}}</a></h1>
+
+{{=button('edit','edit_rutinas',rutina.id)}}
+
+{{=crud.read(db.rutinas,rutina)}}
+
+

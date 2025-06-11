@@ -1,0 +1,69 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<style type="text/css">
+<!--
+div#tabla_uno{
+width:600px;
+position:relative;
+float: left;
+height: auto;
+margin-right: 10px;
+color: blue;
+}
+div#tabla_dos{
+width:600px;
+position:relative;
+float: left;
+height: auto;
+}
+-->
+</style>
+
+{{=script}}	
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+
+});
+</script>
+
+</head>
+<body>
+
+<h3>DETALLE ESTADISTICAS DE SERVIDORES Y BASE DE DATOS </h3>
+<br/>
+<h4></h>{{=ambiente}}  - {{=parametro}}</h4>
+<h7>{{=query}}</h7>
+<br />
+
+
+<div id="tabla_uno">
+<table id='detalle_esta'  class="smarttable table-bordered table-striped " style="font-size: 12px;">
+    <thead class="titulo" >
+		
+        <tr>
+            <th></th><th></th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {{for esta in datos:}}
+		<tr>
+			
+			<td>{{=esta[0]}}</td>
+			<td>{{=esta[1]}}</td>
+			<td>{{=esta[2]}}</td>
+			
+		</tr>
+	
+    {{pass}}
+    </tbody>
+</table>
+</div>
+
+
+
+</body>
+</html>

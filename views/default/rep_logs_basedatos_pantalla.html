@@ -1,0 +1,68 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+{{=script}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+  
+   ///jQuery('#tab1').hide();
+});
+</script>
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 12px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+</div>
+<h2>Reporte de Logs de Base de datos</h2>
+<br />
+<table style="width: 100%" id="rep_logs_basedatos_pantalla" class="xxsmarttable">
+<thead>
+  <tr>
+		<th>Servidor</th>
+		<th>Base de Datos</th>
+		<th>Registro</th>
+    		<th>Accion</th>
+		
+  </tr>
+</thead>
+<tbody>
+{{for r in rows:}}
+
+<tr>
+<td>{{=r.basedatos.servidor.nombre}}</td>
+<td>{{=r.basedatos.nombre}}</td>
+<td>{{=r.body}}</td>
+
+<td>
+<div class="product_box2 margin_r_5" position="center">
+{{=A(IMG( _src=URL(request.application,'static/images','pdf.png'),
+          _alt="Reporte",
+		  _title="Reporte",					
+          _class="click",  _style="border:0;width:30px;height:30px"),
+	  _href=URL(r=request,c='default',f='reporte_logs_basedatos',vars=dict(ID=r.id)))}}
+<!--[<a style="color:red" class="titulo1x" href="{{=URL(r=request,c='default',f='reporte_logs_basedatos',vars=dict(ID=r.id))}}">PDF</a>]-->
+</div>
+</td>
+
+</tr>
+{{pass}}
+</tbody>
+</table>

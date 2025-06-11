@@ -1,0 +1,12 @@
+{{extend 'layout.html'}}
+
+<div style="text-align:left">
+  {{=A('Regresar',_href = URL('list_custodios_bd_appl',args=reg_custodio.basedatos_id),_class="btn")}}
+</div>
+
+{{=button('edit','edit_custodios',reg_custodio.id)}}
+
+
+{{=crud.read(db.custodios_bd_appl,reg_custodio)}}
+
+

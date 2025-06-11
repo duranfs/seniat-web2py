@@ -1,0 +1,12 @@
+{{extend 'layout.html'}}
+
+<div style="text-align:left">
+  {{=A('Regresar',_href = URL('list_esquemas',args=reg_esquema.basedatos_id),_class="btn")}}
+</div>
+
+{{=button('edit','edit_esquema',reg_esquema.id)}}
+
+
+{{=crud.read(db.esquemas,reg_esquema)}}
+
+

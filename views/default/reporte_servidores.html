@@ -1,0 +1,177 @@
+{{extend 'layout.html'}}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Reporte de Servidores - MonitorBD</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css">
+      body {
+        font-family: 'Segoe UI', Verdana, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #333;
+        line-height: 1.6;
+      }
+      
+      #ReportHeader {
+        padding: 15px 20px;
+        background-color: #009ACE;
+        color: white;
+        border-bottom: 2px solid #0077a3;
+      }
+      
+      #ReportHeader h1 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+      
+      .report-date {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      
+      #ReportDetails {
+        margin: 20px;
+        overflow-x: auto;
+      }
+      
+      h2.section-title {
+        font-size: 20px;
+        color: #009ACE;
+        border-bottom: 2px solid #009ACE;
+        padding-bottom: 8px;
+        margin: 25px 0 15px 0;
+      }
+      
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+      }
+      
+      th {
+        background-color: #009ACE;
+        color: white;
+        padding: 12px 8px;
+        text-align: left;
+        font-weight: 600;
+      }
+      
+      td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: top;
+      }
+      
+      tr.server-row {
+        background-color: #f5f5f5;
+        font-weight: 600;
+      }
+      
+      tr.db-row {
+        background-color: #fafafa;
+      }
+      
+      tr.custodian-row {
+        background-color: white;
+        font-size: 14px;
+      }
+      
+      .indent-cell {
+        padding-left: 30px !important;
+      }
+      
+      .double-indent-cell {
+        padding-left: 60px !important;
+      }
+      
+      #ReportFooter {
+        background-color: #009ACE;
+        color: white;
+        padding: 10px 20px;
+        text-align: right;
+        font-size: 14px;
+        margin-top: 30px;
+        border-top: 2px solid #0077a3;
+      }
+      
+      @media (max-width: 768px) {
+        table {
+          font-size: 14px;
+        }
+        
+        th, td {
+          padding: 8px 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ReportHeader">
+      <h1>Reporte de Servidores de Base de Datos</h1>
+      <div class="report-date">Generado el: {{=request.now}}</div>
+    </div>
+    
+    <div id="ReportDetails">
+      <h2 class="section-title">Inventario de Servidores</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo de Equipo</th>
+            <th>Nombre del Servidor</th>
+            <th>Dirección IP</th>
+            <th>Ambiente</th>
+            <th>Tipo de BD</th>
+            <th>Versión</th>
+            <th>Instancia/Cluster</th>
+            <th>Custodios</th>
+          </tr>
+        </thead>
+        <tbody>         
+          {{for p in servidor:}}
+            <tr class="server-row">
+              <td>{{=p.tipo_equipo.descri}}</td>
+              <td><strong>{{=p.nombre.upper()}}</strong></td>
+              <td>{{=p.ip}}</td>
+              <td colspan="5"></td>
+            </tr>  
+            
+            {{for m in p.basedatos.select(orderby=db.basedatos.ambiente_id|db.basedatos.tipobd_id|db.basedatos.nombre):}}
+              <tr class="db-row">
+                <td class="indent-cell"></td>
+                <td class="indent-cell"></td>
+                <td class="indent-cell"></td>
+                <td>{{=m.ambiente_id.descri}}</td>
+                <td>{{=cache.ram('c%s'%m.tipobd_id, lambda:m.tipobd_id.descri.upper(),10)}}</td>
+                <td>{{=m.version_id.descri}}</td>
+                <td>{{=(m.nombre.upper())}}</td>
+                <td></td>
+              </tr>  
+              
+              {{for e in m.custodios_bd_appl.select(orderby=db.custodios_bd_appl.custodio_id):}}
+                <tr class="custodian-row">
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td class="double-indent-cell"></td>
+                  <td>{{=e.custodio_id.nombres}}</td>
+                </tr>  
+              {{pass}}
+            {{pass}}
+          {{pass}}
+        </tbody>        
+      </table>
+    </div>
+    
+    <div id="ReportFooter">
+      Reporte generado por MonitorBD • {{=request.now.date()}}
+    </div>
+  </body>
+</html>

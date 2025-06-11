@@ -1,0 +1,157 @@
+{{response.files.append(URL(r=request,c='static',f='templatemo_style.css'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+
+{{extend 'layout.html'}}
+
+
+<style> 
+	
+background: -prefix-linear-gradient(left, blue, white); 
+ 
+.titulo {
+ background-color: blue;
+ color: blue;
+ font-size: 18px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ box-shadow: 8px 8px 100px #10;#444;
+ background-image: linear-gradient(180deg, #fff, #ddd 10%, #ccc);
+}
+.titulo2 {
+ background-color: blue;
+ color: blue;
+ font-size: 14px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #10;#444;
+ background-image: linear-gradient(180deg, #fff, #ddd 5%, #ccc);
+}
+
+.resaltado {
+font-size:12px;
+font-family: Arial, Helvetica, sans-serif;
+color:red; 
+#background-color: #44A2FF;
+font-weight: bold;
+}
+
+.caja {
+font-size:10px; color:black
+}
+
+<script src="{{=URL("static", "js", args="highcharts.js")}}" type="text/javascript"></script>
+<script src="{{=URL("static", "js", args="exporting.js")}}" type="text/javascript"></script>
+
+</style>  
+<h4 style='background-color:#01A9DB;padding:2px;color:black;borderx-color : red; text-align:center'>
+DASHBOARD
+</h4>
+<br>
+
+
+<div id="xxtemplatemo_content">
+	{{bd_ant=''}}
+	{{ser_ant=''}}
+	{{tipobd_ant=''}}
+	{{VAR=0}}
+	{{X=0}}
+	{{re=0}}
+	{{color=01}}
+	{{cambio_color=0}}
+	{{ancho=40}}
+	{{alto=40}} 
+	{{cinst=0}}
+	
+{{if mon: }}
+      {{for k,m in enumerate(mon):}}
+           {{if m.status=='DESHABILITADO' or m.tx_resultado==''  : 
+		   continue
+		   }}
+					{{if m.tx_instancia.upper() <> bd_ant:}}
+						
+						{{ id_servidor  = func_id_servidor(m.tx_servidor.upper()) }}
+						{{ id_basedatos = func_id_basedatos(m.tx_instancia.upper(), id_servidor ) }}
+						{{ desc_version = version_bd(m.tx_instancia.upper(), id_servidor ) }}
+						<div  class="box3 product_box margin_r_10 tipo">
+						
+						
+						<div class="section md-padding bg-grey">
+						<figure>
+						<embed id='chart_{{=id_basedatos}}' style='width: 10%' class='img-responsive col-xs-12' type='image/svg+xml' src='chart_{{=id_basedatos}}' />
+						<script>ajax('g_crecimiento_tbs/{{=id_basedatos}}/{{=m.tx_servidor.upper()}}',[],'chart_{{=id_basedatos}}');</script>
+						</figure>
+						</div>
+						
+						
+						<h4 style='background-color:x#01A9DB;padding:2px;color:black;borderx-color : red;'>
+							<span class="titulo2x">{{=m.tx_instancia.upper()}}-{{=m.tx_servidor}}</span></h4>
+						<h6 style='background-color:green;#3181cd;padding:2px;color:black;borderx-color : red;'>
+						<br>[{{=I(show_status(m.tx_tipobd.lower()))}}-{{=m.tx_puerto}}]
+						<br>[{{=desc_version.descri}}]   
+						<br>
+						{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/','grafico2.jpeg'),
+								_alt="Info",
+								_title="Grafica crecimiento BD",					
+								_class="xxzoom2",
+								_id='chart_'+str(id_basedatos),
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='g_crecimiento_diario',args=[id_basedatos, m.tx_servidor.upper()]),
+								_target='new'
+								)}}
+						{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/','monitor.ico'),
+								_alt="Info",
+								_title="Grafica crecimiento TBS",					
+								_class="xxzoom2",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='g_crecimiento_tbs',
+								args=[id_basedatos, m.tx_servidor.upper()]),
+								_target='new'
+								)}}
+						{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/','monitor.ico'),
+								_alt="Info",
+								_title="Grafica Transacciones Distribuidas",					
+								_class="xxzoom2",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='g_tran_dist',
+								args=[id_basedatos, m.tx_servidor.upper()]),
+								_target='new'
+								)}}
+						</h6>
+						<br>
+					 {{else:}}
+						</div>
+					 {{pass}}
+				
+		{{bd_ant=m.tx_instancia.upper()}}	
+		{{ser_ant=m.tx_servidor.upper()}}
+		{{tipobd_ant=m.tx_tipobd.upper()}}		
+		{{puerto_ant=m.tx_puerto}}	
+			
+ {{pass}} <!-- fin for principal -->
+			
+</div> <!-- end of templatemo_content -->
+{{pass}}
+
+
+</body>
+
+

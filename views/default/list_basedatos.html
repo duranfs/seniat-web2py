@@ -1,0 +1,264 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+<style>
+/* Estilos generales */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f7fa;
+}
+
+.container {
+  max-width: 95%;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Encabezado */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e1e5eb;
+}
+
+.page-title {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+}
+
+.action-button img {
+  width: 28px;
+  height: 28px;
+}
+
+/* Formulario */
+#form {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: none;
+}
+
+/* Tabla de bases de datos */
+.table-container {
+  overflow-x: auto;
+}
+
+#list_basedatos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#list_basedatos thead th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 500;
+}
+
+#list_basedatos tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e1e5eb;
+  vertical-align: middle;
+}
+
+#list_basedatos tbody tr:hover {
+  background-color: #f1f7fd;
+}
+
+/* Acciones */
+.actions-cell {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.action-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.action-icon:hover {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .action-buttons {
+    align-self: flex-end;
+  }
+  
+  .actions-cell {
+    flex-direction: column;
+  }
+}
+</style>
+
+{{=script}}
+
+<script>
+$(document).ready(function() { 
+   // Verificar si DataTable ya está inicializado
+   if (!$.fn.DataTable.isDataTable('#list_basedatos')) {
+     $('#list_basedatos').DataTable({
+       "language": {
+         "lengthMenu": "Mostrar _MENU_ registros por página",
+         "zeroRecords": "No se encontraron resultados",
+         "info": "Mostrando página _PAGE_ de _PAGES_",
+         "infoEmpty": "No hay registros disponibles",
+         "infoFiltered": "(filtrado de _MAX_ registros totales)",
+         "search": "Buscar:",
+         "paginate": {
+           "first": "Primero",
+           "last": "Último",
+           "next": "Siguiente",
+           "previous": "Anterior"
+         }
+       },
+       "responsive": true,
+       "scrollX": true
+     });
+   }
+   
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+
+function toggleForm() {
+  jQuery('#form').slideToggle();
+}
+</script>
+
+<div class="container">
+  <div class="page-header">
+    {{if servidor:}}
+      <h1 class="page-title">Bases de Datos en {{=nombre_servidor(servidor.id)}}</h1>
+    {{else:}}
+      <h1 class="page-title">Todas las Bases de Datos</h1>
+    {{pass}}
+    
+    <div class="action-buttons">
+      {{if servidor:}}
+      <button class="action-button" onclick="toggleForm()" title="Nueva Base de Datos">
+        <img src="{{=URL(request.application,'static/images','add.png')}}" alt="Crear">
+      </button>
+      {{pass}}
+      
+      <a class="action-button" href="{{=URL(r=request,c='default',f='export_to_csv',args=['basedatos'])}}" title="Exportar a CSV">
+        <img src="{{=URL(request.application,'static/images','csv.png')}}" alt="CSV">
+      </a>
+    </div>
+  </div>
+
+  {{if servidor:}}
+  <div id="form">
+    <h3>Nueva Base de Datos</h3>
+    {{=form}}
+  </div>
+  {{pass}}
+
+  {{if basedatos: }}
+  <div class="table-container">
+    <table id="list_basedatos" class="table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Servidor</th>
+          <th>Instancia</th>
+          <th>Tipo</th>
+          <th>Ambiente</th>
+          <th>Creada</th>
+          <th>Estatus</th>
+          <th>Versión</th>
+          <th>ASM</th>
+          <th>Puerto</th>
+          <th>SW Backup</th>
+          <th>Aplicación</th>
+          <th>Custodio</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{for basedato in basedatos:}}
+        <tr>
+          <td>{{=link_equipo(basedato.servidor)}}</td>
+          <td>{{=link_servidor2(basedato.servidor)}}</td>
+          <td>{{=basedato.nombre}}</td>
+          <td>{{=basedato.tipobd_id.descri}}</td>
+          <td>{{=show_status(basedato.ambiente_id.descri)}}</td>
+          <td>{{=basedato.fecha_creacion}}</td>
+          <td>{{=show_status(basedato.estado_id.descri)}}</td>
+          <td>{{=basedato.version_id.descri}}</td>
+          <td>{{=show_status(basedato.asm)}}</td>
+          <td>{{=basedato.puerto}}</td>
+          <td>{{=show_status(basedato.soft_respaldo)}}</td>
+          <td>{{=basedato.appl}}</td>
+          <td>
+            {{=A(int(link_cuentacust(basedato)), _class="click",
+            _href=URL(r=request,c='default',f='list_custodios_bd_appl',args=[basedato.id]))}}
+          </td>
+          <td class="actions-cell">
+            <a href="{{=URL(r=request,c='default',f='edit_basedatos',args=[basedato.id])}}" title="Editar">
+              <img src="{{=URL(request.application,'static/images','edit-1.ico')}}" class="action-icon" alt="Editar">
+            </a>
+            <a href="{{=URL(r=request,c='default',f='list_matriz_respaldo',args=[basedato.id, basedato.servidor])}}" title="Matriz de Respaldo">
+              <img src="{{=URL(request.application,'static/images','matriz.png')}}" class="action-icon" alt="Matriz">
+            </a>
+            <a href="{{=URL(r=request,c='oracle',f='index')}}" title="Log_error">
+              <img src="{{=URL(request.application,'static/images','logs.png')}}" class="action-icon" alt="Log_error">
+            </a>
+            <a href="{{=URL(r=request,c='oracle',f='ver_tps')}}" title="TPS">
+              <img src="{{=URL(request.application,'static/images','esquemas3.jpg')}}" class="action-icon" alt="Esquemas">
+            </a>
+            <a href="{{=URL(r=request,c='default',f='list_custodios_bd_appl',args=[basedato.id])}}" title="Custodios">
+              <img src="{{=URL(request.application,'static/images','trabajo-en-equipo.png')}}" class="action-icon" alt="Custodios">
+            </a>
+            <a href="{{=URL(r=request,c='default',f='info_basedatos',args=[basedato.id])}}" title="Información">
+              <img src="{{=URL(request.application,'static/images','informacion.png')}}" class="action-icon" alt="Información">
+            </a>
+          </td>
+        </tr>
+        {{pass}}
+      </tbody>
+    </table>
+  </div>
+  {{pass}}
+</div>

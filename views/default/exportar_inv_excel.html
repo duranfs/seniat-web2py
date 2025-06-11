@@ -1,0 +1,143 @@
+<html>
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+<head>
+<style>
+body{
+    background-color:#6e6969;
+    text-align:center;
+}
+body .form_wrapper{
+
+    display:inline-block;
+    background-color: #fff;
+    border-radius: 5px;
+    height: auto;
+    padding: 15px 18px;
+    margin: 10% auto;
+    margin-left: auto;
+    margin-right: auto;
+} 
+
+#form_login {
+    left: 50%;
+    top: 50%;
+    margin-left: -25%;
+    position: absolute;
+    margin-top: -25%;
+    
+ body, html {   
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display:table;
+}
+body {
+    display:table-cell;
+    vertical-align:middle;
+}
+form {
+    display:table;/* shrinks to fit content */
+    margin:auto;
+}
+
+.content {
+  max-width: 500px;
+  margin: auto;
+}
+}
+
+</style>
+
+</head>
+<body>
+<legend>
+			Exportar inventario a Excel
+</legend>
+
+{{=A(T('Exportar todo a EXCEL'), _class='btn btn-primary', _href=URL('default','exportar_inv_excel',args =['inventarioBDPM.xls','inventarioBDPM.xls'] ))}}
+
+
+
+<br>
+<div id="content">
+<h5>Exportar por rango de fechas</h5>
+<form width="80%" class="well" action="" enctype="multipart/form-data" method="post">
+	<input type="hidden"  name="_formname" value="formaOPHTML"/>
+
+					<label for="desde">Desde</label>
+					<input class="string Estatico2cm obligatorio" name="desde" id="desde" type="date"  />
+
+					<label for="hasta">Hasta</label>
+					<input class="string Estatico2cm obligatorio" name="hasta" id="hasta" type="date" />
+					
+<input name="boton-principal" class="button" type="submit" value="Ejecutar" />
+</form>
+</div>
+<br>
+</body>
+
+<script>
+	
+	var hoy = new Date();
+	var now = new Date();
+	var today = now.getFullYear() + '-' + 
+			(now.getMonth() + 1)  + '-' + 
+			("0" + now.getDate()).slice(-2) + ' ' + 
+			now.getHours() + ':' + 
+			now.getMinutes() + ':' + 
+			now.getSeconds()
+	
+	$('#desde2').change(function(){
+			alert('Fechas erradas script');
+	});
+		
+	var existe = false;
+	$('form').submit
+	(
+		function()
+		{
+			// Validando los campos obligatorios
+			flag = true;
+			campos=$('.obligatorio');
+			campos.each(function() 
+			{
+				if(!$(this).val())
+				{
+					//alert('validando campos obligatorio');
+					 flag = false;
+				}
+			});
+
+			if(!flag)
+			{
+				alert('Debe introducir las fechas');
+				return false;
+			}
+			
+			if($(desde).val() > $(hasta).val())
+				{
+					alert('Fechas hasta menor que fecha desde');
+					return false;
+				}
+				
+			if($(desde).val() > today )
+				{
+					alert('Fechas desde mayor a la actual');
+					return false;
+				}
+			
+			if($(hasta).val() > today )
+				{
+					alert('Fechas hasta mayor a la actual');
+					return false;
+				}
+			
+		});  
+		
+</script>
+
+</html>

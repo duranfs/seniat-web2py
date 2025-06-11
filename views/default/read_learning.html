@@ -1,0 +1,9 @@
+{{extend 'layout.html'}}
+
+<h2>Read Titulo</h2>
+{{=A(T('Edit Titulo'),_href=URL('edit_learning',args=request.args(0)))}}
+<br/>
+
+{{=form}}
+{{for t,f in db.learning_goal._referenced_by:}}
+{{if not t[-8:]=='_archive':}}[{{=A(t[2:],_href=URL('%s_select'%t[2:],args=(f,form.record.id)))}}]{{pass}}{{pass}}

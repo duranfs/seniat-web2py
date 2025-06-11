@@ -1,0 +1,151 @@
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+Grafica de crecimiento diario
+
+{{session.base=0}}
+
+{{regXpag=30}}
+{{ths=(size/regXpag+1)}}
+<form enctype="multipart/form-data" action="{{=URL('default', 'list_matriz_respaldo', vars=dict(todos=session.base))}}" method="post">
+<p>Seleccionar BD</p><br>
+<table  id="tabla" class="smarttable" >
+	<thead>
+	<tr>
+		{{for h in range(ths):}}
+			<th style="text-align: center; width:20em;">BD {{=h}}</th>
+		{{pass}} 
+		</tr>
+	</thead>
+<tbody>
+<tr>
+
+{{control=0}}
+{{reg=regXpag}}
+{{ult_td=ths}}
+{{tam=size}}
+{{for j in range(ult_td):}}
+<td style="width:20em;">
+	{{for i in range(control, reg):}}
+		
+        {{hay=link_bdmon(basedatos[i].nombre, basedatos[i].servidor.nombre)}}
+        {{if hay > 0:}}
+			<h style="color:red; font-size:12px">
+			{{=A(basedatos[i].nombre, 
+				_href=URL(r=request,c='default',f='g_crecimiento_diario',
+				args=[basedatos[i].id,basedatos[i].servidor.nombre]))}} *{{=basedatos[i].servidor.nombre}}*
+				</h><br>
+			{{hay=0}}
+		{{else:}}
+			{{=A(basedatos[i].nombre, 
+				_href=URL(r=request,c='default',f='g_crecimiento_diario',
+				args=[basedatos[i].id,basedatos[i].servidor.nombre]))}}-><h style="font-size:7px">
+					{{=basedatos[i].servidor.nombre}}
+					</h><br>
+		{{pass}}
+		
+				
+	
+	{{pass}}
+		BD del {{=control}} Al  {{=reg}} <!--{{=tam-reg}} -->
+	{{if (tam-reg >= regXpag):}}
+			{{control=reg+1}}
+			{{reg=(reg+regXpag)+1}}
+	{{else:}}	
+			{{control=reg+1}}
+			{{reg=tam}}
+	{{pass}}
+</td>
+{{pass}}
+
+
+</tr>
+
+<td>
+
+</td>
+
+
+</tr>
+
+</tbody>
+</table>
+</form>
+
+<script>
+
+if(!$('input:radio[name=hab_des]:checked').val())
+			{
+				flag = false;
+				//alert('falta presionar un radio-botón');
+			}
+
+
+
+function valor() {
+	var cbl=document.getElementsByClassName("bd");
+	var t=false;
+	for (var i = 0; i < cbl.length; ++i){
+		if(cbl[i].checked === true){
+			t=true;
+			{{session.base=200}};
+			alert('Radio  ' + cbl[i].value );
+			ajax("{{=URL('list_matriz_respaldo', vars={'bd':session.base})}}", vars={bd:cbl[i].value},'table');
+		}
+	}
+}				
+
+function envia() {
+	var cbl=document.getElementsByClassName("bd");
+	var t=false;
+	for (var i = 0; i < cbl.length; ++i){
+		if(cbl[i].checked === true){
+			t=true;
+			{{session.base=200}};
+			alert('Radio  ' + cbl[i].value );
+			ajax("{{=URL('list_matriz_respaldo', vars={'bd':session.base})}}", vars={bd:cbl[i].value},'table');
+		}
+	}
+}	
+	
+	
+function salopt() {
+	var cbl=document.getElementsByClassName("servopt");
+	var t=false;
+	for (var i = 0; i < cbl.length; ++i){
+		if(cbl[i].checked === false){
+			t=true;
+		}
+	}
+	if(t){
+  	for (var i = 0; i < cbl.length; ++i){ 
+		cbl[i].checked = "checked"; 
+		}
+	}else{
+		for (var i = 0; i < cbl.length; ++i){ 
+		cbl[i].checked = false; 
+		}
+	}
+}
+function sal() {
+	var cbl=document.getElementsByClassName("servcb");
+	var t=false;
+	for (var i = 0; i < cbl.length; ++i){
+		if(cbl[i].checked === false){
+			t=true;
+		}
+	}
+	if(t){
+  	for (var i = 0; i < cbl.length; ++i){ 
+		cbl[i].checked = "checked"; 
+		}
+	}else{
+		for (var i = 0; i < cbl.length; ++i){ 
+		cbl[i].checked = false; 
+		}
+	}
+}
+
+
+</script>
+

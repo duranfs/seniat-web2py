@@ -1,0 +1,143 @@
+{{extend 'layout.html'}}
+{{import json}}
+
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h2 style="font-size: 1.5rem; display: inline-block;">Horas por Ambiente - {{=mes_actual}}</h2>
+        </div>
+        <div class="col-md-4 text-right">
+            <form class="form-inline float-right">
+                <div class="form-group">
+                    <label for="mes" class="mr-2">Mes:</label>
+                    <select name="mes" id="mes" class="form-control form-control-sm" onchange="this.form.submit()">
+                        {{for opcion in meses_disponibles:}}
+                        <option value="{{=opcion}}" {{='selected' if opcion==mes_param else ''}}>
+                            {{=opcion.replace('-', '/')}}
+                        </option>
+                        {{pass}}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div style="height: 350px;">
+                <canvas id="horasChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div style="max-height: 350px; overflow-y: auto; font-size: 0.85rem;">
+                <table class="table table-sm table-bordered table-hover mb-0">
+                    <thead class="thead-light sticky-top">
+                        <tr>
+                            <th class="p-1">Ambiente</th>
+                            <th class="p-1 text-right">Norm</th>
+                            <th class="p-1 text-right">Ext</th>
+                            <th class="p-1 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{total_normales = 0.0}}
+                        {{total_extras = 0.0}}
+                        {{for i, ambiente in enumerate(ambientes):}}
+                        <tr class="{{='table-warning' if horas_totales[i] > 0 else ''}}">
+                            <td class="p-1"><small>{{=ambiente[:12]}}{{='...' if len(ambiente)>12 else ''}}</small></td>
+                            <td class="p-1 text-right"><small>{{="%.2f" % round(horas_normales[i], 2)}}</small></td>
+                            <td class="p-1 text-right"><small>{{="%.2f" % round(horas_extras[i], 2)}}</small></td>
+                            <td class="p-1 text-right font-weight-bold"><small>{{="%.2f" % round(horas_totales[i], 2)}}</small></td>
+                        </tr>
+                        {{total_normales += horas_normales[i]}}
+                        {{total_extras += horas_extras[i]}}
+                        {{pass}}
+                        <tr class="table-primary">
+                            <td class="p-1"><small><strong>Total</strong></small></td>
+                            <td class="p-1 text-right"><small><strong>{{="%.2f" % round(total_normales, 2)}}</strong></small></td>
+                            <td class="p-1 text-right"><small><strong>{{="%.2f" % round(total_extras, 2)}}</strong></small></td>
+                            <td class="p-1 text-right"><small><strong>{{="%.2f" % round(total_normales + total_extras, 2)}}</strong></small></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('horasChart').getContext('2d');
+    
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{=XML(json.dumps(ambientes))}},
+            datasets: [
+                {
+                    label: 'Normales',
+                    data: {{=XML(json.dumps(horas_normales))}},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Extras',
+                    data: {{=XML(json.dumps(horas_extras))}},
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + 'h';
+                        },
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    stacked: true,
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 10,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + 'h';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

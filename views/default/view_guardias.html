@@ -1,0 +1,9 @@
+{{extend 'layout.html'}}
+<h1>{{=link_guardias(reg_guardias.f_quien_toca)}}</h1>
+
+
+{{=button('edit','edit_guardias',reg_guardias.id)}}
+{{=button('tasks','list_tasks_guardias',reg_guardias.id)}}
+
+{{=crud.read(db.guardias,reg_guardias)}}
+

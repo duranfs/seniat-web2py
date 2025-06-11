@@ -1,0 +1,101 @@
+
+{{extend 'layout.html'}}
+
+
+<style>
+
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.titulo1 {
+ background-color: blue;
+ color: blue;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ box-shadow: 8px 8px 100px #10;#444;
+ background-image: linear-gradient(180deg, #fff, #ddd 10%, #ccc);
+}
+
+/* Tabla de servidores */
+.table-container {
+  overflow-x: auto;
+}
+
+#list_servidores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#list_servidores thead th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 500;
+}
+
+#list_servidores tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e1e5eb;
+  vertical-align: middle;
+}
+
+#list_servidores tbody tr:hover {
+  background-color: #f1f7fd;
+}
+
+</style>
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+   {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+
+</script>
+
+
+<h5>Lista de Rutinas / Parámetros de BD</h5>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear rutina</a>]
+<br>
+<div id="form">
+<h2>Nueva Rutina</h2>
+{{=form}}
+</div>
+
+<div class="table-container">
+<table id="list_rutinas" class="table-bordered table-striped smarttable">
+<thead>
+    <tr>
+		<th>Nombre</th><th>Descripcion</th><th>Codigo SQL</th><th>Activo</th><th>Accion</th>
+	 </tr>    
+</thead>
+<tbody>
+{{for rutina in rutinas:}}
+		<tr>
+      
+    <td>{{=rutina.nombre}}</td>
+		<td>{{=rutina.descripcion}}</td>
+		<td>{{=rutina.sql_code}}</td>
+		<td>{{=rutina.activo}}</td>
+		<td>
+			{{=button('editar','edit_rutinas',rutina.id)}}
+			{{=button('ver','view_rutinas',rutina.id)}}
+		</td>
+    </tr>
+	 
+{{pass}}
+</tbody>
+</table>
+</div>

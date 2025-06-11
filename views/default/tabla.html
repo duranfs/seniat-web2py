@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="table-pagination.js"></script>
+   
+    <script src="{{=URL('static','table-pagination.js')}}"></script>
+<link href="https://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
+
+    <title>Customizable Client Side Table Pagination Plugin Example</title>
+    <style>
+        /* Animation Styling */
+        
+        @keyframes buttonPop {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        /* Page Styling */
+        
+        body {
+            all: unset;
+            font-family: system-ui;
+            color: #272822;
+            font-size: 100%;
+            line-height: 1.5;
+            background-color: #fafafa;
+        }
+        
+        ul {
+            margin: 0 0 0 1.25em;
+            padding: 0;
+            line-height: 1.875;
+        }
+        
+        h1,
+        h2 {
+            margin-top: 0px;
+        }
+        
+        .margin-1200 {
+            width: 1200px;
+            margin: 150px auto;
+            padding: 20px 0px;
+        }
+        
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: flex-start;
+            flex-direction: row
+        }
+        
+        .setting-container {
+            width: 600px;
+        }
+        
+        .button-container {
+            display: flex;
+            align-items: start;
+            flex-direction: column;
+        }
+        
+        .arrow-button {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .code-container {
+            margin-top: 40px;
+        }
+        /* Table Styling */
+        
+        .tableTestClass {
+            border-collapse: collapse;
+            color: #666666;
+        }
+        
+        .tableTestClass tr:nth-child(1) {
+            background-color: #6f7ad7!important;
+            padding: 5px 10px;
+            color: #ffffff;
+        }
+        
+        .tableTestClass tr:nth-child(odd) {
+            background-color: #f4f4f4;
+        }
+        
+        .tableTestClass tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        
+        .tableTestClass td {
+            border: 1px solid #fff;
+            padding: 5px 10px;
+        }
+        
+        #paginateBtn {
+            padding: 10px 20px;
+            background-color: #6f7ad7;
+            color: #fff;
+            outline: none;
+            border: 0px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: 0.2s;
+            animation: buttonPop 1s infinite;
+        }
+        
+        #paginateBtn:hover {
+            background-color: #6f7ad7e6;
+            transform: scale(1.05);
+            transition: 0.2s;
+        }
+        
+        .setting-content {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rowPerTableContainer,
+        .paginationActiveColorContainer,
+        .paginationFontColorContainer,
+        .paginationStyleContainer,
+        .jumpPageContainer {
+            display: flex;
+            flex-wrap: wrap;
+            row-gap: 20px;
+            justify-content: left;
+        }
+        
+        label {
+            min-width: 50px;
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 20px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 3px solid #cccccc;
+            box-sizing: border-box;
+        }
+        
+        .paginationActiveColorContainer label:nth-of-type(1) {
+            background-color: #6f7ad7;
+        }
+        
+        .paginationActiveColorContainer label:nth-of-type(2) {
+            background-color: #FFA4B6;
+        }
+        
+        .paginationActiveColorContainer label:nth-of-type(3) {
+            background-color: #0B1354;
+        }
+        
+        .paginationFontColorContainer label:nth-of-type(1) {
+            background-color: #555555;
+        }
+        
+        .paginationFontColorContainer label:nth-of-type(2) {
+            background-color: #0B1354;
+        }
+        
+        .paginationFontColorContainer label:nth-of-type(3) {
+            background-color: #000000;
+        }
+        
+        
+        input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+            user-select: none;
+        }
+        
+        input[type="text"] {
+            font-size: 16px;
+            border-radius: 5px;
+            padding: 0 10px;
+            min-height: 40px;
+            width: 40px;
+        }
+        
+        input[type="color"] {
+            border-radius: 5px;
+            height: auto;
+            background: #fff;
+        }
+        
+        input[type="radio"]:checked+label {
+            border: 3px solid #6f7ad7;
+        }
+        
+        .table-container {
+            width: fit-content;
+        }
+        /* Use a media query to add a breakpoint at 800px: */
+        
+        @media screen and (max-width: 1200px) {
+            .margin-1200 {
+                width: calc(100vw - 32px);
+                margin: auto;
+            }
+            .top-banner .margin-1200 {
+                padding: 0;
+            }
+            .main-container {
+                flex-direction: column;
+            }
+            .tableTestClass {
+                width: 100%;
+            }
+            .setting-container {
+                width: 100%;
+                display: block;
+            }
+            .top-banner-content svg {
+                height: 30px;
+            }
+            .arrow-button {
+                display: flex;
+                flex-direction: row-reverse;
+                align-items: flex-end;
+                align-self: center;
+            }
+            .arrow-button svg {
+                transform: rotate(90deg);
+            }
+            .button-container {
+                align-items: center;
+            }
+            .button-container h2 {
+                margin-top: 30px;
+            }
+            .setting-content {
+                align-items: center;
+            }
+            .rowPerTableContainer,
+            .paginationActiveColorContainer,
+            .paginationFontColorContainer,
+            .paginationStyleContainer,
+            .jumpPageContainer {
+                justify-content: center;
+            }
+            .table-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body><div id="jquery-script-menu">
+<div class="jquery-script-center">
+<ul>
+<li><a href="https://www.jqueryscript.net/table/client-side-pagination.html">Download This Plugin</a></li>
+<li><a href="https://www.jqueryscript.net/">Back To jQueryScript.Net</a></li>
+</ul><div id="carbon-block"></div>
+<div class="jquery-script-ads"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2783044520727903"
+     crossorigin="anonymous"></script>
+<!-- jQuery_demo -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-2783044520727903"
+     data-ad-slot="2780937993"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script></div>
+<div class="jquery-script-clear"></div>
+</div>
+</div>
+    <div class="margin-1200">
+        <h1>Customizable Client Side Table Pagination Plugin Example</h1>
+<p>A lightweight yet customizable table paginator that lets you divide a large number of table rows into pages to enhance the visibility of your large HTML table.</p>
+
+        <div class="main-container">
+            <div class="table-container">
+                <h2>Try It Yourself</h2>
+
+                <table id="tableTest" class="tableTestClass">
+
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 10%;"></col>
+  <col style="width: 10%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 20%;"></col>
+  <col style="width: 7%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 5%;"></col>
+  <col style="width: 3%;"></col>
+<thead>
+    <tr>
+    <th>Consultor</th>
+  <th>Ambiente</th>
+  <th>Proyecto</th>
+  <th>Subproyecto</th>
+  <th>Servidor</th>
+  <th>BD</th>
+  
+  <th>Accion</th>
+    </tr>    
+</thead>
+<tbody>
+{{for f in rows:}}
+{{=TR(
+    TD(f.analista.first_name+' '+f.analista.last_name, _style="font-size:12px;"),
+    TD(f.ambiente_id.descri ,_style="font-size:12px;"),
+    TD(f.cod_proy.descri, _style="font-size:12px;"),
+    TD(f.cod_subp.descri, _style="font-size:12px;"),
+    TD(f.cod_servidor.nombre, _style="font-size:12px;"),
+    TD(ds_bd(f.cod_bd), _style="font-size:12px;"),
+  
+    TD(
+       A(
+                IMG(
+                    _src=URL(request.application,'static/images','edit-1.ico'),
+                    _alt="Editar",
+          _title="Editar Actividad",          
+                    _class="click imagenes",
+                    _style="border:0;width:15px;height:15px"
+          
+                ),
+                _href=URL(r=request,c='default',f='editar_actividades4',args=[f.id])
+            ))
+)}}       
+{{pass}}
+</tbody>
+</table>
+
+
+         </div>
+            <div class="setting-container">
+                <div class="button-container">
+                    <div>
+                        <h2>Tired of Scrolling?</h2>
+                    </div>
+                    <div class="arrow-button">
+
+                        <button id="paginateBtn">
+                                Paginate This Table !
+                            </button>
+
+                    </div>
+
+
+                </div>
+                <div class="setting-content">
+                    <h2>
+                        Table Row Per Page
+                    </h2>
+                    <div class="rowPerTableContainer">
+                        <input type="radio" id="rowPerTable_10" name="rowPerTable" value="10">
+                        <label for="rowPerTable_10">10</label>
+                        <br>
+                        <input type="radio" id="rowPerTable_15" name="rowPerTable" value="15">
+                        <label for="rowPerTable_15">15</label>
+                        <br>
+                        <input type="radio" id="rowPerTable_20" name="rowPerTable" value="20">
+                        <label for="rowPerTable_20">20</label>
+                        <br>
+                        <input type="radio" id="rowPerTable_custom" name="rowPerTable" value="" rel="custom">
+                        <label for="rowPerTable_custom">Custom Value</label><br>
+                        <input id="rowPerTable_custom_value" type="text">
+                    </div>
+
+                </div>
+                <div class="setting-content">
+                    <h2>
+                        Pagination Color
+                    </h2>
+                    <div class="paginationActiveColorContainer">
+                        <input type="radio" id="paginationActiveColor_#6f7ad7" name="paginationActiveColor" value="#6f7ad7">
+                        <label for="paginationActiveColor_#6f7ad7"></label>
+                        <br>
+                        <input type="radio" id="paginationActiveColor_#FFA4B6" name="paginationActiveColor" value="#FFA4B6">
+                        <label for="paginationActiveColor_#FFA4B6"></label>
+                        <br>
+                        <input type="radio" id="paginationActiveColor_#0B1354" name="paginationActiveColor" value="#0B1354">
+                        <label for="paginationActiveColor_#0B1354"></label>
+                        <br>
+                        <input type="radio" id="paginationActiveColor_custom" name="paginationActiveColor" value="" rel="custom">
+                        <label for="paginationActiveColor_custom">Custom Color</label><br>
+                        <input id="paginationActiveColor_custom_value" type="color">
+                    </div>
+                </div>
+                <div class="setting-content">
+                    <h2>
+                        Pagination Font Color
+                    </h2>
+                    <div class="paginationFontColorContainer">
+                        <input type="radio" id="paginationFontColor_#555555" name="paginationFontColor" value="#555555">
+                        <label for="paginationFontColor_#555555"></label>
+                        <br>
+                        <input type="radio" id="paginationFontColor_#0B1354" name="paginationFontColor" value="#0B1354">
+                        <label for="paginationFontColor_#0B1354"></label>
+                        <br>
+                        <input type="radio" id="paginationFontColor_#000000" name="paginationFontColor" value="#000000">
+                        <label for="paginationFontColor_#000000"></label>
+                        <br>
+                        <input type="radio" id="paginationFontColor_custom" name="paginationFontColor" value="" rel="custom">
+                        <label for="paginationFontColor_custom">Custom Color</label><br>
+                        <input id="paginationFontColor_custom_value" type="color">
+                    </div>
+                </div>
+                <div class="setting-content">
+                    <h2>
+                        Pagination Style
+                    </h2>
+                    <div class="paginationStyleContainer">
+                        <input type="radio" id="paginationStyle_borderless" name="paginationStyle" value="borderless">
+                        <label for="paginationStyle_borderless">Borderless</label>
+                        <br>
+                        <input type="radio" id="paginationStyle_bordered" name="paginationStyle" value="bordered">
+                        <label for="paginationStyle_bordered">Bordered</label>
+                    </div>
+                </div>
+                <div class="setting-content">
+                    <h2>
+                        Jump Page
+                    </h2>
+                    <div class="jumpPageContainer">
+                        <input type="radio" id="jumpPage_true" name="jumpPage" value="true">
+                        <label for="jumpPage_true">Enable</label>
+                        <br>
+                        <input type="radio" id="jumpPage_false" name="jumpPage" value="false">
+                        <label for="jumpPage_false">Disable</label>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+        </div>
+
+
+    </div>
+</body>
+<script>
+    var $rowPerTable = 15;
+    var $paginationActiveColor = '#6f7ad7';
+    var $paginationFontColor = '#555555';
+    var $paginationStyle = 'borderless';
+    var $jumpPage = false;
+
+    $("#paginateBtn").on('click', function() {
+        $("#tableTest").createTablePagination();
+        $('input[name="rowPerTable"]:eq(0)').prop('checked', true);
+        $('input[name="paginationActiveColor"]:eq(0)').prop('checked', true);
+        $('input[name="paginationFontColor"]:eq(0)').prop('checked', true);
+        $('input[name="paginationStyle"]:eq(0)').prop('checked', true);
+        $('input[name="jumpPage"]:eq(1)').prop('checked', true);
+    });
+
+    function setPaginatation() {
+        $rowPerTable = parseInt($('input[name="rowPerTable"]:checked').val());
+        $paginationActiveColor = $('input[name="paginationActiveColor"]:checked').val();
+        $paginationFontColor = $('input[name="paginationFontColor"]:checked').val();
+        $paginationStyle = $('input[name="paginationStyle"]:checked').val();
+        $jumpPage = $('input[name="jumpPage"]:checked').val().toLowerCase() === 'true';
+        $('#code-demo-parameter code').text("<script>\n\
+    $('#tableTest').createTablePagination({\n\
+        rowPerPage: " + $rowPerTable + ",\n\
+        paginationColor: '" + $paginationActiveColor + "',\n\
+        fontColor: '" + $paginationFontColor + "',\n\
+        paginationStyle: '" + $paginationStyle + "',\n\
+        jumpPage: " + $jumpPage + "\n\
+    });\n\
+<\/script>");
+
+        $("#tableTest").createTablePagination({
+            rowPerPage: $rowPerTable,
+            paginationColor: $paginationActiveColor,
+            fontColor: $paginationFontColor,
+            paginationStyle: $paginationStyle,
+            jumpPage: $jumpPage
+        });
+
+    }
+
+    $("#rowPerTable_custom_value").hide();
+    $("#paginationActiveColor_custom_value").hide();
+    $("#paginationFontColor_custom_value").hide();
+
+
+
+    $('input[name="rowPerTable"]').change(function() {
+        if ($(this).attr("rel") == "custom") {
+            $("#rowPerTable_custom_value").show();
+        } else {
+            $("#rowPerTable_custom_value").hide();
+            setPaginatation();
+        }
+    });
+
+    $("#rowPerTable_custom_value").change(function() {
+        $("input[name='rowPerTable']:eq(3)").val($(this).val());
+        setPaginatation();
+    });
+
+    $('input[name="paginationActiveColor"]').change(function() {
+        if ($(this).attr("rel") == "custom") {
+            $("#paginationActiveColor_custom_value").show();
+            $(this).val($("#paginationActiveColor_custom_value").val());
+        } else {
+            $("#paginationActiveColor_custom_value").hide();
+        }
+        setPaginatation();
+    });
+
+    $("#paginationActiveColor_custom_value").change(function() {
+        $("input[name='paginationActiveColor']:eq(3)").val($(this).val());
+        setPaginatation();
+    });
+
+    $('input[name="paginationFontColor"]').change(function() {
+        if ($(this).attr("rel") == "custom") {
+            $("#paginationFontColor_custom_value").show();
+            $(this).val($("#paginationFontColor_custom_value").val());
+        } else {
+            $("#paginationFontColor_custom_value").hide();
+        }
+        setPaginatation();
+    });
+
+    $("#paginationFontColor_custom_value").change(function() {
+        $("input[name='paginationFontColor']:eq(3)").val($(this).val());
+        setPaginatation();
+    });
+
+    $('input[name="paginationStyle"]').change(function() {
+        setPaginatation();
+    });
+
+    $('input[name="jumpPage"]').change(function() {
+        setPaginatation();
+    });
+
+
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1VDDWMRSTH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1VDDWMRSTH');
+</script><script>
+try {
+  fetch(new Request("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js", { method: 'HEAD', mode: 'no-cors' })).then(function(response) {
+    return true;
+  }).catch(function(e) {
+    var carbonScript = document.createElement("script");
+    carbonScript.src = "//cdn.carbonads.com/carbon.js?serve=CK7DKKQU&placement=wwwjqueryscriptnet";
+    carbonScript.id = "_carbonads_js";
+    document.getElementById("carbon-block").appendChild(carbonScript);
+  });
+} catch (error) {
+  console.log(error);
+}
+</script>
+</html>

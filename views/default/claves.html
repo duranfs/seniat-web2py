@@ -1,0 +1,62 @@
+{{extend 'layout.html'}}
+
+{{=H1(response.title or request.application)}}
+<div class="container-fluid">
+<div class="row">
+
+<table class='col-md-12'>
+<tr><td>
+<div class='message_success alert alert-success' style='display:none;padding:10px'>
+<i class='glyphicon glyphicon-ok' style='margin-right:5px'></i>
+<strong>{{=T('Success')}}</strong>
+</div>
+<div class='message_failure alert alert-danger' style='display:none;padding:10px'>
+<i class='glyphicon glyphicon-minus-sign' style='margin-right:5px'></i>
+<strong>{{=T('Error')}}</strong>
+<span style='margin-left:10px;'>{{=T('Please re-try.')}}</span>
+</div>
+
+</td>
+</tr>
+
+<tr><td>
+
+    {{=editable}}
+
+</td></tr>
+<tr><td>
+
+    {{=pagination}}
+
+</td></tr>
+</table>
+</div>
+</div>
+
+{{block head}}
+{{super}}
+<style>
+th {
+    background-color:Gainsboro;
+    text-align: center!important;
+}
+tbody>th {
+    width:10%;
+}
+td.noedit {
+    background-color:Lavender;
+}
+input.error,td.error{
+    background-color:hotpink;
+}
+td.__DELETABLE_, th.__DELETABLE_{
+    background-color:yellow;
+}
+td:focus:not(.error), input:focus:not(.error), select:focus{
+    background-color:paleturquoise;
+}
+td.error:focus {
+    background-color:thistle;
+}
+</style>
+{{end}}

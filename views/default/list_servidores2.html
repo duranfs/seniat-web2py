@@ -1,0 +1,89 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.titulo1 {
+ background-color: blue;
+ color: blue;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+</style>
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+   {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+
+<br><br>
+Platforms list: <a href="javascript: void(0)" onclick="window.open('list_servidores', 
+  'Listado de servidores', 
+  'width=800, height=330, left=300,top=100'); 
+   return false;">[click]</a>
+<br><br>
+
+
+<h2>Lista de Servidores</h2>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nuevo Servidor</h2>
+{{=form}}
+</div>
+
+<br /><br />
+<table class="smarttable">
+<thead>
+    <tr>
+      <th>Nombre</th><th>IP</th><th>Ubicacion</th><th>Cant BD</th><th>Mon</th>
+	  <th>Accion</th><th>Accion</th>
+	  <th>Accion</th><th>Accion</th>
+    </tr>    
+</thead>
+<tbody>
+{{for servidor in servidores:}}
+
+	    <tr>
+    	   <td>{{=link_servidor(servidor)}}</td> 
+	   <td>{{=servidor.ip}}</td> 
+	   <td>{{=servidor.ubicacion_id}}</td> 
+	   <td class="titulo">{{=link_cuentabd(servidor)}}</td>
+	   
+	   <td>
+		   {{=button('conectar','conectar',servidor.id)}}	   
+		   {{=button('Base de Datos','list_database',servidor.id)}}	   
+		   {{=button('editar','edit_servidor',servidor.id)}}
+		   </td>
+		   <td style="text-align: left; top; width: 50%;">
+            <a href="#nil" onclick="jQuery('#form1').slideToggle();"><img border="0" align="botton" hspace="3" vspace="3" src="../static/icon.gif" alt=""></a>New Server
+           <a href="javascript: void(0)" onclick="window.open('test_server_view', 
+  'Listado de conexiones', 
+  'width=800, height=330, left=300,top=100,scrollbars=YES'); 
+   return false;"><img border="0" align="botton" hspace="3" vspace="3" src="../static/ssh_connect.png" alt=""></a>Test connectivity
+        </td>
+		<td><h2 id="t{{=servidor.id}}_1"><blink>probing...</blink></h2>
+<script>ajax('test_port_ssh/{{=servidor.id}}',[],'t{{=servidor.id}}_1');</script></td>
+<td><h2 id="t{{=servidor.id}}_2"><blink>probing...</blink></h2>
+<script>ajax('test_connect_ssh/{{=servidor.id}}',[],'t{{=servidor.id}}_2');</script></td>
+		   
+    </tr>
+{{pass}}
+</tbody>
+</table>

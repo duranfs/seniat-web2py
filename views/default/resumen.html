@@ -1,0 +1,168 @@
+{{extend 'layout.html'}}
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   
+   ///jQuery('#tab1').hide();
+});
+</script>
+
+{{=script}}
+<style type="text/css" media="all">
+  .form_table { text-align: center; }
+  .full_width .segment_header { text-align: center !important; }
+  .q { float:none;display: inline-block; }
+  table.matrix, table.rating_ranking { margin-left:auto !important;margin-right:auto !important; }
+  
+select, option {
+    width: 300px;
+}
+
+option {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+input:invalid {
+  border: 2px dashed red;
+}
+
+input:valid {
+  border: 2px solid black;
+}
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.form-box {
+  padding: 8px; /*makes it look neat*/
+  border-radius: 4px; /*or 2px*/
+  border: 1px solid red;
+}
+
+tr:hover { 
+   background: red; 
+}
+td a { 
+   display: block; 
+   #border: 1px solid black;
+   padding: 16px; 
+}
+
+table#example {
+    border-collapse: collapse;   
+}
+#example tr {
+    background-color: #eee;
+    border-top: 1px solid #fff;
+}
+#example tr:hover {
+    background-color: #ccc;
+}
+#example th {
+    background-color: #fff;
+}
+#example th, #example td {
+    padding: 3px 5px;
+}
+#example td:hover {
+    cursor: pointer;
+}
+.flex {
+  border: 5px solid #ccc;
+  display: inline-flex;
+}
+</style>
+
+<div class="flex">
+<div  style="max-width:700px;margin:autox;" class="form-box">
+<table style="" id="example" xclass="table table-bordered table-striped" >
+	<col style="width:5%">
+	<col style="width:5%">
+	<col style="width:5%">
+	<col style="width:5%">
+	<col style="width:5%">
+	<col style="width:5%">  
+<thead>
+  <tr>
+    <th>Nombres</th><th>Apellidos</th><th>Asignadas</th><th>En curso</th><th>Completadas</th><th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for dba in dbas:}}
+
+<!--
+<tr name="tr{{=dba.id}}" value="{{response.write(dba.id)}}" 
+onclick="ajax('{{=URL('default','buscar_detalle1')}}',['this'],'detalle1'); 
+jQuery('#detalle1').show(); 
+alert('Analista : ' + {{response.write(dba.id)}}); " >
+-->
+
+
+<tr id="tr" name="tr" value="" 
+onclick="jQuery('#tr').val('{{=dba.id}}'); ajax('{{=URL('default','buscar_detalle1')}}',['tr'],'detalle1'); 
+jQuery('#detalle1').show(); alert('Analista : ' + {{=dba.id}}); " >
+
+<td>{{=dba.first_name}}</td>
+<td>{{=dba.last_name}}</td>
+<td>{{=cuenta_asignacion(dba.id)}}</td>
+<td>{{=cuenta_asignacion_status(dba.id,'EN CURSO')}}</td>
+<td>{{=cuenta_asignacion_status(dba.id,'COMPLETADO')}}</td>
+<td>
+
+	  
+{{=A(IMG( _src=URL(request.application,'static/images','list-task.png'),
+          _alt="Tareas",
+	  _title="Lista de Tareas",					
+          _class="click",  _style="width:30px;height:20px"),
+	  _href=URL(r=request,c='default',f='list_tasks',args=[dba.id]))}}
+	 
+</td>
+</tr>
+{{pass}}
+</tbody>
+</table>
+</div>
+
+
+<div id="detalle1"  class="form-box">
+</div>
+
+</div>
+
+<script>
+$(document).ready(function() {
+
+    $('#example trxx').click(function() {
+        var href = $(this).find("a").attr("href");
+        if(href) {
+            window.location = href;
+        }
+    });
+    
+    jQuery('#detalle1').hide();
+
+});
+
+//function myFunction(x) {
+    ////alert("Row index is: " + x.rowIndex);
+    //alert("Row index is: " + x);
+    //jQuery('#detalle1').show();
+    //dato = x
+//}
+
+function myFunction(x) {
+    ajax('{{=URL("default", "buscar_detalle1")}}',['x'], 'detalle1');	
+    jQuery('#detalle1').show();
+}
+
+</script>
+

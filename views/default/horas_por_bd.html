@@ -1,0 +1,160 @@
+{{extend 'layout.html'}}
+
+<h2 class="mb-4">Horas laboradas por Base de Datos - {{=mes}}</h2>
+
+<!-- Formulario de selección de mes -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="mes" class="mr-2">Seleccionar mes:</label>
+                <select name="mes" id="mes" class="form-control" onchange="this.form.submit()">
+                    {{for opcion in meses_disponibles:}}
+                    <option value="{{=opcion}}" {{='selected' if opcion==mes_param else ''}}>
+                        {{=opcion.replace('-', '/')}}
+                    </option>
+                    {{pass}}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if 'error' in response._vars:}}
+<div class="alert alert-danger">
+    <strong>Error:</strong> {{=error}}
+</div>
+{{else:}}
+<div class="row">
+    <div class="col-12">
+        <div class="chart-container" style="position: relative; height:65vh; width:100%">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preparar datos
+        var labels = [];
+        var data = [];
+        {{for item in chart_data[1:]:}}
+            labels.push("{{=item[0].replace('"', '\\"')}}");
+            data.push({{=item[1]}});
+        {{pass}}
+        
+        // Paleta de colores para las barras
+        function generateColors(count) {
+            var colors = [];
+            var hueStep = 360 / count;
+            for (var i = 0; i < count; i++) {
+                var hue = i * hueStep;
+                colors.push(
+                    `hsl(${hue}, 70%, 60%)`, // Color principal
+                    `hsl(${hue}, 70%, 45%)`  // Color del borde
+                );
+            }
+            return colors;
+        }
+        
+        var backgroundColors = [];
+        var borderColors = [];
+        var colorPairs = generateColors(labels.length);
+        
+        for (var i = 0; i < colorPairs.length; i += 2) {
+            backgroundColors.push(colorPairs[i]);
+            borderColors.push(colorPairs[i+1]);
+        }
+        
+        // Configuración responsive
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Horas trabajadas',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Distribución de horas por Base de Datos (Servidor)',
+                        font: {
+                            size: 18
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toFixed(2) + ' horas';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Horas trabajadas'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Bases de Datos (Servidor)'
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+
+        // Redibujar al cambiar tamaño de ventana
+        window.addEventListener('resize', function() {
+            myChart.resize();
+        });
+    });
+</script>
+
+<style>
+    .chart-container {
+        min-height: 300px;
+    }
+    
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 55vh;
+        }
+        
+        .form-inline {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+    }
+</style>
+{{pass}}

@@ -1,0 +1,49 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+{{if company:}}
+<h2>Contactos de {{=link_company(company)}}</h2>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nuevo Contacto</h2>
+{{=form}}
+</div>
+{{else:}}
+<h2>Todos los Contactos</h2>
+{{pass}}
+
+<br /><br />
+<table class="smarttable">
+<thead>
+  <tr>
+    <th>Nombre</th><th>Rol</th><th>Localidad</th><th>Direccion</th><th>Telefono</th><th>Extension</th><th>Correo</th>
+	<th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for person in persons:}}
+<tr>
+<td>{{=person.name}}</td>
+<td>{{=person.role}}</td>
+<td>{{=cache.ram('c%s'%person.company, lambda:person.company.name,100)}}</td>
+<td>{{=person.address}}</td>
+<td>{{=person.phone}}</td>
+<td>{{=person.ext}}</td>
+<td>{{=person.email}}</td>
+<td>{{=button('ver','view_person',person.id)}}
+{{=button('editar','edit_person',person.id)}}
+{{=button('logs','list_logs',person.id)}}
+{{=button('docs','list_docs',person.id)}}
+{{=button('tareas','list_tasks',person.id)}}</td>
+</tr>
+{{pass}}
+</tbody>
+</table>
+

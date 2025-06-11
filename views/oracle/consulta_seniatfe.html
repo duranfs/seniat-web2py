@@ -1,0 +1,212 @@
+{{extend 'layout.html'}}
+
+{{block head}}
+<style>
+  body {
+    font-size: 0.875rem;
+  }
+  
+  .card-shadow {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    border-radius: 8px;
+  }
+  
+  /* Estilo para el grid de columnas */
+  .multi-column-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  /* Estilo para cada columna */
+  .data-column {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    overflow: hidden;
+  }
+  
+  /* Encabezado de columna */
+  .column-header {
+    background-color: #e9ecef;
+    padding: 0.5rem;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  /* Contenedor de pares fecha-cantidad */
+  .column-content {
+    padding: 0.25rem;
+  }
+  
+  /* Estilo para cada par fecha-cantidad */
+  .date-count-pair {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0.3rem;
+    border-bottom: 1px dashed #e9ecef;
+  }
+  
+  .date-count-pair:last-child {
+    border-bottom: none;
+  }
+  
+  .date-value {
+    font-weight: 500;
+    color: #212529;
+  }
+  
+  .count-value {
+    font-weight: 600;
+    color: #0d6efd;
+    min-width: 40px;
+    text-align: right;
+  }
+  
+  /* Cabecera compacta */
+  .compact-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  /* Pie de página compacto */
+  .compact-footer {
+    padding: 0.5rem 1rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .multi-column-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .multi-column-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{{end}}
+
+<div class="container-fluid mt-2">
+  <div class="row">
+    <div class="col-lg-12 p-1">
+      <div class="card card-shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center compact-header">
+          <h5 class="mb-0">
+            <i class="fas fa-exclamation-triangle me-1"></i>Estadisticas Reportes Z
+            <small class="opacity-75"> - Consulta por fecha</small>
+          </h5>
+          <button id="refreshBtn" class="btn btn-sm btn-light" title="Actualizar">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+        
+        <div class="card-body p-0">
+          {{if error:}}
+          <div class="alert alert-danger py-1 px-2 m-2">
+            <i class="fas fa-exclamation-circle me-1"></i>{{=error}}
+          </div>
+          {{else:}}
+          
+          <div id="dataContainer">
+            <div class="multi-column-grid">
+              {{for i in range(0, len(rows), 7):}}  <!-- Agrupar de 7 en 7 -->
+              <div class="data-column">
+                <div class="column-header">
+                  <span>Fecha</span>
+                  <span>Cantidad</span>
+                </div>
+                <div class="column-content">
+                  {{for row in rows[i:i+7]:}}  <!-- Máximo 7 por columna -->
+                  <div class="date-count-pair">
+                    <span class="date-value">{{=row[0] if row[0] else 'N/D'}}</span>
+                    <span class="count-value">{{=row[1]}}</span>
+                  </div>
+                  {{pass}}
+                </div>
+              </div>
+              {{pass}}
+            </div>
+            
+            {{if 'pagina' in globals():}}
+            <nav class="mt-1 px-2">
+              <ul class="pagination pagination-sm justify-content-end">
+                {{if pagina > 1:}}
+                <li class="page-item">
+                  <a class="page-link" href="{{=URL(vars={'page':pagina-1})}}">
+                    <i class="fas fa-chevron-left"></i>
+                  </a>
+                </li>
+                {{pass}}
+                
+                <li class="page-item disabled">
+                  <span class="page-link">{{=pagina}}/{{=total_paginas}}</span>
+                </li>
+                
+                {{if pagina < total_paginas:}}
+                <li class="page-item">
+                  <a class="page-link" href="{{=URL(vars={'page':pagina+1})}}">
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+                {{pass}}
+              </ul>
+            </nav>
+            {{pass}}
+          </div>
+          {{pass}}
+        </div>
+        
+        <div class="card-footer py-1 px-2 d-flex justify-content-between compact-footer">
+          <small class="text-muted">
+            <i class="fas fa-sync-alt me-1"></i>
+            <span id="lastUpdate">{{=request.now.strftime('%d/%m/%y %H:%M')}}</span>
+          </small>
+          <div>
+            <button class="btn btn-sm btn-outline-primary me-1">
+              <i class="fas fa-file-excel"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-file-pdf"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{block page_js}}
+<script>
+$(document).ready(function() {
+  // Botón de actualización
+  $('#refreshBtn').click(function() {
+    const btn = $(this);
+    btn.prop('disabled', true);
+    btn.find('i').addClass('fa-spin');
+    
+    $.ajax({
+      url: '{{=URL('oracle', 'refresh_data')}}',
+      success: function(data) {
+        $('#dataContainer').html(data);
+        $('#lastUpdate').text(new Date().toLocaleString('es-VE', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }));
+      },
+      complete: function() {
+        btn.prop('disabled', false);
+        btn.find('i').removeClass('fa-spin');
+      }
+    });
+  });
+});
+</script>
+{{end}}

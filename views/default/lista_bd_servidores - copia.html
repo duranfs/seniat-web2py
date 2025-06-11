@@ -1,0 +1,113 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+  
+   ///jQuery('#tab1').hide();
+});
+</script>
+
+
+
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="showcase, portfolio, free web templates, css templates" />
+    <link href="{{=URL('static','templatemo_style.css')}}" rel="stylesheet" type="text/css" />
+  </head>
+
+{{=form}}
+
+{{if basedatos:}}
+{{ancho=15}}
+{{alto=15}}    
+    <table id="tabla" class="smarttable" >
+		 <thead>
+  <tr>
+	  <th>Servidor</th>
+	  <th>Tipo</th>
+      <th>Instancias</th>
+      <th>Esquemas</th>
+  </tr>
+  </thead>
+  <tbody>
+        {{for k, serv in enumerate(servidores):}}
+        <tr>
+		<td>
+		<div class="servidor zoom">
+			{{=serv.nombre}} 
+		</div>
+		</td>
+		
+			{{basedatos=db(db.basedatos.servidor == serv.id).select()}}
+			
+			{{for k, bd in enumerate(basedatos):}}
+			<td>
+			<div class="servidor tipo">
+				{{=bd.tipobd_id.descri.upper()}}
+			</div>
+			</td>
+			<td>
+				<div class="basedatos zoom">
+				{{=bd.nombre}}<br>
+				
+				{{if bd.status_mon=='SI':}}
+			    {{=A(
+                IMG(
+                    _src=URL(request.application,'static/images','monitor.png'),
+                    _alt="Monitor",
+					_title="Monitor",					
+                    _class="click imagenes",
+					_id='cancel',
+					_width=ancho,
+					_height=alto,
+                ),
+                _href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+            }}
+			{{pass}}
+			
+				{{=A(
+                IMG(
+                    _src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+                    _alt="Estructura",
+					_title="Estructura Online",					
+                    _class="click imagenes",
+					_id='cancel',
+					_width=ancho,
+					_height=alto,
+                ),
+                _href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+            }}
+            
+            {{=A(
+                IMG(
+                    _src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+                    _alt="Info",
+					_title="Informacion",					
+                    _class="click imagenes",
+					_id='cancel',
+					_width=ancho,
+					_height=alto,
+                ),
+                _href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+            )}}
+            
+            {{esquemas=db(db.esquemas.basedatos_id == bd.id).select()}}
+			{{i=0}}
+				<td>
+				{{for k, es in enumerate(esquemas):}}
+				<div class="esquemas">
+					<div>{{=es.nombre}}</div>
+				</div>
+				{{pass}}
+				</td>
+			{{pass}}
+			
+			</tr>
+        {{pass}}
+     </tbody>
+    </table>    
+    {{pass}}
+
+

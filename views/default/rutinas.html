@@ -1,0 +1,74 @@
+{{extend 'layout.html'}}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mt-4 mb-4">
+                <i class="fas fa-tasks"></i> Administración de Rutinas
+                <small class="text-muted">Gestión de consultas SQL programadas</small>
+            </h2>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Listado de Rutinas</h5>
+                   
+                </div>
+                <div class="card-body p-0">
+                    {{=grid}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mejoras para el grid
+$(document).ready(function() {
+    // Añade clases Bootstrap a los elementos del grid
+    $('.w2p_flash').addClass('alert');
+    $('.w2p_error').addClass('alert-danger');
+    $('.w2p_success').addClass('alert-success');
+    
+    // Mejora los botones
+    $('.w2p_grid .btn').addClass('btn-sm');
+    
+    // Añade iconos a los botones de acción
+    $('.w2p_grid a[title="Edit"]').prepend('<i class="fas fa-edit mr-1"></i>');
+    $('.w2p_grid a[title="Delete"]').prepend('<i class="fas fa-trash-alt mr-1"></i>');
+    $('.w2p_grid a[title="View"]').prepend('<i class="fas fa-eye mr-1"></i>');
+});
+</script>
+
+<style>
+/* Personalización adicional */
+.w2p_grid table {
+    margin-bottom: 0;
+}
+
+.w2p_grid th {
+    background-color: #f8f9fa;
+    vertical-align: middle !important;
+}
+
+.w2p_grid .table td, .w2p_grid .table th {
+    vertical-align: middle;
+}
+
+/* Para el campo de código SQL */
+.sql-code-cell {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive para tablas */
+@media (max-width: 768px) {
+    .w2p_grid .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+</style>

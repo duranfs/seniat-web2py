@@ -1,0 +1,48 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+</script>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h2>Nueva Asignacion</h2>
+{{=form}}
+</div>
+
+<h2>Base de datos asignadas</h2>
+
+
+<br /><br />
+<table class="smarttable">
+<thead>
+  <tr>
+    <th>Administrador responsable</th><th>Servidor</th><th>IP</th>
+
+    <th>Base de Datos</th>
+	<th>Fecha asignacion</th><th>Observacion</th>
+	<th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for adm in admin:}}
+<tr>
+<td>{{=adm.admin_id.first_name+' '+adm.admin_id.last_name}}</td>
+<td>{{=adm.basedatos_id.servidor.nombre}}</td>
+<td>{{=adm.basedatos_id.servidor.ip}}</td>
+
+<td>{{=adm.basedatos_id.nombre}}</td>
+<td>{{=adm.fch_asignacion}}</td>
+<td>{{=adm.observacion}}</td>
+
+<td>{{=button('ver','view_admin_basedatos',adm.id)}}
+	{{=button('editar','edit_admin_basedatos',adm.id)}}
+</td>
+</tr>
+{{pass}}
+</tbody>
+</table>

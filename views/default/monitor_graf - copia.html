@@ -1,0 +1,67 @@
+
+{{extend 'layout.html'}}
+
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="showcase, portfolio, free web templates, css templates" />
+    <link href="{{=URL('static','templatemo_style.css')}}" rel="stylesheet" type="text/css" />
+  </head>
+
+
+<div id="templatemo_content">
+      <p style="font-size:14px; padding: 10px;">Instancias de Bases de Datos Monitoreadas</p>
+      {{bd_ant=''}}
+	  {{ser_ant=''}}
+	  {{VAR=0}}
+	  {{X=0}}
+
+      {{for k,m in enumerate(mon):}}
+           {{if m.status=='DESHABILITADO' or m.tx_resultado=='' or m.tx_resultado=='0' or m.tx_resultado=='NO': 
+		   continue
+		   }}
+		{{s=link_resaltado(m.tx_rutina)}}
+		{{if VAR==0:}}
+			<!--{{if s=="SI":}}
+				estilo=""
+			{{else:}}
+				estilo=""
+			{{pass}}-->
+			<div class="product_box margin_r_10">
+			<a style="font-size:10px; color:black">
+				{{=m.tx_rutina.capitalize()}}=({{=m.tx_resultado}})</a>
+			<br>
+			{{VAR=1}}
+		{{pass}}
+		{{if m.tx_instancia.capitalize()==bd_ant.capitalize():}}
+			<a style="font-size:10px; color:black">
+			{{=m.tx_rutina.capitalize()}}=({{=show_status(m.tx_resultado)}})</a>
+			<br>
+		{{else:}}
+		{{if VAR==1:}}
+		   {{if bd_ant<>'':}} <!--cierra cuadro-->
+			<h3 style='background-color:lightblue;padding:4px;color:green'  >{{=bd_ant.upper()}}</h3>
+			<span>{{=A("Detalles", _href=URL(r = request, c="default", 
+				f="monitor2", args = [ser_ant,])) }}&nbsp; |  {{=ser_ant.upper()}}</span>
+			</div>
+			<div class="product_box margin_r_10">
+			<a style="font-size:10px; color:black">({{=m.tx_rutina.capitalize()}}={{=m.tx_resultado}})</a>
+			<br>
+			{{VAR=1}}
+			{{pass}}
+		{{pass}}
+		{{pass}}
+		{{bd_ant=m.tx_instancia}}	
+		{{ser_ant=m.tx_servidor}}	
+      {{if k%2==3:}}
+      <div class="cleaner"></div>
+      {{pass}}
+      {{pass}}
+      {{pass}}
+	<h3 style='background-color:lightblue;padding:4px;color:green'>{{=bd_ant.upper()}}</h3>
+	<span>{{=A("Detalles", _href=URL(r = request, c="default", 
+		f="monitor2", args = [ser_ant,])) }}&nbsp; |  {{=ser_ant.upper()}}</span>
+	</div>
+    <div class="cleaner"></div>
+</div> <!-- end of templatemo_content -->
+
+

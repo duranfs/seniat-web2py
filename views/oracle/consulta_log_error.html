@@ -1,0 +1,256 @@
+{{extend 'layout.html'}}
+
+{{block head}}
+<style>
+  .card-shadow {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .card-shadow:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  }
+  .table-container {
+    max-height: 65vh;
+    overflow-y: auto;
+  }
+  .table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+  }
+  .refresh-btn {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+ /* .refresh-btn:hover {
+    transform: rotate(180deg);
+  }
+  .refresh-btn:active {
+    transform: rotate(360deg);
+  }*/
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+  }
+  .fecha-col {
+    min-width: 180px;
+  }
+  .mensaje-col {
+    max-width: 300px;
+  }
+  .pagination-nav {
+    background: transparent;
+  }
+  .title-section {
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  .loading-spinner {
+    display: none;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
+</style>
+{{end}}
+
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card card-shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <div>
+            <h3 class="mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>Registro de Errores
+              <small class="text-white-50 ms-2">LOG_ERROR CYGNUS</small>
+            </h3>
+          </div>
+          <div>
+            <button id="refreshBtn" class="btn btn-sm btn-light refresh-btn" title="Actualizar datos">
+              <i class="fas fa-sync-alt"></i>
+              <span class="d-none d-md-inline"> Actualizar</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          {{if error:}}
+          <div class="alert alert-danger d-flex align-items-center">
+            <i class="fas fa-exclamation-circle me-2 fa-lg"></i>
+            <div>{{=error}}</div>
+          </div>
+          {{else:}}
+          
+          <div id="dataContainer">
+            <div class="table-responsive table-container">
+              <table class="table table-hover table-striped align-middle">
+                <thead class="table-light">
+                  <tr>
+                    {{for col in columns:}}
+                    <th>
+                      {{if col == 'fecha_generacion_error':}}
+                      <i class="far fa-calendar-alt me-2"></i>
+                      {{elif col == 'proceso_origen_error':}}
+                      <i class="fas fa-cog me-2"></i>
+                      {{elif col == 'tabla_afectada_error':}}
+                      <i class="fas fa-table me-2"></i>
+                      {{elif col == 'mensaje_error':}}
+                      <i class="fas fa-comment-dots me-2"></i>
+                      {{else:}}
+                      <i class="fas fa-columns me-2"></i>
+                      {{pass}}
+                      {{=col.replace('_', ' ').title()}}
+                    </th>
+                    {{pass}}
+                  </tr>
+                </thead>
+                <tbody>
+                  {{for row in rows:}}
+                  <tr>
+                    {{for i, val in enumerate(row):}}
+                    <td class="{{='fecha-col' if columns[i] == 'fecha_generacion_error' else ''}} {{='mensaje-col' if columns[i] == 'mensaje_error' else ''}}">
+                      {{if columns[i] == 'fecha_generacion_error' and val:}}
+                      <span class="text-muted">
+                        {{=val.strftime('%d/%m/%Y %H:%M:%S') if val else ''}}
+                      </span>
+                      {{elif columns[i] == 'mensaje_error':}}
+                      <span class="d-inline-block text-truncate" style="max-width: 100%;" title="{{=val}}">
+                        {{=val}}
+                      </span>
+                      {{else:}}
+                      {{=val}}
+                      {{pass}}
+                    </td>
+                    {{pass}}
+                  </tr>
+                  {{pass}}
+                </tbody>
+              </table>
+            </div>
+            
+            {{if 'pagina' in globals():}}
+            <nav aria-label="Page navigation" class="mt-3 pagination-nav">
+              <ul class="pagination justify-content-center">
+                {{if pagina > 1:}}
+                <li class="page-item">
+                  <a class="page-link" href="{{=URL(vars={'page':pagina-1})}}">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                  </a>
+                </li>
+                {{pass}}
+                
+                <li class="page-item disabled">
+                  <span class="page-link">
+                    Página {{=pagina}} de {{=total_paginas}}
+                  </span>
+                </li>
+                
+                {{if pagina < total_paginas:}}
+                <li class="page-item">
+                  <a class="page-link" href="{{=URL(vars={'page':pagina+1})}}">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+                {{pass}}
+              </ul>
+            </nav>
+            {{pass}}
+          </div>
+          
+          <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2 text-muted">Actualizando datos...</p>
+          </div>
+          
+          {{pass}}
+        </div>
+        
+        <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+          <small class="text-muted">
+            <i class="fas fa-sync-alt me-1"></i> 
+            <span id="lastUpdate">Actualizado: {{=request.now.strftime('%d/%m/%Y %H:%M:%S')}}</span>
+          </small>
+          <div>
+            <button class="btn btn-sm btn-outline-primary me-2">
+              <i class="fas fa-file-excel me-1"></i> Excel
+            </button>
+            <button class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-file-pdf me-1"></i> PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{block page_js}}
+<script>
+$(document).ready(function() {
+  // Inicializar tooltips
+  $('[title]').tooltip();
+  
+  // Configurar el botón de actualización
+  $('#refreshBtn').click(function() {
+    refreshData();
+  });
+  
+  // Función para actualizar los datos
+  function refreshData() {
+    const btn = $('#refreshBtn');
+    const container = $('#dataContainer');
+    const loading = $('#loadingIndicator');
+    const lastUpdate = $('#lastUpdate');
+    
+    // Deshabilitar botón y mostrar spinner
+    btn.prop('disabled', true);
+    btn.find('i').addClass('loading-spinner');
+    container.hide();
+    loading.show();
+    
+    // Realizar la solicitud AJAX
+    $.ajax({
+      url: '{{=URL('oracle', 'refresh_data')}}',
+      type: 'GET',
+      dataType: 'html',
+      success: function(data) {
+        // Actualizar el contenido
+        container.html(data).fadeIn();
+        
+        // Actualizar la marca de tiempo
+        const now = new Date();
+        lastUpdate.text('Actualizado: ' + now.toLocaleString('es-VE'));
+        
+        // Volver a inicializar tooltips
+        $('[title]').tooltip();
+      },
+      error: function(xhr, status, error) {
+        console.error('Error al actualizar:', error);
+        alert('Error al actualizar los datos');
+      },
+      complete: function() {
+        // Restaurar estado del botón
+        btn.prop('disabled', false);
+        btn.find('i').removeClass('loading-spinner');
+        loading.hide();
+      }
+    });
+  }
+  
+  // Efecto hover en filas
+  $('tbody tr').hover(
+    function() { $(this).addClass('table-active'); },
+    function() { $(this).removeClass('table-active'); }
+  );
+});
+</script>
+{{end}}

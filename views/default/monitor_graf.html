@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {{response.files.append(URL(r=request,c='static',f='templatemo_style.css'))}}
+    <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
+
+    <meta http-equiv="refresh" content="120">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+        .exit-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .exit-button:hover {
+            background: #c0392b;
+        }
+        .ambiente-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .ambiente-title {
+            width: 100%;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid;
+        }
+        .ambiente-produccion { border-color: #3498db;  }
+        .ambiente-qa { border-color: #f39c12; }
+        .ambiente-desarrollo { border-color: #e74c3c; }
+        .ambiente-otros { border-color: #9b59b6; }
+        
+        .instancia-card {
+            background: #ffffff;
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 10px;
+            width: 300px;
+            box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .instancia-card.produccion { border-color: #3498db; }
+        .instancia-card.qa { border-color: #f39c12; }
+        .instancia-card.desarrollo { border-color: #e74c3c;  }
+        .instancia-card.otros { border-color: #9b59b6; }
+        
+        .instancia-card.alerta {
+            border-color: #f44336 !important;
+            animation: border-blink 1s linear infinite;
+        }
+        .instancia-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+        .acciones {
+            margin-bottom: 5px;
+        }
+        .acciones a {
+            display: inline-block;
+            margin: 2px 3px 2px 0;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 13px;
+        }
+        .rutina-item {
+            margin-left: 10px;
+            padding: 2px 0;
+            font-size: 13px;
+        }
+        .resultado-ok { color: green; font-weight: bold; }
+        .resultado-alerta { 
+            color: red; 
+            font-weight: bold;
+            animation: blink 1s linear infinite;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        @keyframes border-blink {
+            0% { border-color: #f44336; }
+            50% { border-color: #ff9999; }
+            100% { border-color: #f44336; }
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 24px;
+            z-index: 9999;
+        }
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid #3498db;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .loading-details {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .rutinas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+        .rutinas-table th {
+            text-align: left;
+            padding: 3px;
+            background-color: #f2f2f2;
+            border-bottom: 1px solid #ddd;
+        }
+        .rutinas-table td {
+            padding: 3px;
+            border-bottom: 1px solid #eee;
+            line-height: 1.2; 
+        }
+        .rutinas-table tr:last-child td {
+            border-bottom: none;
+        }
+        #content-container {
+            display: none;
+        }
+        #update-info {
+            color: white;
+            font-size: 14px;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Overlay de carga - aparece inmediatamente -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Procesando información de monitoreo</div>
+    <div class="loading-details">Por favor espere, esto puede tomar unos momentos...</div>
+</div>
+
+<!-- Contenedor para todo el contenido - oculto inicialmente -->
+<div id="content-container">
+
+{{if mon:}}
+
+{{ from collections import defaultdict }}
+{{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
+
+{{ for m in mon: }}
+    {{ if m.tx_resultado: }}
+        {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
+        {{ servidor = m.tx_servidor.upper() }}
+        {{ instancia = m.tx_instancia.upper() }}
+        {{ agrupado[ambiente][servidor][instancia].append(m) }}
+    {{ else:}}
+        {{ "Problemas en la conexion" }}    
+    {{ pass }}
+{{ pass }}
+
+{{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
+
+{{ for ambiente in orden_ambientes: }}
+    {{ if ambiente in agrupado: }}
+    <div class="ambiente-container">
+        <div class="ambiente-title {{='ambiente-'+ambiente}}">
+            {{=ambiente.upper()}}
+            {{if ambiente.upper()=='PRODUCCION':}} 
+                    <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
+                        Volver a la aplicación principal 
+                    </button>
+                    <span id="update-info">
+                        Última actualización: {{=ultima_actualizacion.strftime('%H:%M:%S')}}
+                    </span>
+            {{pass}}        
+        </div>
+        
+        {{ for servidor, instancias in agrupado[ambiente].items(): }}
+            {{ for instancia, rutinas in instancias.items(): }}
+            {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
+            <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
+                <div class="instancia-header">
+                    {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }}<br>
+                    ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
+                </div>
+                <div class="acciones">
+                    {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
+                    {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
+                </div>
+                 <table class="rutinas-table">
+                  <thead>
+                      <tr>
+                          <th>Rutina</th>
+                          <th>Estado</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {{ for r in rutinas: }}
+                      <tr>
+                          <td>{{=r.tx_rutina.capitalize()}}</td>
+                          <td>
+                              {{if r.tx_resultado == "OK":}}
+                                  <span class="tooltip">
+                                      <span style="text-align: center" class="resultado-ok">🟢</span>
+                                      <span class="tooltiptext">Estado: Correcto</span>
+                                  </span>
+                              {{else:}}
+                                  <span class="tooltip">
+                                      <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
+                                      <span class="tooltiptext">Estado: Error o Alerta</span>
+                                  </span>
+                              {{pass}}
+                          </td>
+                      </tr>
+                      {{ pass }}
+                    </tbody>
+                 </table>
+            </div>
+            {{ pass }}
+        {{ pass }}
+    </div>
+    {{ pass }}
+{{ pass }}
+
+{{pass}}
+
+</div> <!-- Cierre del content-container -->
+
+<script>
+// Variable para controlar si se necesita recargar
+let necesitaRecarga = true;
+let ultimaActualizacion = new Date("{{=ultima_actualizacion.isoformat()}}");
+
+// Mostrar el overlay inmediatamente
+document.addEventListener('DOMContentLoaded', function() {
+    $('#loading-overlay').show();
+    
+    // Calcular tiempo desde última actualización
+    const ahora = new Date();
+    const diferenciaMs = ahora - ultimaActualizacion;
+    const diferenciaMin = Math.floor(diferenciaMs / (1000 * 120));
+    
+    // Actualizar el texto de última actualización
+    const updateInfo = document.getElementById('update-info');
+    if (updateInfo) {
+        updateInfo.textContent += ` (Hace ${diferenciaMin} minuto${diferenciaMin !== 1 ? 's' : ''})`;
+    }
+    
+    // No recargar si los datos tienen menos de 1 minuto
+    if (diferenciaMin < 1) {
+        necesitaRecarga = false;
+        console.log("Datos recientes - No se requiere recarga");
+        
+        // Mostrar contenido inmediatamente
+        setTimeout(function() {
+            $('#loading-overlay').fadeOut(300, function() {
+                $('#content-container').fadeIn(300);
+            });
+        }, 500);
+    }
+});
+
+// Cuando la página esté completamente cargada
+$(window).on('load', function() {
+    setTimeout(function() {
+        // Ocultar el overlay
+        $('#loading-overlay').fadeOut(300, function() {
+            // Mostrar el contenido
+            $('#content-container').fadeIn(300);
+            
+            // Iniciar el refresco automático solo si es necesario y la pestaña está visible
+            if (necesitaRecarga && !document.hidden) {
+                startAutoRefresh();
+            }
+        });
+    }, 500);
+});
+
+// Variable para controlar el intervalo de recarga
+let refreshInterval;
+
+// Función para verificar y recargar si es necesario
+function reloadPage() {
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const ahora = new Date();
+        const nuevaActualizacion = new Date(data.ultima_actualizacion);
+        const diferenciaMs = ahora - nuevaActualizacion;
+        
+        if (diferenciaMs >= 120000) { // 1 minuto en milisegundos
+            location.reload();
+        } else {
+            console.log("Datos aún recientes - Posponiendo recarga");
+            // Actualizar el marcador de tiempo
+            ultimaActualizacion = nuevaActualizacion;
+            // Reprogramar la próxima verificación
+            startAutoRefresh();
+        }
+    })
+    .catch(() => {
+        // En caso de error, recargar de todos modos
+        location.reload();
+    });
+}
+
+// Función para iniciar el refresco automático
+function startAutoRefresh() {
+    // Limpiar intervalo existente si lo hay
+    clearInterval(refreshInterval);
+    // Establecer nuevo intervalo (120 segundos)
+    refreshInterval = setInterval(reloadPage, 120000);
+}
+
+// Controlar la visibilidad de la pestaña
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Pestaña no visible - detener recarga automática
+        console.log("Pestaña inactiva - Deteniendo recarga automática");
+        clearInterval(refreshInterval);
+    } else if (necesitaRecarga) {
+        // Pestaña visible - iniciar recarga automática si es necesario
+        console.log("Pestaña activa - Reanudando recarga automática");
+        startAutoRefresh();
+    }
+});
+
+// Detener el refresco al salir de la página
+window.addEventListener('beforeunload', function() {
+    clearInterval(refreshInterval);
+});
+</script>
+
+</body>
+</html>

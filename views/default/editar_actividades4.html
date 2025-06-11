@@ -1,0 +1,16 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   
+});
+</script>
+{{extend 'layout.html'}}
+<legend>
+			Editar Actividades SOLUTOR DELTA
+</legend>
+{{=script}}
+{{=form}}
+

@@ -1,0 +1,28 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 12px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+{{=salida}} <br>
+
+{{=folder}} <br>
+{{=files}}

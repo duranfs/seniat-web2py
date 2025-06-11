@@ -1,0 +1,391 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+});
+</script>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="showcase, portfolio, free web templates, css templates" />
+    <link href="{{=URL('static','templatemo_style.css')}}" rel="stylesheet" type="text/css" />
+</head>
+
+
+{{if servidores:}}
+{{ancho=20}}
+{{alto=20}}    
+    <table id="tabla" class="smarttable" >
+		 <thead>
+	
+  <tr>
+	  
+	   <th>
+	  <div class="tipo">SISTEMA OPERATIVO</div>
+	  </th>
+	  <th>
+	  <div class="tipo">SERVIDORES</div>
+	  </th>
+	  
+	  {{tipobd=db(db.tipobd.is_active=='T').select(db.tipobd.id,db.tipobd.descri, distinct=True, orderby=db.tipobd.id)}}
+			{{for k, tipo in enumerate(tipobd):}}
+			<th>
+			<div class="tipo">
+				{{=tipo.descri.upper()}}
+			</div>
+			</th>
+		{{pass}}
+	  
+  </tr>
+  </thead>
+  <tbody>
+        {{for k, serv in enumerate(servidores):}}
+       
+		<!--campo oracle-->
+		
+		
+			
+			{{tipobd=db(db.tipobd.descri=='oracle').select(db.tipobd.id,db.tipobd.descri, distinct=True)}}
+			{{for k, oracle in enumerate(tipobd):}}
+			
+			{{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==oracle.id).select()}}
+			
+			{{for k, bd in enumerate(basedatos):}}
+			<tr>
+			<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+			<td><div class="servidor3">{{=serv.nombre}}</div></td>
+				<td>
+					<div class="box zoom">
+					{{=bd.nombre}}
+					<br>
+					{{if bd.status_mon=='SI':}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images','monitor.png'),
+						_alt="Monitor",
+						_title="Monitor",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+					{{pass}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+						_alt="Estructura",
+						_title="Estructura Online",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+            
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+						_alt="Info",
+						_title="Informacion",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+					_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+						)}}
+					</div>
+				</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			</tr>
+			{{pass}}	
+			{{pass}}
+
+			<!--campo postgres-->
+			{{tipobd=db(db.tipobd.descri=='postgresql').select(db.tipobd.id,db.tipobd.descri, distinct=True)}}
+			{{for k, postgres in enumerate(tipobd):}}
+			
+				{{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==postgres.id).select()}}
+			
+				{{for k, bd in enumerate(basedatos):}}
+				<tr>
+				<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+				<td>
+				<div class="servidor3">
+				{{=serv.nombre}} 
+				</div>
+				</td>
+				<td></td>
+				<td>
+					<div class="box zoom">
+					{{=bd.nombre}}
+					<br>
+					{{if bd.status_mon=='SI':}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images','monitor.png'),
+						_alt="Monitor",
+						_title="Monitor",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+					{{pass}}
+					{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+						_alt="Estructura",
+						_title="Estructura Online",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+            
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+						_alt="Info",
+						_title="Informacion",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+					_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+						)}}
+					</div>
+				</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				</tr>
+			{{pass}}
+			{{pass}}
+			
+			<!--campo mysql-->
+			{{tipobd=db(db.tipobd.descri=='mysql').select(db.tipobd.id,db.tipobd.descri, distinct=True)}}
+			{{for k, postgres in enumerate(tipobd):}}
+			
+				{{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==postgres.id).select()}}
+			
+				{{for k, bd in enumerate(basedatos):}}
+				<tr>
+				<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+				<td>
+				<div class="servidor3">
+				{{=serv.nombre}} 
+				</div>
+				</td>
+				<td></td>
+				<td></td>
+				<td>
+					<div class="box zoom">
+					{{=bd.nombre}}
+					<br>
+					{{if bd.status_mon=='SI':}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images','monitor.png'),
+						_alt="Monitor",
+						_title="Monitor",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+					{{pass}}
+					{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+						_alt="Estructura",
+						_title="Estructura Online",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+            
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+						_alt="Info",
+						_title="Informacion",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+					_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+						)}}
+					</div>
+				</td>
+				<td></td>
+				<td></td>
+				</tr>
+			{{pass}}
+			{{pass}}
+			
+			<!--campo db2-->
+			{{tipobd=db(db.tipobd.descri=='db2').select(db.tipobd.id,db.tipobd.descri, distinct=True)}}
+			{{for k, postgres in enumerate(tipobd):}}
+			
+				{{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==postgres.id).select()}}
+			
+				{{for k, bd in enumerate(basedatos):}}
+				<tr>
+				<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+				<td>
+				<div class="servidor3">
+				{{=serv.nombre}} 
+				</div>
+				</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td>
+					<div class="box zoom">
+					{{=bd.nombre}}
+					<br>
+					{{if bd.status_mon=='SI':}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images','monitor.png'),
+						_alt="Monitor",
+						_title="Monitor",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+					{{pass}}
+					{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+						_alt="Estructura",
+						_title="Estructura Online",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+            
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+						_alt="Info",
+						_title="Informacion",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+					_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+						)}}
+					</div>
+				</td>
+				<td></td>
+				</tr>
+			{{pass}}
+			{{pass}}
+			
+			
+			<!--campo sqlserver-->
+			{{tipobd=db(db.tipobd.descri=='sqlserver').select(db.tipobd.id,db.tipobd.descri, distinct=True)}}
+			{{for k, postgres in enumerate(tipobd):}}
+			
+				{{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==postgres.id).select()}}
+			
+				{{for k, bd in enumerate(basedatos):}}
+				<tr>
+				<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+				<td>
+				<div class="servidor3">
+				{{=serv.nombre}} 
+				</div>
+				</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td>
+					<div class="box zoom">
+					{{=bd.nombre}}
+					<br>
+					{{if bd.status_mon=='SI':}}
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images','monitor.png'),
+						_alt="Monitor",
+						_title="Monitor",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+					{{pass}}
+					{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+						_alt="Estructura",
+						_title="Estructura Online",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+						_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+						}}
+            
+						{{=A(
+						IMG(
+						_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+						_alt="Info",
+						_title="Informacion",					
+						_class="click imagenes",
+						_id='cancel',
+						_width=ancho,
+						_height=alto,
+						),
+					_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+						)}}
+					</div>
+				</td>
+				</tr>
+			{{pass}}
+			{{pass}}
+			
+
+		
+		
+		
+{{pass}}
+     </tbody>
+    </table>    
+    {{pass}}
+
+

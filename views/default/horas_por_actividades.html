@@ -1,0 +1,64 @@
+{{extend 'layout.html'}}
+{{import json}}
+
+<div class="container">
+    <h2>Horas por Actividades - {{=mes_actual}}</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <canvas id="actividadesChart" height="400"></canvas>
+        </div>
+        <div class="col-md-4">
+            <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Proyecto</th>
+                            <th class="text-right">Horas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {{for proyecto in proyectos:}}
+                        <tr>
+                            <td>{{=proyecto}}</td>
+                            <td class="text-right">{{=sum(d['data'][i] for i, d in enumerate(datasets) if proyecto in proyectos)}}</td>
+                        </tr>
+                    {{pass}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    var ctx = document.getElementById('actividadesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{=XML(json.dumps(proyectos))}},
+            datasets: {{=XML(json.dumps(datasets))}}
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Proyectos'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

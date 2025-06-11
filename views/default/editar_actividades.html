@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+{{=script}}	
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+});
+</script>
+
+<legend>
+			Editar Actividades
+</legend>
+
+
+{{if mis_actividades:}}
+<small>
+<div class="row">
+<table  id="mis_actividades" class="table table-bordered table-striped " style="font-size: 12px;">
+	<col style="width:10%">
+	<col style="width:50%">
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	<col style="width:4%">  
+	
+<thead>
+	<tr>
+	 <th>Proyecto</th><th>Actividad</th><th>Fecha actividad</th><th>Hora inicio</th>
+	 <th colspan="2" class="center">Horas Remotas</th>
+	 <th colspan="2" class="center">Horas Presenciales</th>
+	 <th>Tipo</th><th>Accion</th>
+	 </tr>
+  <tr>
+    <th colspan="4"></th>><th>Horas diurnas</th><th>Horas nocturnas</th><th>Horas diurnas</th><th>Horas nocturnas</th><th>Tipo</th><th>Accion</th>
+  </tr>
+</thead>
+<tbody>
+{{for r in mis_actividades:}}
+<tr>
+<td> {{ =r.asignacion.cod_proyecto.descri }}</td>
+<td> {{ =r.actividades.descripcion }}</td>
+<td> {{=r.actividades.fecha_actividad}}</td>
+<td> {{=r.actividades.hora_inicio}}</td>
+<td> {{=r.actividades.horas_diurnas_r}}</td>
+<td> {{=r.actividades.horas_nocturnas_r}}</td>
+<td> {{=r.actividades.horas_diurnas}}</td>
+<td> {{=r.actividades.horas_nocturnas}}</td>
+<td> {{=r.actividades.tipo}}</td>
+
+{{=TD(A(IMG( _src=URL(request.application,'static/images','edit-1.ico'),
+          _alt="Editar",
+	  _title="Editar Servidor",					
+          _class="click",  _style="border:0;width:=30px;height:20px"),
+	  _href=URL(r=request,c='default',f='edita',args=[r.actividades.id, r.asignacion.id, r.asignacion.cod_proyecto])))}}
+	  
+</tr>
+{{pass}}
+</tbody>
+</table>
+</div>
+</small>
+{{else:}}
+<p>No hay registros creados aun! </p>
+{{pass}}

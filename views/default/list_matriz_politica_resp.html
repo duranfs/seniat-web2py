@@ -1,0 +1,86 @@
+<!--[if HTML5]><![endif]-->
+<!DOCTYPE html>
+
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+{{=script}}	
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+   ///jQuery('#tab1').hide();
+});
+</script>
+
+<style>
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 12px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 12px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+{{=form}}
+
+{{if basedato:}}
+<h2>Esquemas de respaldos {{=nombre_basedatos(basedato.id)}}</h2>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear</a>]
+<div id="form">
+<h4>Nueva politica de respaldo</h4>
+{{=form}}
+</div>
+{{else:}}
+<h4>Politica de Respaldo</h4>
+{{pass}}
+
+<br /><br />
+<table style="width:100%" id="list_matriz_politica_resp" class="xxsmarttable">
+<thead>
+<tr>
+		<th>Servidor</th>
+		<th>Instancia-Cluster</th>
+		<th>Descripción</th>
+		<th>Tipo de Backup</th>
+		<th>Tipo de política</th>
+		<th>Ret</th>
+		<th>Acción</th>
+		
+</tr>
+</thead>
+<tbody>
+{{for matriz in matriz_respaldo:}}
+<tr>
+<td>{{=link_servidor(matriz.servidor_id)}}</td>
+<td>{{=link_basedatos(matriz.basedatos_id)}}</td>
+
+<td>{{=matriz.descri}}</td>
+<td>{{=show_status(matriz.tipo_backup)}}</td>
+<td>{{=matriz.tipo_politica_resp_id.descri}}</td>
+<td>{{=matriz.retencion}}</td>
+<td class="titulo">
+
+{{=button('editar','edit_matriz_politica_resp',matriz.id)}}
+
+</td>
+</tr>
+{{pass}}
+</tbody>
+</table>
+</html>

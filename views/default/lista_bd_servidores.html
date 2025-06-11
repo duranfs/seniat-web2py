@@ -1,0 +1,428 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{extend 'layout.html'}}
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+});
+</script>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="showcase, portfolio, free web templates, css templates" />
+    <link href="{{=URL('static','templatemo_style.css')}}" rel="stylesheet" type="text/css" />
+</head>
+
+
+{{if servidores:}}
+{{ancho=20}}
+{{alto=20}}  
+
+{{cant_tipo=db(db.tipobd.is_active=='T').count()}}
+{{posicion_final=cant_tipo + 2}}
+{{posicion_inicial=3}}	
+  
+    <table id="tabla" class="smarttable" >
+		 <thead>
+	
+<tr>
+	  
+	   <th>
+	  <div class="tipo">SISTEMA OPERATIVO</div>
+	  </th>
+	  <th>
+	  <div class="tipo">SERVIDORES</div>
+	  </th>
+	  
+	  {{tipobd=db(db.tipobd.is_active=='T').select(db.tipobd.id,db.tipobd.descri, orderby=db.tipobd.orden)}}
+			{{for k, tipo in enumerate(tipobd):}}
+				{{=TH(DIV(tipo.descri.upper(), _class='tipo'))}}
+			{{pass}}
+	  
+</tr>
+
+</thead>
+<tbody>
+        {{for k, serv in enumerate(servidores):}}
+        {{for tipobd in db(db.tipobd.is_active=='T').select(db.tipobd.id,db.tipobd.descri, db.tipobd.orden,\
+			 orderby=db.tipobd.orden):}}
+			  {{basedatos=db(db.basedatos.servidor == serv.id)(db.basedatos.tipobd_id==tipobd.id).select()}}
+				
+	    	 	{{for k, bd in enumerate(basedatos):}}
+					<tr>
+						<td><div class="servidor3">{{=serv.so_id.descri}}</div></td>
+						<td><div class="servidor3">{{=serv.nombre}}</div></td>
+			
+					{{if tipobd.orden == 1:}} 
+						{{for p in range(posicion_inicial - 3):}}
+							{{=TD()}} 
+						{{pass}}
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+									 {{monitor=db(db.bdmon.tx_servidor == serv.nombre)\
+									 (db.bdmon.tx_instancia==bd.nombre)\
+									 (db.bdmon.status=='HABILITADO')\
+									 (db.bdmon.f_corrida>=request.now.date)\
+									 .select()}}
+									{{for h, mon in enumerate(monitor):}}
+									
+										{{if mon.tx_rutina=='RMAN_HOTBK':}} 
+										  {{if mon.tx_resultado=='OK':}}
+											<a style="color:green">
+												RMAN-ok
+											</a>
+										  {{else:}}
+											<a style="color:red">
+												RMAN-fallo
+											</a>
+										  {{pass}}	
+										{{pass}}
+									
+									{{pass}}
+									
+								</div></td>
+								
+						
+						{{for i in range(posicion_final - posicion_inicial):}}
+							{{=TD()}}
+						{{pass}}
+					
+					
+					
+					
+					{{elif tipobd.orden == 2:}} 
+						{{for p in range((posicion_inicial + 1)  - 3):}}
+							{{=TD()}} 
+						{{pass}}
+			    
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+								</div></td>
+						
+						{{for i in range(posicion_final - (posicion_inicial + 1)):}}
+							{{=TD()}}
+						{{pass}}
+			
+					{{elif tipobd.orden == 3:}} 
+						{{for p in range((posicion_inicial + 2)  - 3):}}
+							{{=TD()}} 
+						{{pass}}
+			    
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+								</div></td>
+						
+						{{for i in range(posicion_final - (posicion_inicial + 2)):}}
+							{{=TD()}}
+						{{pass}}
+						
+						
+					{{elif tipobd.orden == 4:}} 
+						{{for p in range((posicion_inicial + 3)  - 3):}}
+							{{=TD()}} 
+						{{pass}}
+			    
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+								</div></td>
+						
+						{{for i in range(posicion_final - (posicion_inicial + 3)):}}
+							{{=TD()}}
+					{{pass}}
+						
+					{{elif tipobd.orden == 5:}} 
+						{{for p in range((posicion_inicial + 4)  - 3):}}
+							{{=TD()}} 
+						{{pass}}
+			    
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+								</div></td>
+						
+						{{for i in range(posicion_final - (posicion_inicial + 4)):}}
+							{{=TD()}}
+					{{pass}}	
+						
+					{{elif tipobd.orden == 6:}} 
+						{{for p in range((posicion_inicial + 5)  - 3):}}
+							{{=TD()}} 
+						{{pass}}
+			    
+								<td><div class="box zoom">
+								{{=bd.nombre}}
+								<br>								
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-statistics.png'),
+								_alt="Estructura",
+								_title="Estructura Online",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_lista_bd_online_bd', vars=dict(instancia=bd.nombre, 	servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+					
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images/apps','utilities-log-viewer.png'),
+								_alt="Info",
+								_title="Informacion",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='info_basedatos',args=bd.id)
+								)}}
+								
+								{{if bd.status_mon=='SI':}}
+								{{=A(
+								IMG(
+								_src=URL(request.application,'static/images','monitor.png'),
+								_alt="Monitor",
+								_title="Monitor",					
+								_class="click imagenes",
+								_id='cancel',
+								_width=ancho,
+								_height=alto,
+								),
+								_href=URL(r=request,c='default',f='func_monitor_bd', vars=dict(instancia=bd.nombre, servidor=bd.servidor, usuario=bd.usuario,clave=bd.clave, tipobd=bd.tipobd_id.descri, home=bd.home, puerto=bd.puerto)))
+								}}
+								{{pass}}
+								
+								</div></td>
+						
+						{{for i in range(posicion_final - (posicion_inicial + 5)):}}
+							{{=TD()}}
+					{{pass}}	
+						
+						
+					{{pass}} <!--if-->
+		
+					</tr>
+			
+				{{pass}}   <!--for basedatos -->
+
+
+		{{pass}}  <!--for tipobd-->
+				
+		
+		{{pass}}  <!--for serv-->
+</tbody>
+</table>    
+{{pass}}  <!--if servidores-->
+
+

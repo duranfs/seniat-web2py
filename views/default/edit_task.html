@@ -1,0 +1,9 @@
+{{extend 'layout.html'}}
+
+{{if person:}}
+<h1>Tareas de {{=person.first_name}}</h1>
+{{else:}}
+<h1>Tareas</h1>
+{{pass}}
+
+{{=form}}

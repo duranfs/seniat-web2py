@@ -1,0 +1,209 @@
+<!--[if HTML5]><![endif]-->
+<!DOCTYPE html>
+
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+
+{{extend 'layout.html'}}
+
+{{=script}}	
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+   ///jQuery('#tab1').hide();
+});
+</script>
+
+<style>
+.titulo {
+ background-color: green;
+ color: white;
+ font-size: 10px;
+ text-align: left; 
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 10px #4;
+ border-color: #555 transparent transparent transparent;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.accion {
+ background-color: white;
+ color: black;
+ font-size: 10px;
+ text-align: left;
+ font-stretch: extra-condensed;
+ #font-family: Arial, Helvetica, sans-serif;
+}
+
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 50px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+</style>
+
+
+
+{{if servidor:}}
+<h4>Cuentas en registradas en el servidor :  {{=nombre_servidor(servidor.id)}}
+
+{{=A(IMG( _src=URL(request.application,'static/images','add.png'),
+          _alt="Crear",
+	  _title="Nueva Cuenta",	_onclick="jQuery('#form').slideToggle();",				
+          _class="click",  _style="border:0;width:20px;height:20px"))
+}}
+</h4>
+<div id="form">
+<h4>Nueva cuenta</h4>
+{{=form}}
+</div>
+{{else:}}
+<h4>Si no hay cuentas, se deben crear por el modulo de servidores</h4>
+{{pass}}
+
+
+
+
+<div class="row">
+<table style="width: 100% " id="list_cuentas_so" class="table table-bordered table-striped" style="font-size: 12px;">
+<thead>
+<tr>
+		<th></th>
+		<th>Servidor</th>
+		<th>IP</th>
+		<th>Cuenta</th>
+		<th>Clave anterior</th>
+		<th>Clave</th>
+		<th>Acción</th>
+		
+</tr>
+</thead>
+<tbody>
+{{for cuenta in cuentas_so:}}
+<tr>
+<td>{{=A(
+		IMG(_src=URL(request.application,'static/images','llave.png' ),
+		_alt="Consulta",	_title="Consulta",	_style="border:0;width:30px;height:20px")
+                
+            )}}</td>
+<td>{{=cuenta.servidor_id.nombre}}</td>
+<td>{{=cuenta.servidor_id.ip}}</td>
+<td>{{=cuenta.cuenta}}</td>
+
+<td class="tooltip2">
+<input style="width:60%" name="pass" id="pass" 		
+				onclick="if(this.type='password'){ this.type = 'text' ; this.style.fontSize = '14px'; this.style.borderColor = 'black'; this.style.background ='#44A2FF'; this.style.color='black'}" 
+				xonmouseleave="{this.style.fontSize = '14px'};{this.style.borderColor = ''};{ this.type = 'password' }; {this.style.background =''}; {this.style.color=''}" 
+				onfocusout="{this.style.fontSize = '14px'};{this.style.borderColor = ''};{ this.type = 'password' }; {this.style.background =''}; {this.style.color=''}"  
+				type="password" 
+				maxlength="8" 
+				alt="Mostrar Clave Anterior"
+				value="{{=cuenta.clave_anterior}}" /> 
+</td>
+
+<td class="tooltip2">
+			<input style="width:60%"  name="pass2" id="pass2" 		
+				onclick="copiar(this.value)" 
+				onmouseleave="{this.style.fontSize = '12px'};{this.style.borderColor = ''};{ this.type = 'password' }; {this.style.background =''}; {this.style.color=''}" 
+				onfocusout="{this.style.fontSize = '12px'};{this.style.borderColor = ''};{ this.type = 'password' }; {this.style.background =''}; {this.style.color=''}"  
+				type="password" 
+				maxlength="8" 
+				alt="Mostrar Clave"
+				value="{{=cuenta.clave}}" /> 
+				<span class="tooltiptext"> Click <b>Copia Clave</b></span>
+</td>
+<td>
+
+{{=A(IMG( _src=URL(request.application,'static/images','edit-1.ico'),
+          _alt="Editar",
+	  _title="Editar Registro",					
+          _class="click",  _style="border:0;width:30px;height:20px"),
+	 
+          _href=URL(r=request,c='default',f='edit_cuentas_so',args=[cuenta.id]))}}
+
+{{=A(IMG( _src=URL(request.application,'static/images','nuevopas.png'),
+          _alt="Generar",
+	  _title="Generar Nueva Clave",					
+          _class="click",  _style="border:0;width:30px;height:20px"),
+	 
+          _href=URL(r=request,c='default',f='Generar_clave',args=[cuenta.id]))}}
+
+{{=A(IMG( _src=URL(request.application,'static/images','logs.png'),
+          _alt="Logs",
+	  _title="Logs de Cuentas",					
+          _class="click",  _style="border:0;width:30px;height:20px"),
+	  _href=URL(r=request,c='default',f='list_logs_cuentas_so',args=[cuenta.id]))}}
+
+</td>
+</tr>
+{{pass}}
+</tbody>
+</table>
+</div>
+
+<script type="text/javascript">
+function ejecutar(idelemento){
+  var txt = $('idelemento').val();//#clipboard es el campo de texto por ejemplo
+  txt.select();//se selecciona en contenido del campo de texto
+  document.execCommand("copy");//copiamos el contenido
+  //alert('Clave=' + txt);
+}
+function copiar(val) {
+  //simula el clipboard
+  var textArea = document.createElement('textarea');
+  textArea.style.position = 'absolute';
+  textArea.style.opacity = '0';
+  textArea.value = val;
+  document.body.appendChild(textArea);
+  textArea.select();
+  var successful = document.execCommand('copy');
+  var msg = successful ? 'successful' : 'unsuccessful';
+  console.log('Copying text command was ' + msg);
+  document.body.removeChild(textArea);
+  alert('Clave copiada');
+}
+function pregunta() {
+return confirm('¿Estas segur@ de ejecutar ?');
+}
+</script>
+</html>
+
+
