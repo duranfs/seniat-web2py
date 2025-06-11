@@ -4,7 +4,60 @@
     {{response.files.append(URL(r=request,c='static',f='templatemo_style.css'))}}
     <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
 
-    <meta http-equiv="refresh" content="120">
+    <script>
+        // Variables globales
+        const REFRESH_INTERVAL = 120; // 2 minutos en segundos
+        let countdownTimer;
+        let refreshTimer;
+
+        // Función para actualizar la página
+        function refreshPage() {
+            // Limpiar los timers antes de recargar
+            clearInterval(countdownTimer);
+            clearTimeout(refreshTimer);
+            location.reload();
+        }
+
+        // Función para actualizar el contador
+        function updateCountdown() {
+            let countdown = REFRESH_INTERVAL;
+            const countdownElement = document.getElementById('countdown');
+            
+            // Limpiar timer existente si lo hay
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Actualizar el contador cada segundo
+            countdownTimer = setInterval(function() {
+                countdown--;
+                const minutes = Math.floor(countdown / 60);
+                const seconds = countdown % 60;
+                countdownElement.textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                
+                if (countdown <= 0) {
+                    refreshPage();
+                }
+            }, 1000);
+
+            // Programar el refresh
+            refreshTimer = setTimeout(refreshPage, REFRESH_INTERVAL * 1000);
+        }
+
+        // Iniciar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCountdown();
+            
+            // Mostrar el contenido cuando esté listo
+            const contentContainer = document.getElementById('content-container');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            if (contentContainer && loadingOverlay) {
+                contentContainer.style.display = 'block';
+                loadingOverlay.style.display = 'none';
+            }
+        });
+    </script>
 
     <style>
         body {
@@ -20,6 +73,11 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
         .exit-button {
             background: #e74c3c;
@@ -47,6 +105,17 @@
             margin-bottom: 5px;
             padding-bottom: 5px;
             border-bottom: 2px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ambiente-title-text {
+            flex: 1;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
         .ambiente-produccion { border-color: #3498db;  }
         .ambiente-qa { border-color: #f39c12; }
@@ -199,7 +268,17 @@
         #update-info {
             color: white;
             font-size: 14px;
-            margin-left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        #countdown {
+            color: #3498db;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -237,14 +316,17 @@
     {{ if ambiente in agrupado: }}
     <div class="ambiente-container">
         <div class="ambiente-title {{='ambiente-'+ambiente}}">
-            {{=ambiente.upper()}}
+            <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
             {{if ambiente.upper()=='PRODUCCION':}} 
+                <div class="header-controls">
                     <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
                         Volver a la aplicación principal 
                     </button>
                     <span id="update-info">
                         Última actualización: {{=ultima_actualizacion.strftime('%H:%M:%S')}}
+                        <span id="countdown">2:00</span>
                     </span>
+                </div>
             {{pass}}        
         </div>
         
