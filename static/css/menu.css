@@ -1,16 +1,16 @@
-/* Estilos para el menú principal */
-.navbar {
+/* Estilos personalizados para el menú principal */
+.custom-navbar {
     padding: 0;
     margin-bottom: 20px;
 }
 
-.navbar-nav > li > a {
+.custom-navbar-nav > li > a {
     padding: 15px 20px;
     transition: all 0.3s ease;
 }
 
 /* Estilos para los separadores */
-.navbar-nav > li:empty {
+.custom-navbar-nav > li:empty {
     height: 1px;
     background-color: #e0e0e0;
     margin: 10px 0;
@@ -18,43 +18,43 @@
 }
 
 /* Estilos para los submenús */
-.dropdown-menu {
+.custom-dropdown-menu {
     border-radius: 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.dropdown-menu > li > a {
+.custom-dropdown-menu > li > a {
     padding: 8px 20px;
     transition: all 0.2s ease;
 }
 
-.dropdown-menu > li > a:hover {
+.custom-dropdown-menu > li > a:hover {
     background-color: rgba(0,0,0,0.05);
 }
 
 /* Efectos hover para los elementos del menú */
-.navbar-nav > li > a:hover {
+.custom-navbar-nav > li > a:hover {
     opacity: 0.9;
     transform: translateY(-1px);
 }
 
 /* Estilos para el menú activo */
-.navbar-nav > li.active > a {
+.custom-navbar-nav > li.active > a {
     font-weight: bold;
 }
 
 /* Estilos para los iconos en el menú */
-.navbar-nav > li > a > i {
+.custom-navbar-nav > li > a > i {
     margin-right: 5px;
 }
 
 /* Ajustes responsive */
 @media (max-width: 768px) {
-    .navbar-nav > li > a {
+    .custom-navbar-nav > li > a {
         padding: 10px 15px;
     }
     
-    .dropdown-menu {
+    .custom-dropdown-menu {
         box-shadow: none;
     }
 } 

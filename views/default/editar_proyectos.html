@@ -4,12 +4,15 @@
 <script>
 jQuery(document).ready(function(){
    jQuery('.smarttable').dataTable();
-   
 });
 </script>
 {{extend 'layout.html'}}
-<legend>
-			Editar Proyectos
-</legend>
-{{=script}}
-{{=form}}
+<div class="container py-4">
+    <h2 class="mb-4 text-warning"><i class="fas fa-edit me-2"></i>Editar Proyectos</h2>
+    <div class="mb-3">
+        {{=script}}
+    </div>
+    <div class="table-responsive">
+        {{=form}}
+    </div>
+</div>

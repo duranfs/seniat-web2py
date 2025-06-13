@@ -280,129 +280,206 @@ def monitor_graf():
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime
 import traceback
+import logging
+import threading
 
 def execute_single_monitor(m, db, get_oracle_connection):
-    logging.info(f"[THREAD] Iniciando monitoreo para instancia: {m.tx_instancia} en servidor: {m.tx_servidor}")
-    servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
-    if not servidor:
-        logging.error(f"[THREAD] Servidor no encontrado: {m.tx_servidor}")
-        return None, "Servidor no encontrado", False
-    
-    resultado = None
-    mensaje = ""
-    success = False
-    service_name = f"{m.tx_instancia}.{servidor.dominio.lower()}" if servidor.dominio else f"{m.tx_instancia}"
-    
+    """Versión mejorada manteniendo la conexión Oracle original"""
     try:
-        bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia).select(db.basedatos.puerto, db.basedatos.version_id).first()
-        if not bdatos:
-            raise Exception(f"Base de datos no encontrada: {m.tx_instancia}")
+        # 1. Inicialización y logging mejorado
+        thread_id = threading.current_thread().ident
+        logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo: {m.tx_instancia}@{m.tx_servidor}")
+        
+        # 2. Obtener información del servidor con manejo de errores
+        try:
+            servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
+            if not servidor:
+                error_msg = f"Servidor no encontrado: {m.tx_servidor}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+        except Exception as e:
+            error_msg = f"Error al buscar servidor: {str(e)}"
+            logging.error(f"[THREAD-{thread_id}] {error_msg}")
+            update_monitor_record(db, m, None, error_msg, False)
+            return m.id, error_msg, False
+
+        # 3. Configurar parámetros de conexión
+        dominio = servidor.dominio.lower() if servidor.dominio else ""
+        service_name = f"{m.tx_instancia}.{dominio}" if dominio else m.tx_instancia
+        
+        try:
+            bdatos = db((db.basedatos.servidor == servidor.id) & 
+                       (db.basedatos.nombre == m.tx_instancia)).select(
+                       db.basedatos.puerto, db.basedatos.version_id).first()
             
+            if not bdatos:
+                error_msg = f"Base de datos no encontrada: {m.tx_instancia}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+        except Exception as e:
+            error_msg = f"Error al buscar base de datos: {str(e)}"
+            logging.error(f"[THREAD-{thread_id}] {error_msg}")
+            update_monitor_record(db, m, None, error_msg, False)
+            return m.id, error_msg, False
+
+        # 4. Procesar versión (manteniendo tu lógica original)
         ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
         ver = int(ver_str) if ver_str.isdigit() else 0
         
+        # 5. Ejecutar consulta Oracle (usando tu función original sin cambios)
+        resultado = None
+        mensaje = ""
+        success = False
         connection = None
         cursor = None
         
         try:
-            logging.info(f"[THREAD] Conectando a Oracle: {servidor.ip}, {service_name}, {bdatos.puerto}, {ver}")
+            logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
+            
+            # USO DE TU FUNCIÓN ORIGINAL get_oracle_connection SIN MODIFICACIONES
             connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
             cursor = connection.cursor()
             
-            # Validar y limpiar el comando SQL
-            comando = m.tx_comando.strip()
+            # Validación de comando SQL mejorada
+            comando = (m.tx_comando or "").strip()
             if not comando:
-                raise Exception("Comando SQL vacío")
+                raise ValueError("Comando SQL vacío o nulo")
                 
-            # Verificar si el comando tiene comillas sin cerrar
             if comando.count("'") % 2 != 0 or comando.count('"') % 2 != 0:
-                raise Exception("Comando SQL con comillas sin cerrar")
+                raise ValueError("Comando SQL con comillas sin cerrar")
                 
-            # Verificar si el comando termina en punto y coma
-            if comando.endswith(';'):
-                comando = comando[:-1]
-                
-            logging.info(f"[THREAD] Ejecutando comando: {comando}")
+            comando = comando.rstrip(';')
+            logging.info(f"[THREAD-{thread_id}] Ejecutando comando en {service_name}")
+            
+            # Ejecución de consulta
             cursor.execute(comando)
             
-            # Manejar diferentes tipos de resultados
+            # Procesamiento de resultados con manejo específico
             try:
-                resultado = cursor.fetchone()
-                if resultado is not None:
-                    resultado = resultado[0]
+                raw_result = cursor.fetchone()
+                if raw_result:
+                    resultado = raw_result[0] if len(raw_result) == 1 else raw_result
                     if isinstance(resultado, (int, float)) and resultado == 0:
-                        mensaje = f"Advertencia: Resultado es cero en {service_name}"
+                        mensaje = f"Advertencia: Resultado cero en {service_name}"
                     else:
-                        mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
+                        mensaje = f"Éxito - Resultado: {resultado}"
                 else:
-                    mensaje = f"Conexión exitosa a {service_name} - Sin resultados"
-            except Exception as e:
-                mensaje = f"Conexión exitosa a {service_name} - Error al obtener resultado: {str(e)}"
+                    mensaje = "Éxito - Sin resultados"
+                success = True
                 
-            success = True
-            
-        except cx_Oracle.DatabaseError as e:
-            error_msg = str(e)
-            if 'ORA-01476' in error_msg:
-                mensaje = f"Error en {service_name}: División por cero en la consulta"
-            elif 'ORA-00942' in error_msg:
-                mensaje = f"Error en {service_name}: Tabla o vista no existe"
-            elif 'ORA-00904' in error_msg:
-                mensaje = f"Error en {service_name}: Columna no existe"
-            elif 'ORA-01756' in error_msg:
-                mensaje = f"Error en {service_name}: Comando SQL con comillas incorrectas"
-            else:
-                mensaje = f"Error al conectar a {service_name}: {error_msg}"
-            logging.error(f"[THREAD] ERROR: {mensaje}")
+            except Exception as fetch_error:
+                mensaje = f"Error al obtener resultados: {str(fetch_error)}"
+                logging.warning(f"[THREAD-{thread_id}] {mensaje}")
+                
+        except cx_Oracle.DatabaseError as ora_error:
+            error_obj, = ora_error.args
+            mensaje = f"Error Oracle [{error_obj.code}]: {error_obj.message}"
+            logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         except Exception as e:
-            mensaje = f"Error al conectar a {service_name}: {str(e)}"
-            logging.error(f"[THREAD] ERROR: {mensaje}")
+            mensaje = f"Error de conexión/consulta: {str(e)}"
+            logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         finally:
-            if cursor:
-                try:
-                    cursor.close()
-                except:
-                    pass
-            if connection:
-                try:
-                    connection.close()
-                except:
-                    pass
-                    
-        # Actualizar el registro con el resultado
-        m.update_record(
-            tx_resultado=resultado,
-            tx_resultado_detalle=mensaje,
-            fe_ultima_ejecucion=datetime.datetime.now(),
-            f_corrida=datetime.datetime.now()
-        )
+            # Cierre seguro de recursos
+            for resource in [cursor, connection]:
+                if resource:
+                    try:
+                        resource.close()
+                    except Exception as close_error:
+                        logging.warning(f"[THREAD-{thread_id}] Error al cerrar recurso: {str(close_error)}")
+        
+        # 6. Actualización final con verificación
+        try:
+            update_monitor_record(db, m, resultado, mensaje, success)
+        except Exception as update_error:
+            logging.error(f"[THREAD-{thread_id}] Error al actualizar registro: {str(update_error)}")
+            return m.id, f"Error al guardar resultados: {str(update_error)}", False
+        
+        return m.id, mensaje, success
         
     except Exception as e:
-        mensaje = f"Error general: {str(e)}"
-        logging.error(f"[THREAD] ERROR: {mensaje}")
-        m.update_record(
-            tx_resultado=resultado,
-            tx_resultado_detalle=mensaje,
-            fe_ultima_ejecucion=datetime.datetime.now(),
-            f_corrida=datetime.datetime.now()
-        )
+        error_msg = f"Error inesperado: {str(e)}"
+        logging.error(f"[THREAD-{thread_id}] {error_msg}\n{traceback.format_exc()}")
+        try:
+            update_monitor_record(db, m, None, error_msg, False)
+        except:
+            pass
+        return m.id, error_msg, False
+
+def update_monitor_record(db, monitor, resultado, mensaje, success):
+    """Función mejorada con caché inteligente y manejo robusto de errores"""
+    try:
+        # Obtener el timestamp actual una sola vez
+        ahora = datetime.datetime.now()
         
-    return m.id, mensaje, success
+        # Verificar si necesitamos actualizar
+        necesita_actualizar = True
+        
+        # Comprobar si podemos usar caché (solo si tenemos un resultado previo válido)
+        registro_actual = db(db.bdmon.id == monitor.id).select(
+            db.bdmon.f_corrida, 
+            db.bdmon.tx_resultado
+        ).first()
+        
+        if registro_actual and registro_actual.f_corrida and registro_actual.tx_resultado is not None:
+            # Convertir a datetime si es necesario
+            fecha_corrida = registro_actual.f_corrida
+            if isinstance(fecha_corrida, datetime.date):
+                fecha_corrida = datetime.datetime.combine(fecha_corrida, datetime.time.min)
+            
+            # Calcular diferencia
+            diferencia = ahora - fecha_corrida
+            
+            # Usar caché si los datos son recientes (menos de 5 minutos)
+            if diferencia < datetime.timedelta(minutes=5):
+                logging.info(f"[CACHÉ] Usando datos recientes para {monitor.id} (actualizado hace {diferencia.total_seconds()} segundos)")
+                necesita_actualizar = False
+        
+        # Actualizar solo si es necesario
+        if necesita_actualizar:
+            update_data = {
+                'tx_resultado': str(resultado) if resultado is not None else None,
+                'tx_resultado_detalle': mensaje[:4000] if mensaje else None,
+                'f_corrida': ahora,
+                'estado': 'OK' if success else 'ERROR'
+            }
+            
+            # Actualización con verificación
+            try:
+                db(db.bdmon.id == monitor.id).update(**update_data)
+                db.commit()
+                logging.info(f"[ACTUALIZACIÓN] Registro {monitor.id} actualizado correctamente")
+            except Exception as e:
+                db.rollback()
+                logging.error(f"[ERROR] Fallo al actualizar {monitor.id}: {str(e)}")
+                raise
+        
+        return necesita_actualizar
+        
+    except Exception as e:
+        logging.error(f"[ERROR CRÍTICO] En update_monitor_record: {str(e)}\n{traceback.format_exc()}")
+        raise
 
 def actualizar_y_mostrar_monitor_parallel():
+    """Función principal que ejecuta el monitoreo en paralelo (igual que tu versión pero con mejor logging)"""
     logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
+    
+    # Obtener todos los monitoreos (igual que tu versión original)
     monitoreos = db(db.bdmon).select()
+    
     conexiones_exitosas = 0
     conexiones_fallidas = 0
     resultados = {}
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {
             executor.submit(execute_single_monitor, m, db, get_oracle_connection): m
             for m in monitoreos
         }
+        
         for future in as_completed(futures):
             m = futures[future]
             try:
@@ -416,19 +493,19 @@ def actualizar_y_mostrar_monitor_parallel():
             except Exception as e:
                 conexiones_fallidas += 1
                 resultados[m.id] = f"Error inesperado: {str(e)}"
-                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}")
+                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}\n{traceback.format_exc()}")
+    
     mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
     resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
     mensajes_ordenados.insert(0, resumen)
     logging.info(f"[MAIN] {resumen}")
+    
     return dict(
         mensajes=mensajes_ordenados,
-        resumen=resumen
+        resumen=resumen,
+        exitosas=conexiones_exitosas,
+        fallidas=conexiones_fallidas
     )
-
-
-
-
 
 #------ en paralelo ------------------------------------------------------------------------
 
@@ -9416,3 +9493,19 @@ def get_color_for_tipo(tipo):
         'O': 'rgba(255, 159, 64, 0.7)'    # Naranja
     }
     return colores.get(tipo, 'rgba(201, 203, 207, 0.7)')  # Gris por defecto
+
+
+
+import gluon.contrib.simplejson
+
+@auth.requires_login()
+def progreso_monitoreo():
+    """
+    Devuelve el estado actual del monitoreo: base de datos y consulta actual.
+    Puedes guardar el progreso en session, en una tabla temporal, o en un archivo.
+    Aquí se muestra un ejemplo usando session.
+    """
+    progreso = session.progreso_monitoreo or {}
+    return gluon.contrib.simplejson.dumps(progreso)
+
+

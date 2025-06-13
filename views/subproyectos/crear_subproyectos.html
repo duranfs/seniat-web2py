@@ -2,160 +2,85 @@
 <!DOCTYPE html>
 
 {{extend 'layout.html'}}
-<legend>
-			Crear Subproyectos
-
-</legend>
-
-{{=script}}
-
-
-<style type="text/css">
-  
-  .boton {
-  color: #fff !important;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 0.5em 1.2em;
-  background: #318aac;
-  border: 2px solid;
-  border-color: #318aac;
-  position: relative;
-}
-.boton:before {
-  content:"";
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 0px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  transition: all 1s ease;
-}
-.boton:hover:before {
-width: 100%;
-}
-
-.boton:hover {
-  background: #318aac;
-  color: #fff !important;
-}
-
-</style>
-
-
-<form class="row" action="" enctype="multipart/form-data" method="post">
-        <input type="hidden"  name="_formname" value="formaSPHTML"/>
-<table class="table table-bordered table-striped">
-     <div id="well" >
-      <tr>
-         <td >
-          <label for="cod_proy" class="texto">Proyecto</label>
-               <select name='cod_proy' id="cod_proy" STYLE="width: 400px; height:30px"
-                    onchange="jQuery('#cod_subp').empty();
-                    ajax('subp_tabla', ['cod_proy'], 'cod_subp');">
-                    
-                    {{for pa in proyectos:}}
-                        
-                     <option value="{{=pa.id}}" 
-                     {{=" selected='selected'" if str(pa.id)==request.vars.cod_proy else ""}}>
-                     {{=pa.descri}}
-                     </option>
-
-                    {{pass}}
-                    </select>
-      <td >
-          <label for="descri">Descripción</label>
-          <input STYLE="width: 400px;" class="string Estatico6cm obligatorio" name="descri" id="descri" type="text" />
-      </td>
-                      
-      <td>
-      <input id="boton-principal" name="boton-principal" class="boton" type="submit" value="Crear Subproyecto" />
-        [{{=A('Crear actividad', _href=URL(r=request, c='default', f='crear_actividades_sd')) }}]
-      </td>
-  </fieldset>
-    
-</table>
-</form>
-
-<!-- <!#### -->
-
-<table style="width: 100%;" class="tablex table-borderedx table-stripedx " >
-<col style="width: 30%;"></col>
-<col style="width: 50%;"></col>
-<thead >
-  <tr >
-    <th style="font-size:12px; width: 30%;">Subproyectos </th>
-    <th style="font-size:12px; width: 50%;">Buscar Subproyectos </th>
-  </tr>
-</thead>    
-<tbody >
-    <tr>
-        <td>
-            <div name="cod_subp" id="cod_subp">
+<div class="container py-4">
+    <h2 class="mb-4 text-info"><i class="fas fa-project-diagram me-2"></i>Crear Subproyectos</h2>
+    {{=script}}
+    <form class="row g-3" action="" enctype="multipart/form-data" method="post">
+        <input type="hidden" name="_formname" value="formaSPHTML"/>
+        <div class="col-md-4 mb-3">
+            <label for="cod_proy" class="form-label">Proyecto</label>
+            <select name='cod_proy' id="cod_proy" class="form-select" style="height:30px;" onchange="jQuery('#cod_subp').empty(); ajax('subp_tabla', ['cod_proy'], 'cod_subp');">
+                {{for pa in proyectos:}}
+                    <option value="{{=pa.id}}" {{=" selected='selected'" if str(pa.id)==request.vars.cod_proy else ""}}>{{=pa.descri}}</option>
+                {{pass}}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="descri" class="form-label">Descripción</label>
+            <input class="form-control obligatorio" name="descri" id="descri" type="text" />
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end">
+            <button id="boton-principal" name="boton-principal" class="btn btn-info me-2" type="submit">
+                <i class="fas fa-plus"></i> Crear Subproyecto
+            </button>
+            <a class="btn btn-outline-secondary" href="{{=URL(r=request, c='default', f='crear_actividades_sd')}}">
+                <i class="fas fa-tasks"></i> Crear actividad
+            </a>
+        </div>
+    </form>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h5 class="mb-3">Subproyectos</h5>
+            <div name="cod_subp" id="cod_subp"></div>
+        </div>
+        <div class="col-md-6">
+            <h5 class="mb-3">Buscar Subproyectos</h5>
+            <div class="table-responsive">
+                <table id="subproyectos" class="table table-bordered table-striped smarttable table-condensed">
+                    <thead>
+                        <tr>
+                            <th style="font-size:12px; width: 40%;">Proyectos</th>
+                            <th style="font-size:12px; width: 40%;">Subproyectos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{for datos in datossubp:}}
+                        <tr>
+                            <td style="font-size:12px;">{{=datos.proyecto.descri}}</td>
+                            <td style="font-size:12px;">{{=datos.descri}}</td>
+                        </tr>
+                        {{pass}}
+                    </tbody>
+                </table>
             </div>
-        </td>
-        <td style="position: absolute;">
-            <div class="well">
-            <table id="subproyectos" style="width: 100%;" class="smarttable table-bordered table-striped" >
-            <col style="width: 40%;"></col>
-            <col style="width: 40%;"></col>
-
-            <thead >
-            <tr >
-                <th style="font-size:8px; width: 40%;">Proyectos   </th>
-                <th style="font-size:8px; width: 40%;">Subproyectos </th>
-            </tr>
-            </thead>
-            <tbody >
-            {{for datos in datossubp:}}
-                <tr>
-                   <td style="font-size:12px;">{{=datos.proyecto.descri}}</td>
-                   <td style="font-size:12px;">{{=datos.descri}}</td>
-                </tr>
-            {{pass}}
-            </tbody>
-            </table>
-            </td>
-            </div>
-
-            {{pass}}
-            </div>
-        </td>
-    </tr>
-</tbody>    
-</table>
-
+        </div>
+    </div>
+</div>
 <script type="text/javascript">
-
 $(document).ready( function() {
     jQuery('#cod_subp').empty();
     ajax('subp_tabla', ['cod_proy'], 'cod_subp');
-    //$('#cod_proy').val('37');
-    //document.getElementById("cod_proy").value = 37;
 });
-
-
 $('form').submit(function(){
-      // Validando los campos obligatorios
-      flag = true;
-      var 
-      campos=$('.obligatorio');
-      campos.each(function(){
+    // Validando los campos obligatorios
+    flag = true;
+    var campos=$('.obligatorio');
+    campos.each(function(){
         if(!$(this).val()){
-          //alert('validando campos obligatorio');
-           flag = false;
+            flag = false;
         }});
-
-      
-      if(!flag){
+    if(!flag){
         alert('Error: La descripción del subproyecto es obligatoria');
         return false;
-      }else{
-      
+    }else{
         alert('Subproyecto creado...');
-        }}
-        );
-  
-
+    }
+});
 </script>
+<style>
+.table-condensed tbody > tr > td, .table-condensed tbody > tr > th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: 12px;
+}
+</style>

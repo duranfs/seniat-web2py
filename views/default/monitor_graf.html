@@ -51,10 +51,23 @@
             // Mostrar el contenido cuando esté listo
             const contentContainer = document.getElementById('content-container');
             const loadingOverlay = document.getElementById('loading-overlay');
+            const monitoringPopup = document.getElementById('monitoring-popup');
             
-            if (contentContainer && loadingOverlay) {
+            if (contentContainer && loadingOverlay && monitoringPopup) {
                 contentContainer.style.display = 'block';
                 loadingOverlay.style.display = 'none';
+                if (loadingOverlay.style.display === 'none') {
+                    monitoringPopup.style.display = 'none';
+                } else {
+                    // Esperar a que el overlay se oculte
+                    const observer = new MutationObserver(function() {
+                        if (loadingOverlay.style.display === 'none') {
+                            monitoringPopup.style.display = 'none';
+                            observer.disconnect();
+                        }
+                    });
+                    observer.observe(loadingOverlay, { attributes: true, attributeFilter: ['style'] });
+                }
             }
         });
     </script>
@@ -291,6 +304,15 @@
     <div class="loading-details">Por favor espere, esto puede tomar unos momentos...</div>
 </div>
 
+<!-- Popup de avance de monitoreo -->
+<div id="monitoring-popup" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:white;padding:40px 60px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.2);text-align:center;min-width:300px;">
+        <div style="margin-bottom:20px;font-size:20px;font-weight:bold;">Consultando instancias, por favor espere...</div>
+        <div id="progreso-monitoreo" style="margin-bottom:10px;font-size:16px;color:#333;">Preparando monitoreo...</div>
+        <div class="spinner" style="margin:auto;width:48px;height:48px;border:6px solid #f3f3f3;border-top:6px solid #3498db;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    </div>
+</div>
+
 <!-- Contenedor para todo el contenido - oculto inicialmente -->
 <div id="content-container">
 
@@ -487,6 +509,37 @@ document.addEventListener('visibilitychange', function() {
 // Detener el refresco al salir de la página
 window.addEventListener('beforeunload', function() {
     clearInterval(refreshInterval);
+});
+
+function actualizarProgresoMonitoreo() {
+    $.ajax({
+        url: "{{=URL('default', 'progreso_monitoreo')}}",
+        method: "GET",
+        cache: false,
+        success: function(data) {
+            try {
+                var progreso = JSON.parse(data);
+                if (progreso && progreso.base_datos) {
+                    $('#progreso-monitoreo').html(
+                        '<b>Base de datos:</b> ' + progreso.base_datos +
+                        '<br><b>Servidor:</b> ' + progreso.servidor +
+                        '<br><b>Consulta:</b> ' + progreso.consulta
+                    );
+                } else {
+                    $('#progreso-monitoreo').html('Preparando monitoreo...');
+                }
+            } catch (e) {
+                $('#progreso-monitoreo').html('Preparando monitoreo...');
+            }
+        },
+        complete: function() {
+            setTimeout(actualizarProgresoMonitoreo, 500);
+        }
+    });
+}
+
+$(document).ready(function() {
+    actualizarProgresoMonitoreo();
 });
 </script>
 
