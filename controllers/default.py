@@ -4,7 +4,15 @@ from gluon import *
 # This is a sample controller
 # this file is released under public domain and you can use without limitations
 # -------------------------------------------------------------------------
-
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler('monitor_oracle.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 # para evitar que se vea el codigo html cuando le dan F12
 response.minify = True  # En tu modelo o controlador
 
@@ -274,45 +282,96 @@ import datetime
 import traceback
 
 def execute_single_monitor(m, db, get_oracle_connection):
-    """Función que ejecuta el monitoreo para una sola instancia"""
+    logging.info(f"[THREAD] Iniciando monitoreo para instancia: {m.tx_instancia} en servidor: {m.tx_servidor}")
     servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
     if not servidor:
+        logging.error(f"[THREAD] Servidor no encontrado: {m.tx_servidor}")
         return None, "Servidor no encontrado", False
     
     resultado = None
     mensaje = ""
     success = False
-
-    # Construir el service_name
     service_name = f"{m.tx_instancia}.{servidor.dominio.lower()}" if servidor.dominio else f"{m.tx_instancia}"
-
-    # Obtener datos de la base de datos
-    bdatos = db(db.basedatos.servidor == servidor.id)(
-              db.basedatos.nombre == m.tx_instancia
-             ).select(db.basedatos.puerto, db.basedatos.version_id).first()
     
     try:
-        ver_str = bdatos.version_id.descri[0:2].replace('.', '')
+        bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia).select(db.basedatos.puerto, db.basedatos.version_id).first()
+        if not bdatos:
+            raise Exception(f"Base de datos no encontrada: {m.tx_instancia}")
+            
+        ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
         ver = int(ver_str) if ver_str.isdigit() else 0
-    except (AttributeError, ValueError):
-        ver = 0
-
-    connection = None
-    cursor = None
-    
-    try:
-        # Establecer conexión
-        connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
-        cursor = connection.cursor()
         
-        # Ejecutar comando
-        comando = m.tx_comando.strip().strip('"').strip("'")
-        cursor.execute(comando)
-        resultado = cursor.fetchone()[0]
-        mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
-        success = True
+        connection = None
+        cursor = None
         
-        # Actualizar registro
+        try:
+            logging.info(f"[THREAD] Conectando a Oracle: {servidor.ip}, {service_name}, {bdatos.puerto}, {ver}")
+            connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
+            cursor = connection.cursor()
+            
+            # Validar y limpiar el comando SQL
+            comando = m.tx_comando.strip()
+            if not comando:
+                raise Exception("Comando SQL vacío")
+                
+            # Verificar si el comando tiene comillas sin cerrar
+            if comando.count("'") % 2 != 0 or comando.count('"') % 2 != 0:
+                raise Exception("Comando SQL con comillas sin cerrar")
+                
+            # Verificar si el comando termina en punto y coma
+            if comando.endswith(';'):
+                comando = comando[:-1]
+                
+            logging.info(f"[THREAD] Ejecutando comando: {comando}")
+            cursor.execute(comando)
+            
+            # Manejar diferentes tipos de resultados
+            try:
+                resultado = cursor.fetchone()
+                if resultado is not None:
+                    resultado = resultado[0]
+                    if isinstance(resultado, (int, float)) and resultado == 0:
+                        mensaje = f"Advertencia: Resultado es cero en {service_name}"
+                    else:
+                        mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
+                else:
+                    mensaje = f"Conexión exitosa a {service_name} - Sin resultados"
+            except Exception as e:
+                mensaje = f"Conexión exitosa a {service_name} - Error al obtener resultado: {str(e)}"
+                
+            success = True
+            
+        except cx_Oracle.DatabaseError as e:
+            error_msg = str(e)
+            if 'ORA-01476' in error_msg:
+                mensaje = f"Error en {service_name}: División por cero en la consulta"
+            elif 'ORA-00942' in error_msg:
+                mensaje = f"Error en {service_name}: Tabla o vista no existe"
+            elif 'ORA-00904' in error_msg:
+                mensaje = f"Error en {service_name}: Columna no existe"
+            elif 'ORA-01756' in error_msg:
+                mensaje = f"Error en {service_name}: Comando SQL con comillas incorrectas"
+            else:
+                mensaje = f"Error al conectar a {service_name}: {error_msg}"
+            logging.error(f"[THREAD] ERROR: {mensaje}")
+            
+        except Exception as e:
+            mensaje = f"Error al conectar a {service_name}: {str(e)}"
+            logging.error(f"[THREAD] ERROR: {mensaje}")
+            
+        finally:
+            if cursor:
+                try:
+                    cursor.close()
+                except:
+                    pass
+            if connection:
+                try:
+                    connection.close()
+                except:
+                    pass
+                    
+        # Actualizar el registro con el resultado
         m.update_record(
             tx_resultado=resultado,
             tx_resultado_detalle=mensaje,
@@ -321,53 +380,34 @@ def execute_single_monitor(m, db, get_oracle_connection):
         )
         
     except Exception as e:
-        error_msg = f"{str(e)} {traceback.format_exc()}" if 'ORA-' in str(e) else str(e)
-        mensaje = f"Error al conectar a {service_name}: {error_msg}"
-        
+        mensaje = f"Error general: {str(e)}"
+        logging.error(f"[THREAD] ERROR: {mensaje}")
         m.update_record(
             tx_resultado=resultado,
-            tx_resultado_detalle="Sin conectar: " + error_msg + " " + servidor.ip +" " + service_name +" "+bdatos.puerto +" "+ str(ver),
+            tx_resultado_detalle=mensaje,
             fe_ultima_ejecucion=datetime.datetime.now(),
             f_corrida=datetime.datetime.now()
         )
         
-    finally:
-        # Cerrar recursos
-        if cursor:
-            try:
-                cursor.close()
-            except:
-                pass
-        if connection:
-            try:
-                connection.close()
-            except:
-                pass
-    
     return m.id, mensaje, success
 
 def actualizar_y_mostrar_monitor_parallel():
-    """Versión paralelizada de la función de monitoreo"""
-    # Obtener todas las instancias activas de bdmon
+    logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
     monitoreos = db(db.bdmon).select()
-    
     conexiones_exitosas = 0
     conexiones_fallidas = 0
     resultados = {}
-    
-    # Usar ThreadPoolExecutor para ejecución paralela
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     with ThreadPoolExecutor(max_workers=10) as executor:
-        # Preparar los futuros
         futures = {
             executor.submit(execute_single_monitor, m, db, get_oracle_connection): m
             for m in monitoreos
         }
-        
-        # Procesar resultados conforme se completan
         for future in as_completed(futures):
             m = futures[future]
             try:
                 m_id, mensaje, success = future.result()
+                logging.info(f"[MAIN] Resultado para {m.tx_instancia}: {mensaje}")
                 if success:
                     conexiones_exitosas += 1
                 else:
@@ -376,20 +416,15 @@ def actualizar_y_mostrar_monitor_parallel():
             except Exception as e:
                 conexiones_fallidas += 1
                 resultados[m.id] = f"Error inesperado: {str(e)}"
-    
-    # Ordenar mensajes por ID de monitoreo para consistencia
+                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}")
     mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
-    
-    # Crear resumen final
     resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
     mensajes_ordenados.insert(0, resumen)
-    
+    logging.info(f"[MAIN] {resumen}")
     return dict(
         mensajes=mensajes_ordenados,
         resumen=resumen
     )
-
-
 
 
 
