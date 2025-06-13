@@ -375,11 +375,11 @@ def execute_single_monitor(m, db, get_oracle_connection):
                 
         except cx_Oracle.DatabaseError as ora_error:
             error_obj, = ora_error.args
-            mensaje = f"Error Oracle [{error_obj.code}]: {error_obj.message}"
+            mensaje = f"Error Oracle [{error_obj.code}]: {service_name}  {error_obj.message}"
             logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         except Exception as e:
-            mensaje = f"Error de conexión/consulta: {str(e)}"
+            mensaje = f"Error de conexión/consulta: {service_name} -  {str(e)}"
             logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         finally:
