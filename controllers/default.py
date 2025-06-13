@@ -334,6 +334,7 @@ def execute_single_monitor(m, db, get_oracle_connection):
         success = False
         connection = None
         cursor = None
+        rutina = None
         
         try:
             logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
@@ -344,6 +345,7 @@ def execute_single_monitor(m, db, get_oracle_connection):
             
             # Validación de comando SQL mejorada
             comando = (m.tx_comando or "").strip()
+            rutina = m.tx_rutina
             if not comando:
                 raise ValueError("Comando SQL vacío o nulo")
                 
@@ -375,11 +377,11 @@ def execute_single_monitor(m, db, get_oracle_connection):
                 
         except cx_Oracle.DatabaseError as ora_error:
             error_obj, = ora_error.args
-            mensaje = f"Error Oracle [{error_obj.code}]: {service_name}  {error_obj.message}"
+            mensaje = f"Error Oracle [{error_obj.code}]: {servidor.ip} {rutina} {service_name}  {error_obj.message}"
             logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         except Exception as e:
-            mensaje = f"Error de conexión/consulta: {service_name} -  {str(e)}"
+            mensaje = f"Error de conexión/consulta: {servidor.ip} {rutina} {service_name} -  {str(e)}"
             logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         finally:
