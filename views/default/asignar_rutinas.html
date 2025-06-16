@@ -1,57 +1,78 @@
 {{extend 'layout.html'}}
 
 <div class="container">
-  <h2 class="text-center my-4">Asignar Rutinas a Servidor</h2>
+  <h2 class="text-center my-4">Asignar Rutinas a Servidores</h2>
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <form method="post">
-        <div class="form-group mb-4">
-          <label for="servidor" class="h5">Seleccione un servidor:</label>
-          <select name="servidor" id="servidor" class="form-select form-select-lg" onchange="this.form.submit()">
-            <option value="">-- Seleccionar --</option>
-            {{for servidor in servidores:}}
-            <option value="{{=servidor.id}}" {{if request.vars.servidor == str(servidor.id):}}selected{{pass}}>
-              {{=servidor.nombre}}
-            </option>
-            {{pass}}
-          </select>
-        </div>
-
-        {{if request.vars.servidor:}}
-        <div class="form-group">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <label class="h5 mb-0">Seleccione las rutinas:</label>
-            <div>
-              <button type="button" id="selectAll" class="btn btn-sm btn-outline-primary me-2">
-                <i class="bi bi-check-square"></i> Todas
-              </button>
-              <button type="button" id="deselectAll" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-square"></i> Ninguna
-              </button>
-            </div>
-          </div>
-          <div class="row">
-            {{for rutina in rutinas:}}
-            <div class="col-md-6 mb-2">
-              <div class="form-check">
-                <input class="form-check-input rutina-checkbox" type="checkbox" name="rutinas" value="{{=rutina.id}}" 
-                       id="rutina{{=rutina.id}}" {{if rutina.id in rutinas_asignadas:}}checked{{pass}}>
-                <label class="form-check-label" for="rutina{{=rutina.id}}">
-                  {{=rutina.nombre}}
-                </label>
+      <form method="post" id="mainForm">
+        <div class="row">
+          <!-- Columna de Servidores -->
+          <div class="col-md-6">
+            <div class="form-group mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="h5 mb-0">Seleccione servidores:</label>
+                <div>
+                  <button type="button" id="selectAllServers" class="btn btn-sm btn-outline-primary me-2">
+                    <i class="bi bi-check-square"></i> Todos
+                  </button>
+                  <button type="button" id="deselectAllServers" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-square"></i> Ninguno
+                  </button>
+                </div>
+              </div>
+              <div class="servidores-list" style="max-height: 400px; overflow-y: auto;">
+                {{for servidor in servidores:}}
+                <div class="form-check">
+                  <input class="form-check-input servidor-checkbox" type="checkbox" 
+                         name="servidores" value="{{=servidor.id}}" 
+                         id="servidor{{=servidor.id}}"
+                         {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
+                  <label class="form-check-label" for="servidor{{=servidor.id}}">
+                    {{=servidor.nombre}}
+                  </label>
+                </div>
+                {{pass}}
               </div>
             </div>
-            {{pass}}
+          </div>
+
+          <!-- Columna de Rutinas -->
+          <div class="col-md-6">
+            <div class="form-group">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="h5 mb-0">Seleccione las rutinas:</label>
+                <div>
+                  <button type="button" id="selectAllRutinas" class="btn btn-sm btn-outline-primary me-2">
+                    <i class="bi bi-check-square"></i> Todas
+                  </button>
+                  <button type="button" id="deselectAllRutinas" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-square"></i> Ninguna
+                  </button>
+                </div>
+              </div>
+              <div class="rutinas-list" style="max-height: 400px; overflow-y: auto;">
+                {{for rutina in rutinas:}}
+                <div class="form-check">
+                  <input class="form-check-input rutina-checkbox" type="checkbox" 
+                         name="rutinas" value="{{=rutina.id}}" 
+                         id="rutina{{=rutina.id}}"
+                         {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
+                  <label class="form-check-label" for="rutina{{=rutina.id}}">
+                    {{=rutina.nombre}}
+                  </label>
+                </div>
+                {{pass}}
+              </div>
+            </div>
           </div>
         </div>
-        
+
         <div class="d-grid gap-2 mt-4">
           <button type="submit" class="btn btn-primary btn-lg">
             <i class="bi bi-save"></i> Guardar Asignaciones
           </button>
         </div>
-        {{pass}}
       </form>
     </div>
   </div>
@@ -59,14 +80,9 @@
 
 <style>
   .card {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     border-radius: 15px;
-  }
-  
-  .form-select-lg {
-    padding: 12px;
-    font-size: 1.1rem;
   }
   
   .form-check-input {
@@ -77,29 +93,50 @@
   .form-check-label {
     font-size: 1.05rem;
     vertical-align: middle;
+    padding: 5px 0;
+  }
+  
+  .servidores-list, .rutinas-list {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+  }
+  
+  .form-check {
+    padding: 8px 15px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .form-check:last-child {
+    border-bottom: none;
   }
 </style>
 
 <script>
-  // Mejorar la experiencia de usuario al seleccionar
-  document.getElementById('servidor').addEventListener('change', function() {
-    if(this.value) {
-      null; //this.form.submit();
-    }
+  // Seleccionar todos los servidores
+  document.getElementById('selectAllServers').addEventListener('click', function() {
+    document.querySelectorAll('.servidor-checkbox').forEach(checkbox => {
+      checkbox.checked = true;
+    });
+  });
+
+  // Deseleccionar todos los servidores
+  document.getElementById('deselectAllServers').addEventListener('click', function() {
+    document.querySelectorAll('.servidor-checkbox').forEach(checkbox => {
+      checkbox.checked = false;
+    });
   });
 
   // Seleccionar todas las rutinas
-  document.getElementById('selectAll').addEventListener('click', function() {
-    const checkboxes = document.querySelectorAll('.rutina-checkbox');
-    checkboxes.forEach(checkbox => {
+  document.getElementById('selectAllRutinas').addEventListener('click', function() {
+    document.querySelectorAll('.rutina-checkbox').forEach(checkbox => {
       checkbox.checked = true;
     });
   });
 
   // Deseleccionar todas las rutinas
-  document.getElementById('deselectAll').addEventListener('click', function() {
-    const checkboxes = document.querySelectorAll('.rutina-checkbox');
-    checkboxes.forEach(checkbox => {
+  document.getElementById('deselectAllRutinas').addEventListener('click', function() {
+    document.querySelectorAll('.rutina-checkbox').forEach(checkbox => {
       checkbox.checked = false;
     });
   });
