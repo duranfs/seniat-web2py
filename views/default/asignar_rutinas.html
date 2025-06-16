@@ -11,24 +11,23 @@
           <div class="col-md-6">
             <div class="form-group mb-4">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <label class="h5 mb-0">Seleccione servidores:</label>
+                <h5 class="section-title">Seleccione servidores:</h5>
                 <div>
-                  <button type="button" id="selectAllServers" class="btn btn-sm btn-outline-primary me-2">
+                  <button type="button" id="selectAllServers" class="btn btn-outline-primary btn-action">
                     <i class="bi bi-check-square"></i> Todos
                   </button>
-                  <button type="button" id="deselectAllServers" class="btn btn-sm btn-outline-danger">
+                  <button type="button" id="deselectAllServers" class="btn btn-outline-danger btn-action">
                     <i class="bi bi-square"></i> Ninguno
                   </button>
                 </div>
               </div>
-              <div class="servidores-list" style="max-height: 400px; overflow-y: auto;">
+              <div class="list-container">
                 {{for servidor in servidores:}}
-                <div class="form-check">
-                  <input class="form-check-input servidor-checkbox" type="checkbox" 
-                         name="servidores" value="{{=servidor.id}}" 
-                         id="servidor{{=servidor.id}}"
+                <div class="list-item">
+                  <input type="checkbox" class="custom-checkbox" name="servidores" 
+                         value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
                          {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
-                  <label class="form-check-label" for="servidor{{=servidor.id}}">
+                  <label class="list-label" for="servidor{{=servidor.id}}">
                     {{=servidor.nombre}}
                   </label>
                 </div>
@@ -41,24 +40,23 @@
           <div class="col-md-6">
             <div class="form-group">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <label class="h5 mb-0">Seleccione las rutinas:</label>
+                <h5 class="section-title">Seleccione las rutinas:</h5>
                 <div>
-                  <button type="button" id="selectAllRutinas" class="btn btn-sm btn-outline-primary me-2">
+                  <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
                     <i class="bi bi-check-square"></i> Todas
                   </button>
-                  <button type="button" id="deselectAllRutinas" class="btn btn-sm btn-outline-danger">
+                  <button type="button" id="deselectAllRutinas" class="btn btn-outline-danger btn-action">
                     <i class="bi bi-square"></i> Ninguna
                   </button>
                 </div>
               </div>
-              <div class="rutinas-list" style="max-height: 400px; overflow-y: auto;">
+              <div class="list-container">
                 {{for rutina in rutinas:}}
-                <div class="form-check">
-                  <input class="form-check-input rutina-checkbox" type="checkbox" 
-                         name="rutinas" value="{{=rutina.id}}" 
-                         id="rutina{{=rutina.id}}"
+                <div class="list-item">
+                  <input type="checkbox" class="custom-checkbox" name="rutinas" 
+                         value="{{=rutina.id}}" id="rutina{{=rutina.id}}"
                          {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
-                  <label class="form-check-label" for="rutina{{=rutina.id}}">
+                  <label class="list-label" for="rutina{{=rutina.id}}">
                     {{=rutina.nombre}}
                   </label>
                 </div>
@@ -79,64 +77,124 @@
 </div>
 
 <style>
+  /* ESTILOS PRINCIPALES */
   .card {
     max-width: 1200px;
     margin: 0 auto;
     border-radius: 15px;
+    padding: 20px;
   }
   
-  .form-check-input {
-    transform: scale(1.2);
-    margin-right: 10px;
-  }
-  
-  .form-check-label {
-    font-size: 1.05rem;
-    vertical-align: middle;
-    padding: 5px 0;
-  }
-  
-  .servidores-list, .rutinas-list {
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
+  /* CONTENEDORES DE LISTAS */
+  .list-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
     padding: 10px;
+    background-color: #f9f9f9;
+    max-height: 500px;
+    overflow-y: auto;
   }
   
-  .form-check {
-    padding: 8px 15px;
+  /* ESTILOS PARA ITEMS DE LISTA */
+  .list-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
     border-bottom: 1px solid #eee;
+    margin: 0;
+    min-height: 32px;
   }
   
-  .form-check:last-child {
+  .list-item:last-child {
     border-bottom: none;
+  }
+  
+  /* CHECKBOXES PERSONALIZADOS - SOLUCIÓN DEFINITIVA */
+  .custom-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid #6c757d;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+  
+  .custom-checkbox:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+  
+  .custom-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  
+  .list-label {
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    flex-grow: 1;
+    padding-top: 2px;
+  }
+  
+  /* BOTONES */
+  .btn-action {
+    margin-left: 10px;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+  }
+  
+  /* TÍTULOS */
+  .section-title {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+  
+  /* BOTÓN PRINCIPAL */
+  .btn-lg {
+    padding: 10px 20px;
+    font-size: 1.1rem;
   }
 </style>
 
 <script>
   // Seleccionar todos los servidores
   document.getElementById('selectAllServers').addEventListener('click', function() {
-    document.querySelectorAll('.servidor-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.custom-checkbox[name="servidores"]').forEach(checkbox => {
       checkbox.checked = true;
     });
   });
 
   // Deseleccionar todos los servidores
   document.getElementById('deselectAllServers').addEventListener('click', function() {
-    document.querySelectorAll('.servidor-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.custom-checkbox[name="servidores"]').forEach(checkbox => {
       checkbox.checked = false;
     });
   });
 
   // Seleccionar todas las rutinas
   document.getElementById('selectAllRutinas').addEventListener('click', function() {
-    document.querySelectorAll('.rutina-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.custom-checkbox[name="rutinas"]').forEach(checkbox => {
       checkbox.checked = true;
     });
   });
 
   // Deseleccionar todas las rutinas
   document.getElementById('deselectAllRutinas').addEventListener('click', function() {
-    document.querySelectorAll('.rutina-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.custom-checkbox[name="rutinas"]').forEach(checkbox => {
       checkbox.checked = false;
     });
   });

@@ -693,31 +693,35 @@ def list_rutina_status():
 
 @auth.requires_login()
 def asignar_rutinas():
+	# fecha 16-06-2025 2:16 pm
     # Obtener todos los servidores y rutinas disponibles
-    servidores = db(db.servidores.id>0).select(orderby=db.servidores.nombre)
+    servidores = db(db.servidores.id>0)(db.servidores.status_mon=='SI').select(orderby=db.servidores.nombre)
     rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
     
     rutinas_asignadas = []
-    
-    # Convertir request.vars.servidores a lista siempre
     servidores_seleccionados = []
+    
+    # Manejar servidores seleccionados (si los hay)
     if request.vars.servidores:
+        # Convertir a lista siempre
         if isinstance(request.vars.servidores, list):
             servidores_seleccionados = request.vars.servidores
         else:
             servidores_seleccionados = [request.vars.servidores]
     
-    # Mostrar rutinas asignadas solo si hay un servidor seleccionado
+    # Mostrar rutinas asignadas si solo hay un servidor seleccionado
     if len(servidores_seleccionados) == 1:
         rutinas_asignadas = [str(r.rutina) for r in 
                            db(db.rutina_status.servidor_id==servidores_seleccionados[0]).select()]
     
-    # Procesar el formulario cuando se envían rutinas
+    # Procesar el formulario cuando se envía
     if request.vars.rutinas and servidores_seleccionados:
+        # Convertir rutinas a lista si es necesario
         rutinas_seleccionadas = request.vars.rutinas
         if isinstance(rutinas_seleccionadas, str):
             rutinas_seleccionadas = [rutinas_seleccionadas]
         
+        # Procesar cada servidor seleccionado
         for servidor_id in servidores_seleccionados:
             # Validar ID del servidor
             if not servidor_id.isdigit():
@@ -754,96 +758,6 @@ def asignar_rutinas():
                rutinas=rutinas, 
                rutinas_asignadas=rutinas_asignadas,
                servidores_seleccionados=servidores_seleccionados)
-
-@auth.requires_login()
-def asignar_rutinasx2():
-    # Obtener todos los servidores y rutinas disponibles
-    servidores = db(db.servidores.id>0).select(orderby=db.servidores.nombre)
-    rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
-    
-    rutinas_asignadas = []
-    
-    if request.vars.servidor:
-        servidor_id = request.vars.servidor
-        
-        # Obtener rutinas ya asignadas al servidor seleccionado
-        rutinas_asignadas = [r.rutina for r in 
-                           db(db.rutina_status.servidor_id==servidor_id).select()]
-        
-        if request.vars.rutinas:
-            rutinas_seleccionadas = request.vars.rutinas
-            
-            # Eliminar solo las asignaciones del servidor actual
-            db(db.rutina_status.servidor_id == servidor_id).delete()
-            
-            # Crear nuevas asignaciones solo para este servidor
-            if isinstance(rutinas_seleccionadas, str):
-                rutinas_seleccionadas = [rutinas_seleccionadas]
-                
-            for rutina_id in rutinas_seleccionadas:
-                if not rutina_id.isdigit():
-                    raise HTTP(400, f"ID de rutina no válido: {rutina_id}")
-                
-                rutina_id = int(rutina_id)
-                
-                if not db(db.rutinas.id == rutina_id).count():
-                    todas_rutinas = db(db.rutinas.id>0).select()
-                    rutinas_existentes = [str(r.id) for r in todas_rutinas]
-                    raise HTTP(400, f"La rutina {rutina_id} no existe. Rutinas existentes: {', '.join(rutinas_existentes)}")
-                
-                db.rutina_status.insert(servidor_id=servidor_id, rutina=rutina_id)
-            
-            response.flash = 'Rutinas asignadas correctamente'
-            rutinas_asignadas = rutinas_seleccionadas
-    
-    guarda_log_bdmon()
-    
-    return dict(servidores=servidores, rutinas=rutinas, rutinas_asignadas=rutinas_asignadas)
-
-
-
-
-@auth.requires_login()
-def asignar_rutinasxxxx():
-    # Obtener todos los servidores y rutinas disponibles
-    servidores = db(db.servidores.id>0).select(orderby=db.servidores.nombre)
-    rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
-    
-    if request.vars.servidor and request.vars.rutinas:
-        servidor_id = request.vars.servidor
-        rutinas_seleccionadas = request.vars.rutinas
-        
-        response.flash = 'Rutinas : ' + str(rutinas_seleccionadas)
-
-        db(db.rutina_status.servidor_id == servidor_id).delete()
-     
-        # Crear nuevas asignaciones
-        if request.vars.servidor:
-        	serv=db(db.servidores.id==request.vars.servidor).select().first()
-        	for rutina_id in rutinas_seleccionadas:
-        		if not rutina_id.isdigit():
-        			raise HTTP(400, f"ID de rutina no válido: {rutina_id} (tipo: {type(rutina_id)})")
-        		#if db(db.rutinas.id == rutina_id).count() == 0:
-        		#	raise HTTP(400, "La rutina especificada no existe: " + rutina_id)	
-        		rutina_id = int(rutina_id)  # Asegurar que es entero
-
-        		if not db(db.rutinas.id == rutina_id).count():
-        			todas_rutinas = db(db.rutinas.id>0).select()
-        			rutinas_existentes = [str(r.id) for r in todas_rutinas]
-        			raise HTTP(400, f"La rutina {rutina_id} no existe. Rutinas existentes: {', '.join(rutinas_existentes)}")
-
-        		db.rutina_status.insert(servidor_id=servidor_id, rutina=rutina_id)
- 
-    guarda_log_bdmon()
-    # Obtener rutinas ya asignadas al servidor seleccionado
-    rutinas_asignadas = []
-    if request.vars.servidor:
-        rutinas_asignadas = [r.rutina for r in 
-                           db(db.rutina_status.servidor_id==request.vars.servidor).select()]
-    
-    return dict(servidores=servidores, rutinas=rutinas, rutinas_asignadas=rutinas_asignadas)
-
-
 def guarda_log_bdmon():
     from datetime import datetime
     db.bdmon.truncate()
@@ -851,7 +765,7 @@ def guarda_log_bdmon():
     todas_rutinas = db(db.rutina_status).select()
     fecha_actual = datetime.now()
     for rutina in todas_rutinas:
-    	for bd in  db(db.basedatos.servidor == rutina.servidor_id).select():
+    	for bd in  db(db.basedatos.servidor == rutina.servidor_id)(db.basedatos.status_mon == 'SI').select():
         	db.bdmon.insert(
             	tx_ambiente=rutina.servidor_id.ambiente_id.descri,
             	tx_servidor=rutina.servidor_id.nombre,
