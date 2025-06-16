@@ -694,6 +694,7 @@ def list_rutina_status():
 @auth.requires_login()
 def asignar_rutinas():
 	# fecha 16-06-2025 2:16 pm
+	# cambios desde VS
     # Obtener todos los servidores y rutinas disponibles
     servidores = db(db.servidores.id>0)(db.servidores.status_mon=='SI').select(orderby=db.servidores.nombre)
     rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
