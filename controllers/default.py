@@ -818,7 +818,52 @@ def guarda_log_bdmon():
         db.bdmon.bulk_insert(batch)
     
     db.commit()
-	
+
+
+def rutinas_asignadas():
+    # Esta función ahora es muy simple porque la vista hace las consultas directamente
+    return dict()
+
+def manage_assignment():
+    response.view = 'generic.json'
+    
+    try:
+        rutina_id = request.vars.rutina_id
+        servidor_id = request.vars.servidor_id
+        action = request.vars.action
+        
+        if not (rutina_id and servidor_id and action):
+            return dict(success=False, message="Parámetros incompletos")
+        
+        if action == 'add' or action == 'update':
+            status = request.vars.status or 'HABILITADO'
+            
+            # Buscar si ya existe
+            registro = db((db.rutina_status.rutina == rutina_id) & 
+                         (db.rutina_status.servidor_id == servidor_id)).select().first()
+            
+            if registro:
+                registro.update_record(status=status)
+            else:
+                db.rutina_status.insert(
+                    rutina=rutina_id,
+                    servidor_id=servidor_id,
+                    status=status,
+                    is_active='T'
+                )
+                
+        elif action == 'remove':
+            db((db.rutina_status.rutina == rutina_id) & 
+               (db.rutina_status.servidor_id == servidor_id)).delete()
+        
+        return dict(success=True)
+        
+    except Exception as e:
+        return dict(success=False, message=str(e))
+
+
+
+
 @auth.requires_login()
 def detalle_estructura():
 	basedatos_nombre=request.args[0]

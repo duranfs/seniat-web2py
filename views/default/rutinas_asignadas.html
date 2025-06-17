@@ -1,0 +1,155 @@
+{{extend 'layout.html'}}
+
+<div class="container mt-4">
+    <h3 class="mb-4">Asignación de Rutinas a Servidores</h3>
+    
+    {{# Primero preparar los datos necesarios}}
+    {{servidores = db(db.servidores.id>0)(db.servidores.status_mon=='SI').select(orderby=db.servidores.nombre)}}
+    {{rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)}}
+    {{asignaciones = db(db.rutina_status.id>0).select()}}
+    
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Rutina</th>
+                    {{for servidor in servidores:}}
+                        <th class="text-center">{{=servidor.nombre}}</th>
+                    {{pass}}
+                </tr>
+            </thead>
+            <tbody>
+                {{for rutina in rutinas:}}
+                    <tr>
+                        <td>{{=rutina.nombre}}</td>
+                        {{for servidor in servidores:}}
+                            {{# Verificar si existe asignación}}
+                            {{asignada = False}}
+                            {{for asignacion in asignaciones:}}
+                                {{if asignacion.rutina == rutina.id and asignacion.servidor_id == servidor.id:}}
+                                    {{asignada = True}}
+                                    
+                                {{pass}}
+                            {{pass}}
+                            
+                            <td class="text-center">
+                                {{if asignada:}}
+                                    <span class="badge badge-success" 
+                                          onclick="manageAssignment({{=rutina.id}}, {{=servidor.id}}, true)">
+                                        ✔
+                                    </span>
+                                {{else:}}
+                                    <span class="badge badge-light" 
+                                          onclick="manageAssignment({{=rutina.id}}, {{=servidor.id}}, false)">
+                                        ✖
+                                    </span>
+                                {{pass}}
+                            </td>
+                        {{pass}}
+                    </tr>
+                {{pass}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Simplificado -->
+<div class="modal fade" id="assignmentModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gestión de Asignación</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <input type="text" class="form-control" id="statusInput" value="HABILITADO">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="removeBtn">Eliminar</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables para controlar la asignación actual
+let currentRutinaId, currentServidorId, currentIsAssigned;
+
+function manageAssignment(rutinaId, servidorId, isAssigned) {
+    currentRutinaId = rutinaId;
+    currentServidorId = servidorId;
+    currentIsAssigned = isAssigned;
+    
+    // Configurar modal
+    $('#removeBtn').toggle(isAssigned);
+    $('#assignmentModal').modal('show');
+}
+
+$('#saveBtn').click(function() {
+    const status = $('#statusInput').val();
+    const action = currentIsAssigned ? 'update' : 'add';
+    
+    $.ajax({
+        url: '{{=URL("default", "manage_assignment")}}',
+        type: 'POST',
+        data: {
+            rutina_id: currentRutinaId,
+            servidor_id: currentServidorId,
+            status: status,
+            action: action
+        },
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert(response.message || 'Error en la operación');
+            }
+        }
+    });
+});
+
+$('#removeBtn').click(function() {
+    if (confirm('¿Confirmas que deseas eliminar esta asignación?')) {
+        $.ajax({
+            url: '{{=URL("default", "manage_assignment")}}',
+            type: 'POST',
+            data: {
+                rutina_id: currentRutinaId,
+                servidor_id: currentServidorId,
+                action: 'remove'
+            },
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert(response.message || 'Error al eliminar');
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.table th, .table td {
+    padding: 0.1rem;
+    vertical-align: middle;
+}
+.badge {
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.35em 0.65em;
+}
+.badge-success {
+    background-color: #28a745;
+}
+.badge-light {
+    background-color: #07223d;
+    color: #dc3545;
+}
+</style>

@@ -126,6 +126,7 @@ monitor =[
 	(T('Monitor'), False, '#', [
             (T('Rutinas'), URL('default','list_rutinas')==URL(),URL('default','list_rutinas'),[]),
             (T('Asignar Rutinas'), URL('default','asignar_rutinas')==URL(),URL('default','asignar_rutinas'),[]),
+			(T('Administrar Rutinas'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
             (T('Monitor Rutinas'), URL('default','monitor_graf')==URL(),URL('default','monitor_graf'),[]),
             (T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
