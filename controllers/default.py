@@ -676,109 +676,149 @@ def prueba_9i():
         conexiones_fallidas=conexiones_fallidas
     )
 
-@auth.requires_login()
-def list_rutina_status():
-	response.files.append(URL(request.application,'static','data_table.css'))
-	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
-	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#list_rutina_status').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
-	});''')
-	form=crud.create(db.rutina_status)
-	if form.accepts(request.vars, session):
-		guarda_log_bdmon()
-
-	rutina_status=db(db.rutina_status.id>0).select(orderby=db.rutina_status.rutina)
-	return dict(rutina_status=rutina_status,form=form, script=script)
-
 
 @auth.requires_login()
 def asignar_rutinas():
-	# fecha 16-06-2025 2:16 pm
-	# cambios desde VS
-    # Obtener todos los servidores y rutinas disponibles
-    servidores = db(db.servidores.id>0)(db.servidores.status_mon=='SI').select(orderby=db.servidores.nombre)
-    rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
+    """
+    Asigna rutinas de monitoreo a servidores - Versión compatible con Web2py 3.12+
+    """
+    # Cachear consultas de servidores y rutinas (válido por 1 hora)
+    cache_key = f"asignar_rutinas_data_{request.now}"
+    cached_data = cache.ram(cache_key, lambda: None, time_expire=3600)
     
-    rutinas_asignadas = []
+    if cached_data is None:
+        # Consulta optimizada para servidores
+        servidores = db((db.servidores.id > 0) & 
+                       (db.servidores.status_mon == 'SI')).select(
+                       orderby=db.servidores.nombre,
+                       cache=(cache.ram, 3600))
+        
+        # Consulta optimizada para rutinas
+        rutinas = db(db.rutinas.id > 0).select(
+                  orderby=db.rutinas.nombre,
+                  cache=(cache.ram, 3600))
+        cached_data = (servidores, rutinas)
+    else:
+        servidores, rutinas = cached_data
+    
+    # Procesamiento de parámetros
     servidores_seleccionados = []
-    
-    # Manejar servidores seleccionados (si los hay)
     if request.vars.servidores:
-        # Convertir a lista siempre
-        if isinstance(request.vars.servidores, list):
-            servidores_seleccionados = request.vars.servidores
-        else:
-            servidores_seleccionados = [request.vars.servidores]
+        servidores_seleccionados = request.vars.servidores
+        if not isinstance(servidores_seleccionados, list):
+            servidores_seleccionados = [servidores_seleccionados]
     
-    # Mostrar rutinas asignadas si solo hay un servidor seleccionado
+    # Precarga de rutinas asignadas
+    rutinas_asignadas = []
     if len(servidores_seleccionados) == 1:
-        rutinas_asignadas = [str(r.rutina) for r in 
-                           db(db.rutina_status.servidor_id==servidores_seleccionados[0]).select()]
+        try:
+            servidor_id = int(servidores_seleccionados[0])
+            rutinas_asignadas = [str(r.rutina) for r in 
+                               db(db.rutina_status.servidor_id == servidor_id).select(
+                               cache=(cache.ram, 300))]
+        except ValueError:
+            pass
     
-    # Procesar el formulario cuando se envía
+    # Procesamiento de asignaciones
     if request.vars.rutinas and servidores_seleccionados:
-        # Convertir rutinas a lista si es necesario
         rutinas_seleccionadas = request.vars.rutinas
         if isinstance(rutinas_seleccionadas, str):
             rutinas_seleccionadas = [rutinas_seleccionadas]
         
-        # Procesar cada servidor seleccionado
-        for servidor_id in servidores_seleccionados:
-            # Validar ID del servidor
-            if not servidor_id.isdigit():
-                raise HTTP(400, f"ID de servidor no válido: {servidor_id}")
+        try:
+            # Validación y conversión de IDs
+            serv_ids = [int(sid) for sid in servidores_seleccionados if sid.isdigit()]
+            rutina_ids = [int(rid) for rid in rutinas_seleccionadas if rid.isdigit()]
             
-            servidor_id = int(servidor_id)
+            if len(serv_ids) != len(servidores_seleccionados) or len(rutina_ids) != len(rutinas_seleccionadas):
+                raise ValueError("IDs no válidos detectados")
             
-            # Verificar que el servidor existe
-            if not db(db.servidores.id == servidor_id).count():
-                raise HTTP(400, f"El servidor {servidor_id} no existe")
-            
-            # Eliminar asignaciones previas para este servidor
-            db(db.rutina_status.servidor_id == servidor_id).delete()
-            
-            # Asignar las nuevas rutinas
-            for rutina_id in rutinas_seleccionadas:
-                if not rutina_id.isdigit():
-                    raise HTTP(400, f"ID de rutina no válido: {rutina_id}")
+            # Verificación de existencia
+            if db(db.servidores.id.belongs(serv_ids)).count() != len(serv_ids):
+                raise ValueError("Algunos servidores no existen")
                 
-                rutina_id = int(rutina_id)
+            if db(db.rutinas.id.belongs(rutina_ids)).count() != len(rutina_ids):
+                raise ValueError("Algunas rutinas no existen")
+            
+            # Transacción atómica
+            db.commit()  # Cerrar transacciones pendientes
+            
+            try:
+                for servidor_id in serv_ids:
+                    db(db.rutina_status.servidor_id == servidor_id).delete()
+                    db.rutina_status.bulk_insert([
+                        {'servidor_id': servidor_id, 'rutina': rutina_id}
+                        for rutina_id in rutina_ids
+                    ])
                 
-                # Verificar que la rutina existe
-                if not db(db.rutinas.id == rutina_id).count():
-                    raise HTTP(400, f"La rutina {rutina_id} no existe")
+                db.commit()
+                response.flash = 'Rutinas asignadas correctamente'
                 
-                # Insertar nueva asignación
-                db.rutina_status.insert(servidor_id=servidor_id, rutina=rutina_id)
-        
-        response.flash = 'Rutinas asignadas correctamente a los servidores seleccionados'
+                # Invalidar caché
+                cache.ram.clear(regex='^asignar_rutinas_data_.*')
+                
+                # Llamada a guarda_log_bdmon() sin scheduler
+                guarda_log_bdmon()
+                
+            except Exception as e:
+                db.rollback()
+                raise HTTP(500, f"Error en asignación: {str(e)}")
+                
+        except ValueError as ve:
+            raise HTTP(400, str(ve))
     
-    guarda_log_bdmon()
-    
-    return dict(servidores=servidores, 
-               rutinas=rutinas, 
-               rutinas_asignadas=rutinas_asignadas,
-               servidores_seleccionados=servidores_seleccionados)
+    return dict(
+        servidores=servidores,
+        rutinas=rutinas,
+        rutinas_asignadas=rutinas_asignadas,
+        servidores_seleccionados=servidores_seleccionados
+    )
+
+
 def guarda_log_bdmon():
     from datetime import datetime
-    db.bdmon.truncate()
-
+    
+    # En lugar de TRUNCATE que bloquea toda la tabla
+    db(db.bdmon).delete()  # DELETE es menos bloqueante
+    db.commit()  # Commit inmediato para liberar locks
+    
     todas_rutinas = db(db.rutina_status).select()
     fecha_actual = datetime.now()
+    
+    # Pre-cargar relaciones para evitar N+1
+    rutinas = db(db.rutinas.id.belongs([r.rutina for r in todas_rutinas])).select()
+    servidores = db(db.servidores.id.belongs([r.servidor_id for r in todas_rutinas])).select()
+    
+    # Procesamiento por lotes
+    batch_size = 100
+    batch = []
+    
     for rutina in todas_rutinas:
-    	for bd in  db(db.basedatos.servidor == rutina.servidor_id)(db.basedatos.status_mon == 'SI').select():
-        	db.bdmon.insert(
-            	tx_ambiente=rutina.servidor_id.ambiente_id.descri,
-            	tx_servidor=rutina.servidor_id.nombre,
-            	tx_instancia=bd.nombre,
-            	tx_puerto=bd.puerto,
-            	tx_tipobd=rutina.tipobd_id.descri,
-            	tx_rutina=rutina.rutina.nombre,
-            	tx_comando=rutina.rutina.sql_code,
-            	tx_resultado="",
-            	f_corrida=fecha_actual)
+        bases_datos = db(db.basedatos.servidor == rutina.servidor_id)(
+                      db.basedatos.status_mon == 'SI').select()
+        
+        for bd in bases_datos:
+            batch.append({
+                'tx_ambiente': next(s.ambiente_id.descri for s in servidores if s.id == rutina.servidor_id),
+                'tx_servidor': next(s.nombre for s in servidores if s.id == rutina.servidor_id),
+                'tx_instancia': bd.nombre,
+                'tx_puerto': bd.puerto,
+                'tx_tipobd': rutina.tipobd_id.descri,
+                'tx_rutina': next(r.nombre for r in rutinas if r.id == rutina.rutina),
+                'tx_comando': next(r.sql_code for r in rutinas if r.id == rutina.rutina),
+                'tx_resultado': "",
+                'f_corrida': fecha_actual
+            })
+            
+            if len(batch) >= batch_size:
+                db.bdmon.bulk_insert(batch)
+                batch = []
+    
+    if batch:
+        db.bdmon.bulk_insert(batch)
+    
     db.commit()
-
+	
 @auth.requires_login()
 def detalle_estructura():
 	basedatos_nombre=request.args[0]

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 ### required - do no delete
+
+if request.is_local:
+    from gluon.custom_import import track_changes
+    track_changes(True)
+    
 migrate = True
 redefine = False
 
