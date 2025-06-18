@@ -9515,19 +9515,20 @@ def horas_por_ambiente_mes_actual():
         mes_actual=ahora.strftime("%B %Y")
     )
 
+
 def horas_por_actividades():
     from datetime import datetime
     
-    # Obtener parámetros de fecha (opcional: filtrar por mes)
+    # Obtener parámetros de fecha
     ahora = datetime.now()
     mes_actual = ahora.month
     año_actual = ahora.year
     
-    # Consulta para obtener horas por proyecto y tipo de actividad
+    # Consulta SQL mejorada
     query = """
     SELECT 
         p.descri as proyecto,
-        a.tipo as tipo_actividad,
+        a.fecha_inicio as fecha,
         SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas,
         COUNT(a.id) as cantidad_actividades
     FROM 
@@ -9535,64 +9536,84 @@ def horas_por_actividades():
     JOIN 
         proyectos p ON a.cod_proy = p.id
     WHERE
-        EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
+        EXTRACT(MONTH FROM a.fecha_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM a.fecha_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
     GROUP BY 
-        p.descri, a.tipo
+        p.descri, a.fecha_inicio
     ORDER BY 
-        p.descri, total_horas DESC
-    """.format(mes=mes_actual, año=año_actual)
+        p.descri, fecha, total_horas DESC
+    """
     
     registros = db.executesql(query, as_dict=True)
     
-    # Procesar datos para el gráfico
-    proyectos = sorted(list(set(r['proyecto'] for r in registros)))
-    tipos_actividad = sorted(list(set(r['tipo_actividad'] for r in registros)))
+    # Procesar datos para el gráfico y tablas
+    proyectos = sorted(list({r['proyecto'] for r in registros}))
+    fechas = sorted(list({r['fecha'] for r in registros}))
     
-    # Preparar datos para Chart.js
+    # Diccionario de tipos de actividad (si no hay tabla específica)
+    TIPO_ACT = {
+        'P': 'Preventivo',
+        'R': 'Correctivo',
+        'M': 'Mantenimiento',
+        'V': 'Verificación',
+        'C': 'Control de Cambios',
+        'O': 'Otros'
+    }
+    
+    # Preparar datos para Chart.js (agrupado por proyecto)
     datasets = []
-    for tipo in tipos_actividad:
+    for proyecto in proyectos:
         data = []
-        for proyecto in proyectos:
-            horas = next((r['total_horas'] for r in registros 
-                         if r['proyecto'] == proyecto and r['tipo_actividad'] == tipo), 0)
+        for fecha in fechas:
+            horas = sum(r['total_horas'] for r in registros 
+                       if r['proyecto'] == proyecto and r['fecha'] == fecha)
             data.append(float(horas))
         
         datasets.append({
-            'label': tipo,
+            'label': proyecto,
             'data': data,
-            'backgroundColor': get_color_for_tipo(tipo)  # Función auxiliar para colores
+            'backgroundColor': get_color_for_proyecto(proyecto),  # Color por proyecto
+    		'borderColor': get_color_for_proyecto(proyecto).replace('0.7', '1'),  # Borde más opaco
+    		'borderWidth': 1
         })
-    TIPO_ACT = {
-    	'P': 'Preventivo',
-    	'R': 'Correctivo',
-    	'M': 'Mantenimiento',
-    	'V': 'Verificación',
-    	'C': 'Control de Cambios',
-    	'O': 'Otros'
-	}
-
+    
+    # Calcular totales por proyecto
+    totales_proyectos = {proyecto: 0 for proyecto in proyectos}
+    for r in registros:
+        totales_proyectos[r['proyecto']] += r['total_horas']
+    
     return dict(
         registros=registros,
         proyectos=proyectos,
+        fechas=fechas,
         datasets=datasets,
-        tipos_actividad=tipos_actividad,
         mes_actual=ahora.strftime("%B %Y"),
-        TIPO_ACT=TIPO_ACT
+        TIPO_ACT=TIPO_ACT,
+        totales_proyectos=totales_proyectos,
+        total_general=sum(totales_proyectos.values())
     )
 
-def get_color_for_tipo(tipo):
-    # Asignar colores consistentes a cada tipo de actividad
-    colores = {
-        'P': 'rgba(54, 162, 235, 0.7)',  # Azul
-        'R': 'rgba(255, 99, 132, 0.7)',  # Rojo
-        'M': 'rgba(75, 192, 192, 0.7)',  # Verde
-        'V': 'rgba(255, 206, 86, 0.7)',   # Amarillo
-        'C': 'rgba(153, 102, 255, 0.7)',  # Morado
-        'O': 'rgba(255, 159, 64, 0.7)'    # Naranja
-    }
-    return colores.get(tipo, 'rgba(201, 203, 207, 0.7)')  # Gris por defecto
 
+def get_color_for_proyecto(proyecto):
+    # Asignar colores consistentes a cada proyecto basado en hash
+    colores_disponibles = [
+        'rgba(54, 162, 235, 0.7)',  # Azul
+        'rgba(255, 99, 132, 0.7)',  # Rojo
+        'rgba(75, 192, 192, 0.7)',  # Verde
+        'rgba(255, 206, 86, 0.7)',  # Amarillo
+        'rgba(153, 102, 255, 0.7)', # Morado
+        'rgba(255, 159, 64, 0.7)',  # Naranja
+        'rgba(199, 199, 199, 0.7)', # Gris
+        'rgba(83, 102, 255, 0.7)',  # Azul oscuro
+        'rgba(40, 167, 69, 0.7)',   # Verde oscuro
+        'rgba(108, 117, 125, 0.7)'  # Gris oscuro
+    ]
+    
+    # Generar un índice consistente basado en el nombre del proyecto
+    hash_valor = sum(ord(c) for c in proyecto)
+    indice_color = hash_valor % len(colores_disponibles)
+    
+    return colores_disponibles[indice_color]
 
 
 import gluon.contrib.simplejson
