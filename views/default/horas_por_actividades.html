@@ -90,7 +90,6 @@ $(document).ready(function() {
         data: {
             labels: {{=XML(json.dumps(proyectos))}},
             datasets: [{
-                label: 'Horas en {{=nombre_mes}} {{=año_actual}}',
                 data: {{=XML(json.dumps(horas))}},
                 backgroundColor: {{=XML(json.dumps(background_colors))}},
                 borderColor: {{=XML(json.dumps(border_colors))}},
@@ -108,23 +107,18 @@ $(document).ready(function() {
                 },
                 y: {
                     grid: { display: false },
-                    afterFit: function(scale) {
-                        scale.width = 100; // Reduce el espacio vertical
+                    afterFit: function(axis) {
+                        axis.width = 150; // Espacio ampliado para nombres
+                    },
+                    ticks: {
+                        font: { size: 12 },
+                        padding: 10 // Espacio alrededor del texto
                     }
                 }
             },
             plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.x.toFixed(2) + ' horas';
-                        }
-                    }
-                },
                 legend: { display: false }
             },
-            barPercentage: 0.6,
-            categoryPercentage: 0.8,
             maintainAspectRatio: false
         }
     });
