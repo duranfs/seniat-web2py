@@ -9,6 +9,9 @@ sessions/
 # Archivos de caché
 cache/
 
+# errores
+errors/
+
 # Archivos de base de datos
 *.db
 *.sqlite3
