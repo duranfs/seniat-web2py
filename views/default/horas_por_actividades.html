@@ -103,19 +103,13 @@ $(document).ready(function() {
             scales: {
                 x: {
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Horas trabajadas'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value.toFixed(2);
-                        }
-                    }
+                    title: { display: true, text: 'Horas trabajadas' },
+                    ticks: { callback: function(value) { return value.toFixed(2); } }
                 },
                 y: {
-                    grid: {
-                        display: false
+                    grid: { display: false },
+                    afterFit: function(scale) {
+                        scale.width = 100; // Reduce el espacio vertical
                     }
                 }
             },
@@ -127,10 +121,11 @@ $(document).ready(function() {
                         }
                     }
                 },
-                legend: {
-                    display: false
-                }
-            }
+                legend: { display: false }
+            },
+            barPercentage: 0.6,
+            categoryPercentage: 0.8,
+            maintainAspectRatio: false
         }
     });
 });
