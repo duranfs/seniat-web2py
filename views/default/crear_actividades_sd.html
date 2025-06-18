@@ -471,298 +471,202 @@ jQuery(document).ready(function(){
 {{=script}}
 
 
-<!---<div id='formulario' class='float-container' >
--->
-<div class="center well" id="xderecha" >
-<form class="well" action="" enctype="multipart/form-data" method="post">
-	<input type="hidden"  name="_formname" value="formaActHTML"/>
-		<table style="background-color: #f7f7f3; " class="table table-bordered ">
-            <div id="container" >
-			<tr>
-                 <td >
-					<label for="cod_proy" class="texto" style="width: 20%;">Proyecto</label>
-			         <select name='cod_proy'  class="custom-select select texto" style="width: 230px;"
-                    onchange="jQuery('#cod_subp').empty();
-                    ajax('subproyecto', ['cod_proy'], 'cod_subp');">
-                    {{for pa in proyectos:}}
-                        
-                        <option  value="{{=pa.id}}" 
-                        {{=" selected='selected'" if str(pa.id)==request.vars.cod_proy else ""}}>
-                        {{=pa.descri}}
-                        </option>
 
-                    {{pass}}
-                    </select>
-                </td>
-                <td>
-                    <label for="cod_subp" style="width: 20%;">Sub-Proyecto </label>
-                    <select  class="custom-select select texto" style="width: 230px;" name="cod_subp" id="cod_subp" >
-                        
-                        {{for datos in subproyectos:}}
-                            <option value="{{=datos.id}}">{{=str(datos.descri) }}</option>
-                        {{pass}}
-                    </select>
-                </td>
-
-
-{{if act_abiertas:}}
-<div class="row">  
- <td style="font-size:9px rowspan=4 colspan=1 id=izquierda">
- <label for="status_act" style="font-size:14px; color: #1059d8;" class="texto"><b>Actividades Abiertas SENIAT</b></label>
-
-                  
-<table id="tableData" class="table table-bordered table-striped" >
-  <col style="width: 20%;"></col>
-  <col style="width: 20%;"></col>
-  <col style="width: 20%;"></col>
-  <col style="width: 20%;"></col>
-  <col style="width: 10%;"></col>
-<thead >
-  <tr >
-    <th style="font-size:9px;">Consultor</th>
-    <th style="font-size:9px;">Fecha de inicio</th>
-    <th style="font-size:9px;">Servidor</th>
-    <th style="font-size:9px;">BD</th>
-    <th style="font-size:9px;">Opción</th>
-  </tr>
-</thead>
-<tbody >
-{{for datos in act_abiertas:}}
-    <tr>
-       <td style="font-size:10px;">{{=datos.analista.first_name}}</td>
-       <td style="font-size:10px;">{{=datos.fecha_inicio.strftime('%d/%m/%Y')}}</td>
-       <td style="font-size:10px;">{{=datos.cod_servidor.nombre}}</td>
-       {{if datos.cod_bd>0: }}
-         <td style="font-size:10px;">{{=datos.cod_bd.nombre}}</td>
-       {{else:}}
-         <td style="font-size:10px;">{{=datos.cod_bd}}</td>
-       {{pass}}  
-        <td style="font-size:10px;">
-      {{=A(IMG( _src=URL(request.application,'static/images','edit-1.ico'),
-          _alt="Bitacora",
-      _title="Bitacora actividades",                 
-          _class="click",  _style="border:0;width:15px;height:15px"),
-      _href=URL(r=request,c='bitacora',f='agregar_subactividad',vars=dict(actividad_id=datos.id, proyecto=datos.cod_proy.descri, 
-               subproyecto=datos.cod_subp.descri, desc=datos.descripcion) ))}}
-</td>
-    </tr>
-{{pass}}
-</tbody>
-</table>
-</td>
-</div>
-
-{{pass}}
-
-    </tr>
-     <tr>
-          
-			    <td>
-
-                    <label for="cod_servidor" class="texto " style="width: 20%;">Servidor</label>
-
-                    <select name='cod_servidor' class="custom-select select texto" style="width: 230px;"
-                    onchange="jQuery('#cod_bd').empty(); ajax('func_bd', ['cod_servidor'], 'cod_bd');">
-                                        
-                    {{for ser in servidores:}}
-                        
-                        <option value="{{=ser.id}}" 
-                        {{=" selected='selected'" if str(ser.id)==request.vars.cod_servidor else ""}}>
-                        {{=ser.nombre}}
-                        </option>
-
-                    {{pass}}
-                    </select>
-
-
-     <td  rowspan="2" >
-        <div class="textarea">
-            <label for="descripcion" class="texto" style="" >Actividad</label>
-            <textarea onfocus="marcar(this);" style='width: 100%; height: 100%; border: blue;'  class="texto obligatorio" autofocus  name="descripcion" id="descripcion" type="text"  rows="10" cols="1" maxlength = "800" /></textarea>
-        </div>    
-          </td>
-
-        <tr>
-                <td>
-                    <label for="cod_bd" class="texto" style="width: 20%;">Bd</label>
-                    <select  class="custom-select select texto" style="width: 230px;" name="cod_bd" id="cod_bd" 
-                    >
-                        {{for datos in basedatos:}}
-                            <option value="{{=datos.id}}">{{=str(datos.nombre) }}</option>
-                        {{pass}}
-                    </select>
-
-                </td>
-           
-        </tr>	
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Crear Nueva Actividad</h4>
         </div>
-
-
-<!--    <table class="table table-bordered table-striped">
--->
-      <tr>
-        <td>
-					<label for="fecha_inicio">Fecha inicio actividad</label>
-					<input  class="texto obligatorio customDate"  onchange="actualiza_actividades(); resta();" name="fecha_inicio" id="fecha_inicio" type="datetime-local"   required />
-		    </td>
-        <td> 
-        <label for="fecha_fin">Fecha fin actividad</label>
-          <input class="texto obligatorio customDate"  onchange="resta();" name="fecha_fin" id="fecha_fin" type="datetime-local"  required />
-
-   
-					<label for="horas_laboradas">Horas laboradas </label>
-					<input class="texto  obligatorio" 
-                    STYLE="font-weight: bold; color: red; #1059d8;; width: 50px; " name="horas_laboradas" id="horas_laboradas" type="text" value="0.00"  readonly />
-
-            <label for="horas_extras">Extras </label>
-            <input class="texto  obligatorio" 
-                    STYLE="font-weight: bold; color: red; #1059d8;; width: 50px; " name="horas_extras" id="horas_extras" type="text"  value="0.00" readonly />
-        </td>
-        <tr>
-
-
-        <td colspan="1" >
-                  
-        	<label for="tipo">Tipo </label>
-					<select id="tipo" name="tipo" style="width:100px" class="custom-select texto obligatorio">
-							<option value="P">PRESENCIAL</option>
-							<option value="R">REMOTO</option>
-						</select>
-				
-					<label for="producto">Prod.</label>
-					<select id="producto" name="producto" style="width:100px" class="custom-select texto obligatorio">
-							<option value="CORREO">CORREO</option>
-							<option value="INFORME">INFORME</option>
-							<option value="DOCUMENTO">DOCUMENTO</option>
-							<option value="CC">CC</option>
-							<option value="WHATSAPP">WHATSAPP</option>
-                            <option value="WHATSAPP">LLAMADA</option>
-						</select>
-				
-        </td>
-
-        <td style="text-align: left;" colspan="1">
-         
-					<label for="completado">Estatus</label>
-					<select id="completado" name="completado" style="width:100px" class="custom-select texto obligatorio">
-							<option value="CERRADA">CERRADA</option>
+        
+        <div class="card-body">
+            <form id="actividadForm" class="needs-validation" novalidate action="" enctype="multipart/form-data" method="post">
+                <input type="hidden" name="_formname" value="formaActHTML"/>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="cod_proy" class="form-label">Proyecto</label>
+                        <select name="cod_proy" class="form-select obligatorio" required
+                                onchange="jQuery('#cod_subp').empty(); ajax('subproyecto', ['cod_proy'], 'cod_subp');">
+                            {{for pa in proyectos:}}
+                            <option value="{{=pa.id}}" {{="selected" if str(pa.id)==request.vars.cod_proy else ""}}>
+                                {{=pa.descri}}
+                            </option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione un proyecto</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_subp" class="form-label">Sub-Proyecto</label>
+                        <select name="cod_subp" id="cod_subp" class="form-select obligatorio" required>
+                            {{for datos in subproyectos:}}
+                            <option value="{{=datos.id}}">{{=str(datos.descri) }}</option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione un subproyecto</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_servidor" class="form-label">Servidor</label>
+                        <select name="cod_servidor" class="form-select obligatorio" required
+                                onchange="jQuery('#cod_bd').empty(); ajax('func_bd', ['cod_servidor'], 'cod_bd');">
+                            {{for ser in servidores:}}
+                            <option value="{{=ser.id}}" {{="selected" if str(ser.id)==request.vars.cod_servidor else ""}}>
+                                {{=ser.nombre}}
+                            </option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione un servidor</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label for="descripcion" class="form-label">Actividad</label>
+                        <textarea class="form-control obligatorio" name="descripcion" id="descripcion" 
+                                  rows="3" maxlength="800" required></textarea>
+                        <div class="invalid-feedback">Ingrese una descripción</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_bd" class="form-label">Base de Datos</label>
+                        <select name="cod_bd" id="cod_bd" class="form-select">
+                            {{for datos in basedatos:}}
+                            <option value="{{=datos.id}}">{{=str(datos.nombre) }}</option>
+                            {{pass}}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                        <input type="datetime-local" class="form-control obligatorio" name="fecha_inicio" 
+                               id="fecha_inicio" required onchange="actualiza_actividades(); resta();">
+                        <div class="invalid-feedback">Ingrese fecha válida</div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                        <input type="datetime-local" class="form-control obligatorio" name="fecha_fin" 
+                               id="fecha_fin" required onchange="resta();">
+                        <div class="invalid-feedback">Ingrese fecha válida</div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="horas_laboradas" class="form-label">Horas</label>
+                        <input type="text" class="form-control" name="horas_laboradas" 
+                               id="horas_laboradas" value="0.00" readonly>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="horas_extras" class="form-label">Extras</label>
+                        <input type="text" class="form-control" name="horas_extras" 
+                               id="horas_extras" value="0.00" readonly>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select id="tipo" name="tipo" class="form-select obligatorio" required>
+                            <option value="P">PRESENCIAL</option>
+                            <option value="R">REMOTO</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un tipo</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="producto" class="form-label">Producto</label>
+                        <select id="producto" name="producto" class="form-select obligatorio" required>
+                            <option value="CORREO">CORREO</option>
+                            <option value="INFORME">INFORME</option>
+                            <option value="DOCUMENTO">DOCUMENTO</option>
+                            <option value="CC">CC</option>
+                            <option value="WHATSAPP">WHATSAPP</option>
+                            <option value="LLAMADA">LLAMADA</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un producto</div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="completado" class="form-label">Estatus</label>
+                        <select id="completado" name="completado" class="form-select obligatorio" required>
+                            <option value="CERRADA">CERRADA</option>
                             <option value="ABIERTA">ABIERTA</option>
-						</select>
-             <label>Incidencia :</label>
-                <label class="toggle">
-                  <input class="toggle-checkbox" type="checkbox" onclick="fade2()" name="incid_bd">
-                  <div class="toggle-switch"></div>
-                  <span class="toggle-label">BD</span>
-                </label>
-                
-                <label class="toggle">
-                  <input class="toggle-checkbox" type="checkbox"  onclick="fade();fade3();" name="incid_otros" >
-                  <div class="toggle-switch"></div>
-                  <span class="toggle-label"><b>Otros</b></span>
-                </label>
-            
-               
-
-         </td>
-                   
-			   </td>
-         <td>
-         
-                <div id="fade" class="fadeIn">
-                        <label for="obs"><b>Obs:</b> </label>
-                        <textarea class="" style='width: 200px; height: 10; font-size: 10px'  rows='1' cols='1' maxlength = '300' name="obs_otros" id="obs_otros" ></textarea>
-                        <label for="otros_afecta"><b>Afectó otras BD </b> </label>
-                        <input  name="otros_afecta" id="otros_afecta" type="checkbox"></input>
-                </div>
-                <br>
-                <div id="fade2" class="fadeIn">
-                        <label for="bd_afecta"><b>Afectó otras BD </b> </label>
-                        <input  name="bd_afecta" id="bd_afecta" type="checkbox"></input>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un estatus</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="incid_bd" name="incid_bd" onclick="fade2()">
+                            <label class="form-check-label" for="incid_bd">Incidencia BD</label>
+                        </div>
+                        
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="incid_otros" name="incid_otros" onclick="fade();fade3();">
+                            <label class="form-check-label" for="incid_otros">Incidencia Otros</label>
+                        </div>
+                    </div>
                 </div>
                 
-          
-          </td>
-          
-         <div style="padding: 0px 0px 0px 0px;">
-            <h6 id="clockDisplay" style="color: #1059d8; "></h6> 
-         </div>
-         <!--<img style="width:40px;height:40px" id="picture" src="{{=URL('download', args=pic)}}"></img>-->
-
-
-</tr>
-
-<div>
-  <!--rgb(64, 181, 225)-->
-<td class="div-1" colspan='3' style="background-color: #2181cb; #40b5e1; #4789fc; #3179f7; #1059d8; #40b5e1; xborder: 3px solid black"> 
-<!--<img style="text-align: right;" src="static/images/icon-docs.png">-->
-{{=A(
-                IMG(
-                    _src=URL(request.application,'static/images','marcapaginas.png'),
-                    _alt="Gestión de Actividades",
-                    _title="Gestión de  Actividades",          
-                    _class="click",
-                    _style="border:2;width:40px;height:50px"
-          
-                ),
-                _href=URL(r=request,c='default',f='list_actividades_sd',args=[])
-            )
-}}
-
-{{=A(
-                IMG(
-                    _src=URL(request.application,'static/images','contactos.png'),
-                    _alt="Bitácora de actividades",
-                    _title="Bitácora de actividades",          
-                    _class="click",
-                    _style="border:2;width:40px;height:40px",
-                    _id="boton-principal"
-          
-                ),
-                _href=URL(r=request,c='bitacora',f='bitacora_actividades_sd',args=[])
-            )
-}}
-
-{{=A(
-                IMG(
-                    _src=URL(request.application,'static/images','libro.png'),
-                    _alt="Subproyectos",
-                    _title="Subproyectos",          
-                    _class="click",
-                    _style="border:2;width:40px;height:40px"
-          
-                ),
-                _href=URL(r=request,c='subproyectos',f='crear_subproyectos',args=[])
-            )
-}}
-
-
-{{=A(
-          IMG( _src=URL(request.application,'static/images','basedatos.png'),
-          _alt="Click Nombre de Aplicación",
-          _title="Click Consulta BD/Appl", 
-          _onclick="jQuery('#bd').slideToggle();",              
-          _class="click",  
-          _style="color:blue; font-size: 12px; font-family: 'Rock Salt', cursive; caption-side: bottom; text-align: right;  letter-spacing: 0px; border:1; width:40px; height:40px; cursor: pointer;"))}}
-
-<button id="boton-principal" name="boton-principal" class="pushable" type="submit" value="Guardar" /> 
-<span class="front">
-<b>G</b>uardar 
-</span>
-</button>
-
-<button id="boton-limpiarx"   name="boton-limpiar"   class="pushable" type="reset"  /> 
-<span class="front">
-<b>L</b>impiar 
-</span>
-</button>
-
-</td>
+                <div id="fade" class="fadeIn mb-3" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label for="obs_otros" class="form-label">Observaciones</label>
+                            <textarea class="form-control" name="obs_otros" id="obs_otros" rows="1" maxlength="300"></textarea>
+                        </div>
+                        <div class="col-md-4 mt-4 pt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="otros_afecta" name="otros_afecta">
+                                <label class="form-check-label" for="otros_afecta">Afectó otras BD</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fade2" class="fadeIn mb-3" style="display:none;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="bd_afecta" name="bd_afecta">
+                        <label class="form-check-label" for="bd_afecta">Afectó otras BD</label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        {{=A(IMG(_src=URL(request.application,'static/images','marcapaginas.png'),
+                            _alt="Gestión de Actividades", _title="Gestión de Actividades",
+                            _class="click", _style="border:2;width:40px;height:50px"),
+                            _href=URL(r=request,c='default',f='list_actividades_sd',args=[]))}}
+                        
+                        {{=A(IMG(_src=URL(request.application,'static/images','contactos.png'),
+                            _alt="Bitácora de actividades", _title="Bitácora de actividades",
+                            _class="click", _style="border:2;width:40px;height:40px"),
+                            _href=URL(r=request,c='bitacora',f='bitacora_actividades_sd',args=[]))}}
+                        
+                        {{=A(IMG(_src=URL(request.application,'static/images','libro.png'),
+                            _alt="Subproyectos", _title="Subproyectos",
+                            _class="click", _style="border:2;width:40px;height:40px"),
+                            _href=URL(r=request,c='subproyectos',f='crear_subproyectos',args=[]))}}
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="bi bi-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 
-</table>
-</form>
-</div>
+
 
 
 <div  class="float-child" id="bd" style="text-decoration: bold; font-size: 12px; width: 100%; height: 250px; overflow-y: scroll; float: left;">
@@ -1165,6 +1069,7 @@ else if ( (fin.getDate() - inicio.getDate()) > 1) {
   document.getElementById("horas_extras").value = (horas).toFixed(2) ;
   return horas;
 }
+
 
 
 function calcula_diferencia(h1, h2){
