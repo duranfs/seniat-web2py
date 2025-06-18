@@ -261,8 +261,8 @@ def monitor_graf():
     
     # Verificar si hay registros recientes (menos de 1 minuto)
     # CORRECCIÓN: Usar db.bdmon para el select, no el datetime
-    registros_recientes = db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=2))) \
-                         .select(db.bdmon.id, limitby=(0, 1))
+    # registros_recientes = db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=2))) \
+    #                     .select(db.bdmon.id, limitby=(0, 1))
     #response.flash = 'recientes : ' + str(registros_recientes)
     # Solo actualizar si no hay registros recientes
     #if not registros_recientes:
