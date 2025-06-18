@@ -9515,20 +9515,28 @@ def horas_por_ambiente_mes_actual():
         mes_actual=ahora.strftime("%B %Y")
     )
 
-
 def horas_por_actividades():
     from datetime import datetime
     
-    # Obtener parámetros de fecha
-    ahora = datetime.now()
-    mes_actual = ahora.month
-    año_actual = ahora.year
+    # Obtener parámetros del formulario o usar valores por defecto
+    mes = request.vars.mes or datetime.now().month
+    año = request.vars.año or datetime.now().year
     
-    # Consulta SQL mejorada
+    try:
+        mes = int(mes)
+        año = int(año)
+    except:
+        mes = datetime.now().month
+        año = datetime.now().year
+    
+    # Validar rangos
+    mes = max(1, min(12, mes))
+    año = max(2000, min(2100, año))
+    
+    # Consulta SQL
     query = """
     SELECT 
         p.descri as proyecto,
-        a.fecha_inicio as fecha,
         SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas,
         COUNT(a.id) as cantidad_actividades
     FROM 
@@ -9536,63 +9544,45 @@ def horas_por_actividades():
     JOIN 
         proyectos p ON a.cod_proy = p.id
     WHERE
-        EXTRACT(MONTH FROM a.fecha_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
+        EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
+        AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
     GROUP BY 
-        p.descri, a.fecha_inicio
+        p.descri
     ORDER BY 
-        p.descri, fecha, total_horas DESC
-    """
+        total_horas DESC
+    """.format(mes=mes, año=año)
     
     registros = db.executesql(query, as_dict=True)
     
-    # Procesar datos para el gráfico y tablas
-    proyectos = sorted(list({r['proyecto'] for r in registros}))
-    fechas = sorted(list({r['fecha'] for r in registros}))
+    # Preparar datos
+    proyectos = [r['proyecto'] for r in registros]
+    horas = [float(r['total_horas']) for r in registros]
+    background_colors = [get_color_for_proyecto(p) for p in proyectos]
+    border_colors = [color.replace('0.7', '1') for color in background_colors]
     
-    # Diccionario de tipos de actividad (si no hay tabla específica)
-    TIPO_ACT = {
-        'P': 'Preventivo',
-        'R': 'Correctivo',
-        'M': 'Mantenimiento',
-        'V': 'Verificación',
-        'C': 'Control de Cambios',
-        'O': 'Otros'
-    }
+    # Generar lista de meses y años para el dropdown
+    meses = [
+        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), 
+        (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
+        (7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'),
+        (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+    ]
     
-    # Preparar datos para Chart.js (agrupado por proyecto)
-    datasets = []
-    for proyecto in proyectos:
-        data = []
-        for fecha in fechas:
-            horas = sum(r['total_horas'] for r in registros 
-                       if r['proyecto'] == proyecto and r['fecha'] == fecha)
-            data.append(float(horas))
-        
-        datasets.append({
-            'label': proyecto,
-            'data': data,
-            'backgroundColor': get_color_for_proyecto(proyecto),  # Color por proyecto
-    		'borderColor': get_color_for_proyecto(proyecto).replace('0.7', '1'),  # Borde más opaco
-    		'borderWidth': 1
-        })
-    
-    # Calcular totales por proyecto
-    totales_proyectos = {proyecto: 0 for proyecto in proyectos}
-    for r in registros:
-        totales_proyectos[r['proyecto']] += r['total_horas']
+    años = list(range(2020, datetime.now().year + 1))
     
     return dict(
         registros=registros,
         proyectos=proyectos,
-        fechas=fechas,
-        datasets=datasets,
-        mes_actual=ahora.strftime("%B %Y"),
-        TIPO_ACT=TIPO_ACT,
-        totales_proyectos=totales_proyectos,
-        total_general=sum(totales_proyectos.values())
+        horas=horas,
+        background_colors=background_colors,
+        border_colors=border_colors,
+        mes_actual=mes,
+        año_actual=año,
+        meses=meses,
+        años=años,
+        nombre_mes=next((m[1] for m in meses if m[0] == mes), ''),
+        total_general=sum(horas)
     )
-
 
 def get_color_for_proyecto(proyecto):
     # Asignar colores consistentes a cada proyecto basado en hash
