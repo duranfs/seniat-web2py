@@ -1,52 +1,130 @@
-{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
-{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
 {{extend 'layout.html'}}
 
-<link rel="stylesheet" href="static/jqwidgets/styles/jqx.base.css" type="text/css" />
-    <link rel="stylesheet" href="static/jqwidgets/styles/jqx.summer.css" type="text/css" />
-    <script type="text/javascript" src="static/scripts/jquery-1.11.1.min.js"></script>
-    <script type="text/javascript" src="static/jqwidgets/jqxcore.js"></script>
-    <script type="text/javascript" src="static/jqwidgets/jqxbuttons.js"></script>
-    <script type="text/javascript" src="static/jqwidgets/jqxscrollbar.js"></script>
-    <script type="text/javascript" src="static/jqwidgets/jqxtextarea.js"></script>
-    
-<script type="text/javascript">
-        $(document).ready(function () {
-            $('#jqxTextArea').jqxTextArea({ theme: 'summer', width: 250, height: 100, placeHolder: 'Enter a sentence...' });
-            $('#jqxTextArea').jqxTextArea('val', 'jQWidgets is a comprehensive and innovative widget library built on top of the jQuery JavaScript Library. It empowers developers to deliver professional, cross-browser compatible web applications, while significantly minimizing their development time. jQWidgets contains more than 60 UI widgets and is one of the fastest growing JavaScript UI frameworks on the Web.');
-        });
-    </script>
+<!-- Incluir Bootstrap 5 CSS -->
+<link href="{{=URL('static','css/bootstrap.min.css')}}" rel="stylesheet">
 
+<div class="container mt-4" style="margin-top: 80px !important;"> <!-- Ajuste de margen superior -->
+    <!-- Formulario de edición -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h1 class="h4 mb-0">Mi Wiki</h1>
+        </div>
+        
+        <div class="card-body">
+            {{=form.custom.begin}}
+            <div class="mb-3">
+                <!-- Barra de herramientas básica -->
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertText('**', '**')">
+                        <strong>Negrita</strong>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertText('*', '*')">
+                        <em>Itálica</em>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertText('[', '](url)')">
+                        Enlace
+                    </button>
+                </div>
+                
+                <!-- Área de texto principal -->
+                {{=form.custom.widget.body}}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            {{=form.custom.end}}
+        </div>
+    </div>
 
-<script>
-jQuery(document).ready(function(){
-   jQuery('.smarttable').dataTable();
-   {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
-});
-</script>
-
-
-
-<div id="jqxTextArea">
-{{=form}}
+    <!-- Listado de entradas existentes -->
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h2 class="h5 mb-0">Entradas Existentes</h2>
+        </div>
+        
+        <div class="card-body">
+            {{if not rows:}}
+            <div class="alert alert-info">No hay entradas aún.</div>
+            {{else:}}
+                {{for r in rows:}}
+                <div class="wiki-entry mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <a href="{{=URL('default','edit_learning',args=(request.args(0),r.id))}}" class="btn btn-sm btn-outline-secondary">
+                            Editar
+                        </a>
+                    </div>
+                    <div class="wiki-content">
+                        {{=MARKMIN(r.body)}}
+                    </div>
+                </div>
+                {{pass}}
+            {{pass}}
+        </div>
+    </div>
 </div>
 
+<!-- Incluir jQuery y Bootstrap JS -->
+<script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
+<script src="{{=URL('static','js/bootstrap.bundle.min.js')}}"></script>
+
+<style>
+/* Asegurar que el menú se mantenga encima */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+}
+
+/* Ajustar contenido para no quedar detrás del menú */
+body {
+    padding-top: 56px; /* Altura del navbar */
+}
+
+/* Estilos personalizados */
+.wiki-content {
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+
+.wiki-content pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+}
+
+textarea.form-control {
+    min-height: 300px;
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+</style>
+
 <script>
-jQuery('textarea').css({"width":"1200px", "font-size":"18px", "color":"black", "background-color":" #EECC84",  "height":"300px"});
-</script>
+// Función para insertar texto con formato
+function insertText(before, after) {
+    const textarea = document.querySelector('textarea');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    textarea.value = textarea.value.substring(0, start) + before + selectedText + after + textarea.value.substring(end);
+    
+    const newCursorPos = start + before.length;
+    textarea.selectionStart = newCursorPos;
+    textarea.selectionEnd = newCursorPos + selectedText.length;
+    textarea.focus();
+}
 
-<b>Información Existente</b>
-<br>
-{{for r in rows:}}
-[{{=A('editar',_href=URL('default','edit_learning',args=(request.args(0),r.id)))}}]
-
-{{=MARKMIN(r.body)}}
-
-<hr/>
-{{pass}}
-
-<script type="text/javascript">
-    $(document).ready(function () {
-        $('#jqxTextArea').jqxTextArea({ theme: 'summer', width: 250, height: 100, placeHolder: 'Enter a sentence...' });
-    });
+// Configuración inicial al cargar la página
+jQuery(document).ready(function() {
+    // Aplicar clases de Bootstrap al textarea
+    jQuery('textarea').addClass('form-control');
+    
+    // Ocultar el formulario si no hay errores
+    {{if form and not form.errors:}}jQuery('#form').hide();{{pass}}
+    
+    // Asegurar que el menú funcione correctamente
+    jQuery('.dropdown-toggle').dropdown();
+});
 </script>
