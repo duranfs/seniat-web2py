@@ -57,6 +57,7 @@
                                 <tr>
                                     <th>Proyecto</th>
                                     <th class="text-right">Horas</th>
+                                    <th class="text-center">Cantidad</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,6 +68,7 @@
                                         {{=proyecto}}
                                     </td>
                                     <td class="text-right">{{=format(horas[i], '.2f')}}</td>
+                                    <td class="text-center">{{=format(int(cant_actividades[i]), 'd') }}</td>
                                 </tr>
                             {{pass}}
                             </tbody>

@@ -9569,7 +9569,7 @@ def horas_por_actividades():
     ]
     
     años = list(range(2020, datetime.now().year + 1))
-    
+    cant_actividades = [float(r['cantidad_actividades']) for r in registros]
     return dict(
         registros=registros,
         proyectos=proyectos,
@@ -9580,6 +9580,7 @@ def horas_por_actividades():
         año_actual=año,
         meses=meses,
         años=años,
+		cant_actividades=cant_actividades,
         nombre_mes=next((m[1] for m in meses if m[0] == mes), ''),
         total_general=sum(horas)
     )
