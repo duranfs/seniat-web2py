@@ -3443,7 +3443,7 @@ def editar_actividades4():
 	#	form=crud.read(db.actividades_sd, actividad.id )
 
 	#form=crud.update(db.actividades_sd, actividad_reg.id, next=url('crear_actividades_sd'))
-	return 	locals()
+	return 	form
 
 
 def valida_actividad():
