@@ -4,7 +4,7 @@ def bitacora_actividades_sd():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
 	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#bitacora').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	oTable = $('#bitacora_actividades_sd').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
 	#actividad =  request.vars.get('actividad')
 	me = auth.user_id	
@@ -317,7 +317,7 @@ def list_subactividades_sd():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
 	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#subactividades').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	oTable = $('#list_subactividades_sd').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
 	return dict(form=form, rows=rows, script=script)
 

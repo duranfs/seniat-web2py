@@ -17,12 +17,38 @@ $(document).ready(function() {
     display: none;
 }
 
-.miDiv
-{
-	display: inline-block;
-}
+<style type="text/css">
+    /* Estilos personalizados */
+    .texto {
+        font-size: 12px; 
+        text-align: center;
+        vertical-align: middle;
+    }
+    .color {
+        font-size: 12px; 
+        color: red;
+        font-weight: bold;
+    }
+    .dataTables_wrapper {
+        margin-top: 10px;
+    }
+    #subactividades {
+        width: 100% !important;
+    }
+    .table-header {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    .edit-icon {
+        width: 15px;
+        height: 15px;
+        border: 0;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>
 
-}
 
 </style>
 	<legend>
@@ -32,93 +58,70 @@ $(document).ready(function() {
 
 <br/>
 
-<div class="row miDiv"  >
-<table id='bitacora' style = "width: 100%" class="table-bordered table-striped " border="1px">
-	<col style="width: 5%;"></col>
-	<col style="width: 2%;"></col>
-	<col style="width: 5%;"></col>
-	<col style="width: 10%;"></col>
-	<col style="width: 10%;"></col>
-	<col style="width: 5%;"></col>
-	<col style="width: 5%;"></col>
-	<col style="width: 20%;"></col>
-	<col style="width: 6%;"></col>
-	<col style="width: 5%;"></col>
-	<col style="width: 5%;"></col>
-	<col style="width: 3%;"></col>
-	<col style="width: 3%;"></col>
-	
-
-<thead>
-    <tr>
-    <th>Consultor</th>
-    <th>ID</th>
-	<th>Ambiente</th>
-	<th>Proyecto</th>
-	<th>Subproyecto</th>
-	<th>Servidor</th>
-	<th>BD</th>
-	<th>Actividad</th>
-	<th>Fecha</th>
-	<th>Tipo</th>
-	<th>Status</th>
-	<th colspan="2">Accion</th>
-    </tr>    
-</thead>
-<tbody>
-{{for datos in rows:}}
-
-{{des_tipo='REMOTO'}}
-{{if datos.tipo=='P':
-	des_tipo='PRESENCIAL'
-}}
-{{pass}}
-
-<tr>
-<td>{{=datos.analista.first_name+' '+datos.analista.last_name}}</td>
-<td>{{=datos.id}}</td>
-<td>{{=datos.ambiente_id.descri}}</td>
-<td>{{=datos.cod_proy.descri}}</td>
-<td>{{=datos.cod_subp.descri}}</td>
-<td>{{=datos.cod_servidor.nombre}}</td>
-<td>{{=ds_bd(datos.cod_bd)}}</td>
-<td>{{=datos.descripcion}}</td>
-<td>{{=datos.fecha_inicio}}</td>
-<td>{{=des_tipo}}</td>
-<td>{{=datos.completado}}</td>
-{{=
-TD(A(
-                IMG(
-                    _src=URL(request.application,'static/images','agregar-actividad.jpg'),
-                    _alt="Agregar",
-					_title="Agregar subactividad",					
-                    _class="click imagenes",
-                    _style="border:2;width:40px;height:40px"
-                ),
-               _href=URL(r=request,c='bitacora',f='agregar_subactividad',vars=dict(actividad_id=datos.id,proyecto=datos.cod_proy.descri, 
-               subproyecto=datos.cod_subp.descri, desc=datos.descripcion)) 
-            ),
-
-TD(A(
-                IMG(
-                    _src=URL(request.application,'static/images','cerrar-actividad.jpg'),
-                    _alt="Cerrar",
-					_title="Cerrar actividad",					
-                    _class="click imagenes",
-					_id='cerrar',
-					_style="border:2;width:40px;height:40px",
-					_onclick="validax();"	
-                ),
-                _href=URL(r=request,c='bitacora',f='status_actividad',vars=dict(actividad_id=datos.id, st='CERRADA'))
-            )),
-
-)}}
-</tr>
-{{pass}}
-</tbody>
-</table>
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table id="bitacora_actividades_sd" class="table table-bordered table-striped">
+                <thead>
+                    <tr class="table-header">
+                        <th>Consultor</th>
+                        <th>ID</th>
+                        <th>Ambiente</th>
+                        <th>Proyecto</th>
+                        <th>Subproyecto</th>
+                        <th>Servidor</th>
+                        <th>BD</th>
+                        <th>Actividad</th>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th colspan="2">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{for datos in rows:}}
+                        {{des_tipo='REMOTO'}}
+                        {{if datos.tipo=='P': des_tipo='PRESENCIAL'}}
+                        
+                        {{status_class='status-pending'}}
+                        {{if datos.completado=='COMPLETADO': status_class='status-completed'}}
+                        
+                        <tr>
+                            <td>{{=datos.analista.first_name+' '+datos.analista.last_name}}</td>
+                            <td>{{=datos.id}}</td>
+                            <td>{{=datos.ambiente_id.descri}}</td>
+                            <td>{{=datos.cod_proy.descri}}</td>
+                            <td>{{=datos.cod_subp.descri}}</td>
+                            <td>{{=datos.cod_servidor.nombre}}</td>
+                            <td>{{=ds_bd(datos.cod_bd)}}</td>
+                            <td>{{=datos.descripcion}}</td>
+                            <td>{{=datos.fecha_inicio}}</td>
+                            <td>{{=des_tipo}}</td>
+                            <td class="{{=status_class}}">{{=datos.completado}}</td>
+                            <td>
+                                <a href="{{=URL('bitacora','agregar_subactividad', vars=dict(actividad_id=datos.id, proyecto=datos.cod_proy.descri, subproyecto=datos.cod_subp.descri, desc=datos.descripcion))}}" 
+                                   title="Agregar subactividad">
+                                    <img src="{{=URL('static','images/agregar-actividad.jpg')}}" 
+                                         class="action-icon" 
+                                         alt="Agregar">
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{=URL('bitacora','status_actividad', vars=dict(actividad_id=datos.id, st='CERRADA'))}}" 
+                                   title="Cerrar actividad" 
+                                   onclick="return confirm('¿Está seguro de cerrar la actividad?');">
+                                    <img src="{{=URL('static','images/cerrar-actividad.jpg')}}" 
+                                         class="action-icon" 
+                                         alt="Cerrar">
+                                </a>
+                            </td>
+                        </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
 
 <script type="text/javascript">
 function valida(){

@@ -3231,7 +3231,7 @@ def list_actividades_sd():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
 	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#actividades').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	oTable = $('#list_actividades_sd').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
 	session.flash='Bienvenido'
 	return dict(form=form, rows=rows, script=script)
