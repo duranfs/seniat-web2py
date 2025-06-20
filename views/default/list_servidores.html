@@ -12,10 +12,10 @@ body {
 }
 
 .container {
-  max-width: 95%;
+  max-width: 90%;
   margin: 20px auto;
   padding: 20px;
-  background-color: white;
+  background-color: rgb(208, 216, 230);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
@@ -70,13 +70,18 @@ body {
 
 /* Tabla de servidores */
 .table-container {
+   width: 100%;
   overflow-x: auto;
 }
 
 #list_servidores {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  min-width: 1400px;
+}
+
+#list_servidores th, #list_servidores td {
+  padding: 8px 12px;
+  border: 0px solid #ddd;
 }
 
 #list_servidores thead th {
@@ -225,31 +230,6 @@ body {
 {{=script}}
 
 <script>
-$(document).ready(function() { 
-   // Verificar si DataTable ya está inicializado
-   if (!$.fn.DataTable.isDataTable('#list_servidores')) {
-     $('#list_servidores').DataTable({
-       "language": {
-         "lengthMenu": "Mostrar _MENU_ registros por página",
-         "zeroRecords": "No se encontraron resultados",
-         "info": "Mostrando página _PAGE_ de _PAGES_",
-         "infoEmpty": "No hay registros disponibles",
-         "infoFiltered": "(filtrado de _MAX_ registros totales)",
-         "search": "Buscar:",
-         "paginate": {
-           "first": "Primero",
-           "last": "Último",
-           "next": "Siguiente",
-           "previous": "Anterior"
-         }
-       },
-       "responsive": true
-     });
-   }
-   
-   {{if not form.errors:}}jQuery('#form').hide();{{pass}}
-   jQuery('#tab1').hide();
-});
 
 function toggleForm() {
   jQuery('#form').slideToggle();
