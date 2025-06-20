@@ -725,101 +725,102 @@ def prueba_9i():
 
 @auth.requires_login()
 def asignar_rutinas():
-    """
-    Asigna rutinas de monitoreo a servidores - Versión compatible con Web2py 3.12+
-    """
-    # Cachear consultas de servidores y rutinas (válido por 1 hora)
-    cache_key = f"asignar_rutinas_data_{request.now}"
-    cached_data = cache.ram(cache_key, lambda: None, time_expire=100)
-    
-    if cached_data is None:
-        # Consulta optimizada para servidores
-        servidores = db((db.servidores.id > 0) & 
-                       (db.servidores.status_mon == 'SI')).select(
-                       orderby=db.servidores.nombre,
-                       cache=(cache.ram, 100))
-        
-        # Consulta optimizada para rutinas
-        rutinas = db(db.rutinas.id > 0).select(
-                  orderby=db.rutinas.nombre,
-                  cache=(cache.ram, 100))
-        cached_data = (servidores, rutinas)
-    else:
-        servidores, rutinas = cached_data
-    
-    # Procesamiento de parámetros
-    servidores_seleccionados = []
-    if request.vars.servidores:
-        servidores_seleccionados = request.vars.servidores
-        if not isinstance(servidores_seleccionados, list):
-            servidores_seleccionados = [servidores_seleccionados]
-    
-    # Precarga de rutinas asignadas
-    rutinas_asignadas = []
-    if len(servidores_seleccionados) == 1:
-        try:
-            servidor_id = int(servidores_seleccionados[0])
-            rutinas_asignadas = [str(r.rutina) for r in 
-                               db(db.rutina_status.servidor_id == servidor_id).select(
-                               cache=(cache.ram, 100))]
-        except ValueError:
-            pass
-    
-    # Procesamiento de asignaciones
-    if request.vars.rutinas and servidores_seleccionados:
-        rutinas_seleccionadas = request.vars.rutinas
-        if isinstance(rutinas_seleccionadas, str):
-            rutinas_seleccionadas = [rutinas_seleccionadas]
-        
-        try:
-            # Validación y conversión de IDs
-            serv_ids = [int(sid) for sid in servidores_seleccionados if sid.isdigit()]
-            rutina_ids = [int(rid) for rid in rutinas_seleccionadas if rid.isdigit()]
-            
-            if len(serv_ids) != len(servidores_seleccionados) or len(rutina_ids) != len(rutinas_seleccionadas):
-                raise ValueError("IDs no válidos detectados")
-            
-            # Verificación de existencia
-            if db(db.servidores.id.belongs(serv_ids)).count() != len(serv_ids):
-                raise ValueError("Algunos servidores no existen")
-                
-            if db(db.rutinas.id.belongs(rutina_ids)).count() != len(rutina_ids):
-                raise ValueError("Algunas rutinas no existen")
-            
-            # Transacción atómica
-            db.commit()  # Cerrar transacciones pendientes
-            
-            try:
-                for servidor_id in serv_ids:
-                    db(db.rutina_status.servidor_id == servidor_id).delete()
-                    db.rutina_status.bulk_insert([
-                        {'servidor_id': servidor_id, 'rutina': rutina_id}
-                        for rutina_id in rutina_ids
-                    ])
-                
-                db.commit()
-                response.flash = 'Rutinas asignadas correctamente'
-                
-                # Invalidar caché
-                cache.ram.clear(regex='^asignar_rutinas_data_.*')
-                
-                # Llamada a guarda_log_bdmon() sin scheduler
-                guarda_log_bdmon()
-                
-            except Exception as e:
-                db.rollback()
-                raise HTTP(500, f"Error en asignación: {str(e)}")
-                
-        except ValueError as ve:
-            raise HTTP(400, str(ve))
-    
-    return dict(
-        servidores=servidores,
-        rutinas=rutinas,
-        rutinas_asignadas=rutinas_asignadas,
-        servidores_seleccionados=servidores_seleccionados
-    )
-
+	"""
+	Asigna rutinas de monitoreo a servidores - Versión compatible con Web2py 3.12+
+	"""
+	# Cachear consultas de servidores y rutinas (válido por 1 hora)
+	cache_key = f"asignar_rutinas_data_{request.now}"
+	cached_data = cache.ram(cache_key, lambda: None, time_expire=100)
+	
+	if cached_data is None:
+		# Consulta optimizada para servidores
+		servidores = db((db.servidores.id > 0) & 
+					   (db.servidores.status_mon == 'SI')).select(
+					   orderby=db.servidores.nombre,
+					   cache=(cache.ram, 100))
+		
+		# Consulta optimizada para rutinas
+		rutinas = db(db.rutinas.id > 0).select(
+				  orderby=db.rutinas.nombre,
+				  cache=(cache.ram, 100))
+		cached_data = (servidores, rutinas)
+	else:
+		servidores, rutinas = cached_data
+	
+	# Procesamiento de parámetros
+	servidores_seleccionados = []
+	if request.vars.servidores:
+		servidores_seleccionados = request.vars.servidores
+		if not isinstance(servidores_seleccionados, list):
+			servidores_seleccionados = [servidores_seleccionados]
+	
+	# Precarga de rutinas asignadas
+	rutinas_asignadas = []
+	if len(servidores_seleccionados) == 1:
+		try:
+			servidor_id = int(servidores_seleccionados[0])
+			rutinas_asignadas = [str(r.rutina) for r in 
+							   db(db.rutina_status.servidor_id == servidor_id).select(
+							   cache=(cache.ram, 100))]
+		except ValueError:
+			pass
+	
+	# Procesamiento de asignaciones
+	if request.vars.rutinas and servidores_seleccionados:
+		rutinas_seleccionadas = request.vars.rutinas
+		if isinstance(rutinas_seleccionadas, str):
+			rutinas_seleccionadas = [rutinas_seleccionadas]
+		
+		try:
+			# Validación y conversión de IDs
+			serv_ids = [int(sid) for sid in servidores_seleccionados if sid.isdigit()]
+			rutina_ids = [int(rid) for rid in rutinas_seleccionadas if rid.isdigit()]
+			
+			if len(serv_ids) != len(servidores_seleccionados) or len(rutina_ids) != len(rutinas_seleccionadas):
+				raise ValueError("IDs no válidos detectados")
+			
+			# Verificación de existencia
+			if db(db.servidores.id.belongs(serv_ids)).count() != len(serv_ids):
+				raise ValueError("Algunos servidores no existen")
+				
+			if db(db.rutinas.id.belongs(rutina_ids)).count() != len(rutina_ids):
+				raise ValueError("Algunas rutinas no existen")
+			
+			# Transacción atómica
+			db.commit()  # Cerrar transacciones pendientes
+			
+			try:
+				for servidor_id in serv_ids:
+					db(db.rutina_status.servidor_id == servidor_id).delete()
+					tipobd = db(db.basedatos.servidor == servidor_id).select().first()
+					if tipobd:
+						db.rutina_status.bulk_insert([
+        					{'servidor_id': servidor_id, 'rutina': rutina_id, 'tipobd_id': tipobd.tipobd_id}
+        					for rutina_id in rutina_ids
+    					])
+				
+				db.commit()
+				response.flash = 'Rutinas asignadas correctamente'
+				
+				# Invalidar caché
+				cache.ram.clear(regex='^asignar_rutinas_data_.*')
+				
+				# Llamada a guarda_log_bdmon() sin scheduler
+				guarda_log_bdmon()
+				
+			except Exception as e:
+				db.rollback()
+				raise HTTP(500, f"Error en asignación: {str(e)}")
+				
+		except ValueError as ve:
+			raise HTTP(400, str(ve))
+	
+	return dict(
+		servidores=servidores,
+		rutinas=rutinas,
+		rutinas_asignadas=rutinas_asignadas,
+		servidores_seleccionados=servidores_seleccionados
+	)
 
 def guarda_log_bdmon():
     from datetime import datetime
