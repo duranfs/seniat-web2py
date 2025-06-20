@@ -316,6 +316,12 @@
     padding: 2px 5px;
     border-radius: 3px;
     }
+     .db-version-11 {
+    background-color: #d12525; /* rojo */
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    }
     </style>
 </head>
 <body>
@@ -385,9 +391,11 @@
             <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
                 <div class="instancia-header">
                     {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }}<br>
-                    <span class="{{='db-version-19' if '19' in version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri else ''}}">
-                    ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
+                 
+                    <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
+                        ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
                     </span>
+
                 </div>
                 <div class="acciones">
                     {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
