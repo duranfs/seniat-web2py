@@ -283,14 +283,12 @@ import traceback
 import logging
 import threading
 
-def execute_single_monitor(m, db, get_oracle_connection):
-    """Versión mejorada manteniendo la conexión Oracle original"""
+def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connection):
+    """Versión final adaptada para múltiples tipos de bases de datos"""
     try:
-        # 1. Inicialización y logging mejorado
         thread_id = threading.current_thread().ident
         logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo: {m.tx_instancia}@{m.tx_servidor}")
         
-        # 2. Obtener información del servidor con manejo de errores
         try:
             servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
             if not servidor:
@@ -304,14 +302,13 @@ def execute_single_monitor(m, db, get_oracle_connection):
             update_monitor_record(db, m, None, error_msg, False)
             return m.id, error_msg, False
 
-        # 3. Configurar parámetros de conexión
-        dominio = servidor.dominio.lower() if servidor.dominio else ""
-        service_name = f"{m.tx_instancia}.{dominio}" if dominio else m.tx_instancia
-        
+        # Obtener información completa de la base de datos
         try:
             bdatos = db((db.basedatos.servidor == servidor.id) & 
                        (db.basedatos.nombre == m.tx_instancia)).select(
-                       db.basedatos.puerto, db.basedatos.version_id).first()
+                       db.basedatos.puerto, 
+                       db.basedatos.version_id,
+                       db.basedatos.tipobd_id).first()
             
             if not bdatos:
                 error_msg = f"Base de datos no encontrada: {m.tx_instancia}"
@@ -324,28 +321,25 @@ def execute_single_monitor(m, db, get_oracle_connection):
             update_monitor_record(db, m, None, error_msg, False)
             return m.id, error_msg, False
 
-        # 4. Procesar versión (manteniendo tu lógica original)
-        ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
-        ver = int(ver_str) if ver_str.isdigit() else 0
+        # Obtener tipo de base de datos
+        tipo_bd = db(db.tipobd.id == bdatos.tipobd_id).select(db.tipobd.descri).first()
+        if not tipo_bd:
+            error_msg = f"Tipo de base de datos no definido para: {m.tx_instancia}"
+            logging.error(f"[THREAD-{thread_id}] {error_msg}")
+            update_monitor_record(db, m, None, error_msg, False)
+            return m.id, error_msg, False
+
+        tipo_bd = tipo_bd.descri.strip().upper()
         
-        # 5. Ejecutar consulta Oracle (usando tu función original sin cambios)
         resultado = None
         mensaje = ""
         success = False
         connection = None
         cursor = None
-        rutina = None
+        rutina = m.tx_rutina
         
         try:
-            logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
-            
-            # USO DE TU FUNCIÓN ORIGINAL get_oracle_connection SIN MODIFICACIONES
-            connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
-            cursor = connection.cursor()
-            
-            # Validación de comando SQL mejorada
             comando = (m.tx_comando or "").strip()
-            rutina = m.tx_rutina
             if not comando:
                 raise ValueError("Comando SQL vacío o nulo")
                 
@@ -353,18 +347,68 @@ def execute_single_monitor(m, db, get_oracle_connection):
                 raise ValueError("Comando SQL con comillas sin cerrar")
                 
             comando = comando.rstrip(';')
-            logging.info(f"[THREAD-{thread_id}] Ejecutando comando en {service_name}")
             
-            # Ejecución de consulta
+            # Conexión según tipo de base de datos
+            if tipo_bd in ['ORACLE', 'CONTENEDOR ORACLE']:
+                # Configuración específica para Oracle
+                dominio = servidor.dominio.lower() if servidor.dominio else ""
+                service_name = f"{m.tx_instancia}.{dominio}" if dominio else m.tx_instancia
+                ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
+                ver = int(ver_str) if ver_str.isdigit() else 0
+                
+                logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
+                connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
+                cursor = connection.cursor()
+                
+            elif tipo_bd == 'MSSQLSERVER':
+                # Configuración específica para SQL Server
+                logging.info(f"[THREAD-{thread_id}] Conectando a SQL Server: {servidor.ip}:{bdatos.puerto}/{m.tx_instancia}")
+                connection = get_sqlserver_connection(
+                    servidor=servidor.ip,
+                    base_datos=m.tx_instancia,
+                    puerto=bdatos.puerto,
+                    controlador='ODBC Driver 17 for SQL Server'
+                )
+                cursor = connection.cursor()
+                
+            elif tipo_bd in ['POSTGRESQL', 'DOCKER-KUBERNETES-PGSQL']:
+                # Configuración para PostgreSQL (requiere implementación)
+                error_msg = f"Conexión PostgreSQL no implementada aún para: {m.tx_instancia}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+                
+            elif tipo_bd in ['MYSQL', 'MARIADB', 'DOCKER-KUBERNETES-MYSQL']:
+                # Configuración para MySQL/MariaDB (requiere implementación)
+                error_msg = f"Conexión MySQL/MariaDB no implementada aún para: {m.tx_instancia}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+                
+            elif tipo_bd == 'MONGODB':
+                # Configuración para MongoDB (requiere implementación)
+                error_msg = f"Conexión MongoDB no implementada aún para: {m.tx_instancia}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+                
+            else:
+                error_msg = f"Tipo de base de datos no soportado: {tipo_bd}"
+                logging.error(f"[THREAD-{thread_id}] {error_msg}")
+                update_monitor_record(db, m, None, error_msg, False)
+                return m.id, error_msg, False
+                
+            # Ejecución del comando (común para todos los tipos)
+            logging.info(f"[THREAD-{thread_id}] Ejecutando comando en {m.tx_instancia} ({tipo_bd})")
             cursor.execute(comando)
             
-            # Procesamiento de resultados con manejo específico
+            # Procesamiento de resultados
             try:
                 raw_result = cursor.fetchone()
                 if raw_result:
                     resultado = raw_result[0] if len(raw_result) == 1 else raw_result
                     if isinstance(resultado, (int, float)) and resultado == 0:
-                        mensaje = f"Advertencia: Resultado cero en {service_name}"
+                        mensaje = f"Advertencia: Resultado cero en {m.tx_instancia}"
                     else:
                         mensaje = f"Éxito - Resultado: {resultado}"
                 else:
@@ -375,13 +419,8 @@ def execute_single_monitor(m, db, get_oracle_connection):
                 mensaje = f"Error al obtener resultados: {str(fetch_error)}"
                 logging.warning(f"[THREAD-{thread_id}] {mensaje}")
                 
-        except cx_Oracle.DatabaseError as ora_error:
-            error_obj, = ora_error.args
-            mensaje = f"Error Oracle [{error_obj.code}]: {servidor.ip} {rutina} {service_name}  {error_obj.message}"
-            logging.error(f"[THREAD-{thread_id}] {mensaje}")
-            
-        except Exception as e:
-            mensaje = f"Error de conexión/consulta: {servidor.ip} {rutina} {service_name} -  {str(e)}"
+        except Exception as db_error:
+            mensaje = f"Error de {tipo_bd}: {servidor.ip} {rutina} {m.tx_instancia} - {str(db_error)}"
             logging.error(f"[THREAD-{thread_id}] {mensaje}")
             
         finally:
@@ -393,7 +432,7 @@ def execute_single_monitor(m, db, get_oracle_connection):
                     except Exception as close_error:
                         logging.warning(f"[THREAD-{thread_id}] Error al cerrar recurso: {str(close_error)}")
         
-        # 6. Actualización final con verificación
+        # Actualización de resultados
         try:
             update_monitor_record(db, m, resultado, mensaje, success)
         except Exception as update_error:
@@ -410,6 +449,55 @@ def execute_single_monitor(m, db, get_oracle_connection):
         except:
             pass
         return m.id, error_msg, False
+
+def actualizar_y_mostrar_monitor_parallel():
+    """Función principal para monitoreo paralelo multi-BD"""
+    logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
+    
+    monitoreos = db(db.bdmon).select()
+    
+    conexiones_exitosas = 0
+    conexiones_fallidas = 0
+    resultados = {}
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {
+            executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection): m
+            for m in monitoreos
+        }
+        
+        for future in as_completed(futures):
+            m = futures[future]
+            try:
+                m_id, mensaje, success = future.result()
+                logging.info(f"[MAIN] Resultado para {m.tx_instancia} ({m.id}): {mensaje[:100]}...")
+                if success:
+                    conexiones_exitosas += 1
+                else:
+                    conexiones_fallidas += 1
+                resultados[m_id] = mensaje
+            except Exception as e:
+                conexiones_fallidas += 1
+                resultados[m.id] = f"Error inesperado: {str(e)}"
+                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}\n{traceback.format_exc()}")
+    
+    # Generar reporte resumen por tipo de BD
+    resumen = (
+        f"Proceso completado. Total: {len(monitoreos)}, "
+        f"Exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
+    )
+    
+    # Ordenar mensajes por ID de monitor
+    mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
+    mensajes_ordenados.insert(0, resumen)
+    logging.info(f"[MAIN] {resumen}")
+    
+    return dict(
+        mensajes=mensajes_ordenados,
+        resumen=resumen,
+        exitosas=conexiones_exitosas,
+        fallidas=conexiones_fallidas
+    )
 
 def update_monitor_record(db, monitor, resultado, mensaje, success):
     """Función mejorada con caché inteligente y manejo robusto de errores"""
@@ -465,49 +553,7 @@ def update_monitor_record(db, monitor, resultado, mensaje, success):
         logging.error(f"[ERROR CRÍTICO] En update_monitor_record: {str(e)}\n{traceback.format_exc()}")
         raise
 
-def actualizar_y_mostrar_monitor_parallel():
-    """Función principal que ejecuta el monitoreo en paralelo (igual que tu versión pero con mejor logging)"""
-    logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
-    
-    # Obtener todos los monitoreos (igual que tu versión original)
-    monitoreos = db(db.bdmon).select()
-    
-    conexiones_exitosas = 0
-    conexiones_fallidas = 0
-    resultados = {}
-    
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {
-            executor.submit(execute_single_monitor, m, db, get_oracle_connection): m
-            for m in monitoreos
-        }
-        
-        for future in as_completed(futures):
-            m = futures[future]
-            try:
-                m_id, mensaje, success = future.result()
-                logging.info(f"[MAIN] Resultado para {m.tx_instancia}: {mensaje}")
-                if success:
-                    conexiones_exitosas += 1
-                else:
-                    conexiones_fallidas += 1
-                resultados[m_id] = mensaje
-            except Exception as e:
-                conexiones_fallidas += 1
-                resultados[m.id] = f"Error inesperado: {str(e)}"
-                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}\n{traceback.format_exc()}")
-    
-    mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
-    resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
-    mensajes_ordenados.insert(0, resumen)
-    logging.info(f"[MAIN] {resumen}")
-    
-    return dict(
-        mensajes=mensajes_ordenados,
-        resumen=resumen,
-        exitosas=conexiones_exitosas,
-        fallidas=conexiones_fallidas
-    )
+
 
 #------ en paralelo ------------------------------------------------------------------------
 
@@ -684,19 +730,19 @@ def asignar_rutinas():
     """
     # Cachear consultas de servidores y rutinas (válido por 1 hora)
     cache_key = f"asignar_rutinas_data_{request.now}"
-    cached_data = cache.ram(cache_key, lambda: None, time_expire=3600)
+    cached_data = cache.ram(cache_key, lambda: None, time_expire=100)
     
     if cached_data is None:
         # Consulta optimizada para servidores
         servidores = db((db.servidores.id > 0) & 
                        (db.servidores.status_mon == 'SI')).select(
                        orderby=db.servidores.nombre,
-                       cache=(cache.ram, 3600))
+                       cache=(cache.ram, 100))
         
         # Consulta optimizada para rutinas
         rutinas = db(db.rutinas.id > 0).select(
                   orderby=db.rutinas.nombre,
-                  cache=(cache.ram, 3600))
+                  cache=(cache.ram, 100))
         cached_data = (servidores, rutinas)
     else:
         servidores, rutinas = cached_data
@@ -715,7 +761,7 @@ def asignar_rutinas():
             servidor_id = int(servidores_seleccionados[0])
             rutinas_asignadas = [str(r.rutina) for r in 
                                db(db.rutina_status.servidor_id == servidor_id).select(
-                               cache=(cache.ram, 300))]
+                               cache=(cache.ram, 100))]
         except ValueError:
             pass
     
