@@ -272,7 +272,8 @@
                 <div class="db-name">{{=ping['nombre']}}</div>
                 
                 <div class="db-detail">
-                    <span class="db-detail-label">Aplicación:</span> {{=ping['aplicacion'].capitalize()}}
+                  <span class="db-detail-label">Aplicación:</span> 
+                        {{=ping['aplicacion'].capitalize() if ping['aplicacion'] else ''}}
                 </div>
                 
                 <div class="db-detail">
