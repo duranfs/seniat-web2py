@@ -756,7 +756,7 @@ def asignar_rutinas():
 	
 	# Precarga de rutinas asignadas
 	rutinas_asignadas = []
-	if len(servidores_seleccionados) == 1:
+	if len(servidores_seleccionados) >= 1:
 		try:
 			servidor_id = int(servidores_seleccionados[0])
 			rutinas_asignadas = [str(r.rutina) for r in 
@@ -814,7 +814,22 @@ def asignar_rutinas():
 				
 		except ValueError as ve:
 			raise HTTP(400, str(ve))
-	
+		
+	elif not request.vars.rutinas and servidores_seleccionados:
+		serv_ids = [int(sid) for sid in servidores_seleccionados if sid.isdigit()]
+		db.commit()  # Cerrar transacciones pendientes
+		try:
+				for servidor_id in serv_ids:
+					db(db.rutina_status.servidor_id == servidor_id).delete()
+				
+				db.commit()
+				response.flash = 'Rutinas eliminadas correctamente'
+				guarda_log_bdmon()
+		except Exception as e:
+				db.rollback()
+				raise HTTP(500, f"Error en eliminacion: {str(e)}")
+			
+			
 	return dict(
 		servidores=servidores,
 		rutinas=rutinas,
