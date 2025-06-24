@@ -383,9 +383,18 @@
                 </div>
             {{pass}}        
         </div>
-        {{ for servidor in agrupado[ambiente]: }}
-            {{ for instancia in agrupado[ambiente][servidor]: }}
-                {{ rutinas = agrupado[ambiente][servidor][instancia] }}
+        {{# Agrupar instancias por tipo de base de datos #}}
+        {{ tipobd_dict = dict() }}
+        {{ for servidor, instancias in agrupado[ambiente].items(): }}
+            {{ for instancia, rutinas in instancias.items(): }}
+                {{ tipobd = rutinas[0].tx_tipobd.upper() if rutinas and hasattr(rutinas[0], 'tx_tipobd') else 'OTRO' }}
+                {{ if tipobd not in tipobd_dict: tipobd_dict[tipobd] = [] }}
+                {{ tipobd_dict[tipobd].append((servidor, instancia, rutinas)) }}
+            {{ pass }}
+        {{ pass }}
+        {{ for tipobd, items in tipobd_dict.items(): }}
+            <div class="ambiente-title" style="font-size:18px; color:#666; border:none; margin-top:10px;">{{=tipobd}}</div>
+            {{ for servidor, instancia, rutinas in items: }}
                 {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
                 <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
                     <div class="instancia-header">
@@ -428,28 +437,28 @@
                     </table>
                 </div>
             {{ pass }}
-        {{ pass }}
-        {{# Mostrar recuadros de error para BDs no disponibles en este ambiente #}}
-        {{ if basedatos_mon: }}
-            {{ for bd in basedatos_mon: }}
-                {{ amb_bd = bd.ambiente_id.descri.lower() if hasattr(bd.ambiente_id, 'descri') else 'otros' }}
-                {{ servidor_bd = bd.servidor.nombre.upper() if hasattr(bd.servidor, 'nombre') else str(bd.servidor).upper() }}
-                {{ instancia_bd = bd.nombre.upper() }}
-                {{ if amb_bd == ambiente and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
-                    <div class="instancia-card alerta {{=ambiente}}">
-                        <div class="instancia-header">
-                            {{=instancia_bd}} ({{=servidor_bd}})<br>
-                            <span class="db-version-11">No disponible / No se puede conectar</span>
+            {{ if basedatos_mon: }}
+                {{ for bd in basedatos_mon: }}
+                    {{ amb_bd = bd.ambiente_id.descri.lower() if hasattr(bd.ambiente_id, 'descri') else 'otros' }}
+                    {{ servidor_bd = bd.servidor.nombre.upper() if hasattr(bd.servidor, 'nombre') else str(bd.servidor).upper() }}
+                    {{ instancia_bd = bd.nombre.upper() }}
+                    {{ tipobd_bd = bd.tipobd_id.descri.upper() if hasattr(bd.tipobd_id, 'descri') else 'OTRO' }}
+                    {{ if amb_bd == ambiente and tipobd_bd == tipobd and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
+                        <div class="instancia-card alerta {{=ambiente}}">
+                            <div class="instancia-header">
+                                {{=instancia_bd}} ({{=servidor_bd}})<br>
+                                <span class="db-version-11">No disponible / No se puede conectar</span>
+                            </div>
+                            <div class="acciones">
+                                <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
+                            </div>
+                            <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
                         </div>
-                        <div class="acciones">
-                            <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
-                        </div>
-                        <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
-                    </div>
+                    {{pass}}
                 {{pass}}
             {{pass}}
-        {{pass}}
-        {{# Fin recuadros de error #}}
+        {{ pass }}
+        {{# Fin agrupación por tipo de BD #}}
     </div>
     {{ pass }}
 {{ pass }}
