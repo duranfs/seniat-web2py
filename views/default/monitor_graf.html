@@ -349,7 +349,6 @@
 
 {{ from collections import defaultdict }}
 {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
-
 {{ for m in mon: }}
  {{
     if '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
@@ -364,8 +363,8 @@
         {{ "Problemas en la conexion" }}    
     {{ pass }}
 {{ pass }}
-
 {{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
+{{ mon_set = set((m.tx_servidor.upper(), m.tx_instancia.upper()) for m in mon) }}
 
 {{ for ambiente in orden_ambientes: }}
     {{ if ambiente in agrupado: }}
@@ -384,55 +383,73 @@
                 </div>
             {{pass}}        
         </div>
-        
-        {{ for servidor, instancias in agrupado[ambiente].items(): }}
-            {{ for instancia, rutinas in instancias.items(): }}
-            {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
-            <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
-                <div class="instancia-header">
-                    {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }}<br>
-                 
-                    <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
-                        ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
-                    </span>
-
+        {{ for servidor in agrupado[ambiente]: }}
+            {{ for instancia in agrupado[ambiente][servidor]: }}
+                {{ rutinas = agrupado[ambiente][servidor][instancia] }}
+                {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
+                <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
+                    <div class="instancia-header">
+                        {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }}<br>
+                        <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
+                            ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
+                        </span>
+                    </div>
+                    <div class="acciones">
+                        {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
+                        {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
+                    </div>
+                    <table class="rutinas-table">
+                        <thead>
+                            <tr>
+                                <th>Rutina</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ for r in rutinas: }}
+                            <tr>
+                                <td>{{=r.tx_rutina.capitalize()}}</td>
+                                <td>
+                                    {{if r.tx_resultado == "OK":}}
+                                        <span class="tooltip">
+                                            <span style="text-align: center" class="resultado-ok">🟢</span>
+                                            <span class="tooltiptext">Estado: Correcto</span>
+                                        </span>
+                                    {{else:}}
+                                        <span class="tooltip">
+                                            <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
+                                            <span class="tooltiptext">Estado: Error o Alerta</span>
+                                        </span>
+                                    {{pass}}
+                                </td>
+                            </tr>
+                            {{ pass }}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="acciones">
-                    {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
-                    {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
-                </div>
-                 <table class="rutinas-table">
-                  <thead>
-                      <tr>
-                          <th>Rutina</th>
-                          <th>Estado</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      {{ for r in rutinas: }}
-                     
-                      <tr>
-                          <td>{{=r.tx_rutina.capitalize()}}</td>
-                          <td>
-                              {{if r.tx_resultado == "OK":}}
-                                  <span class="tooltip">
-                                      <span style="text-align: center" class="resultado-ok">🟢</span>
-                                      <span class="tooltiptext">Estado: Correcto</span>
-                                  </span>
-                              {{else:}}
-                                  <span class="tooltip">
-                                      <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
-                                      <span class="tooltiptext">Estado: Error o Alerta</span>
-                                  </span>
-                              {{pass}}
-                          </td>
-                      </tr>
-                      {{ pass }}
-                    </tbody>
-                 </table>
-            </div>
             {{ pass }}
         {{ pass }}
+        {{# Mostrar recuadros de error para BDs no disponibles en este ambiente #}}
+        {{ if basedatos_mon: }}
+            {{ for bd in basedatos_mon: }}
+                {{ amb_bd = bd.ambiente_id.descri.lower() if hasattr(bd.ambiente_id, 'descri') else 'otros' }}
+                {{ servidor_bd = bd.servidor.nombre.upper() if hasattr(bd.servidor, 'nombre') else str(bd.servidor).upper() }}
+                {{ instancia_bd = bd.nombre.upper() }}
+                {{ if amb_bd == ambiente and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
+                    <div class="instancia-card alerta {{=ambiente}}">
+                        <div class="instancia-header">
+                            {{=instancia_bd}} ({{=servidor_bd}})<br>
+                            <span class="db-version-11">No disponible / No se puede conectar</span>
+                        </div>
+                        <div class="acciones">
+                            <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
+                        </div>
+                        <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
+                    </div>
+                {{pass}}
+            {{pass}}
+        {{pass}}
+        {{# Fin recuadros de error #}}
     </div>
     {{ pass }}
 {{ pass }}

@@ -259,20 +259,22 @@ def monitor_graf():
     mensajes = None
     now = datetime.datetime.now()
     
-    # Verificar si hay registros recientes (menos de 1 minuto)
-    # CORRECCIÓN: Usar db.bdmon para el select, no el datetime
-    # registros_recientes = db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=2))) \
-    #                     .select(db.bdmon.id, limitby=(0, 1))
-    #response.flash = 'recientes : ' + str(registros_recientes)
-    # Solo actualizar si no hay registros recientes
-    #if not registros_recientes:
-    #actualizar_y_mostrar_monitor()
+    # Actualizar monitoreo en paralelo
     actualizar_y_mostrar_monitor_parallel()
     # Obtener los registros más recientes (del último minuto)
     mon = db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=2))) \
           .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
-    
-    return dict(mon=mon, mensajes=mensajes, ultima_actualizacion=now)
+    # Obtener la lista completa de bases de datos monitoreadas
+    basedatos_mon = db(db.basedatos.status_mon.upper() == 'SI').select(
+        db.basedatos.id,
+        db.basedatos.nombre,
+        db.basedatos.servidor,
+        db.basedatos.tipobd_id,
+        db.basedatos.version_id,
+        db.basedatos.puerto,
+        db.basedatos.ambiente_id
+    )
+    return dict(mon=mon, mensajes=mensajes, ultima_actualizacion=now, basedatos_mon=basedatos_mon)
 
 
 #------- en paralelo ------------------------------------------------------------------------
@@ -1068,6 +1070,7 @@ def createReport():
 	response.headers['Content-Disposition'] = 'attachment; filename=RepNovedades.pdf'
 	return data                                                             
 	
+
 
 def reportxxx():
 	response.title = "web2py sample report"
@@ -2163,10 +2166,10 @@ def asignacion():
 		if st.status == 'POR REALIZAR':
 			db(db.proyectos.id == proy).update(status = 'ASIGNADO')
 			db.commit()
-			response.flash = 'Primera asignacion al proyecto se realizÃ³ con Ã‰xito' 
+			response.flash = 'Primera asignacion al proyecto se realizó con Éxito' 
 		else :
 			analista=db.auth_user[formaOP.vars.analista]
-			response.flash = 'Se asignÃ³ ' + str(analista.first_name.upper()) + ' al proyecto ..' 
+			response.flash = 'Se asignó ' + str(analista.first_name.upper()) + ' al proyecto ..' 
 		
 	elif formaOP.errors:
 		import copy
@@ -3447,7 +3450,7 @@ def func_mac():
 		tablaHTML +="</tr>"
 		#total_horas = total_horas + atos.actividades.horas_laboradas;
 
-	
+
 	tablaHTML +="</tbody>"
 	tablaHTML +="<tfoot>"
 	tablaHTML +="<tr>"
@@ -6948,7 +6951,7 @@ def reporte_serv_pdf():
 		if "version" in buff:
 			pdf.cell(175*0.075, 2*th, "VersiÃ³n".encode("latin_1"), border=1,fill=True)
 		if "app" in buff:
-			pdf.cell(175*0.5, 2*th, "AplicaciÃ³n".encode("latin_1").decode("latin_1"), border=1,fill=True)
+			pdf.cell(175*0.5, 2*th, "AplicaciÃ³n".encode("utf-8").decode("utf-8"), border=1,fill=True)
 		if "responsable" in buff:
 			pdf.cell(175*0.17, 2*th, "Responsable", border=1,fill=True)
 		pdf.ln(2*th)
@@ -8379,7 +8382,7 @@ def list_actividades_solutor2():
 					wsa.write (row, 7, r.subactividades_sd.cod_proy.descri, texto)
 				else:
 					wsa.write (row, 7, ' ', texto)	
-	
+
 				if r.subactividades_sd.cod_subp >0:
 					wsa.write (row, 8, r.subactividades_sd.cod_subp.descri, texto)
 				else:
