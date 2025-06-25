@@ -2989,7 +2989,8 @@ def func_mac_sd():
         
         if mis_actividades_sd:
             tablaHTML = """
-            <table cellpadding='3' id='' style='max-width:100%; font-size: 12px;' class='table-bordered'>
+			   
+            <table cellpadding='3' id='' style='max-width:100%; font-size: 12px;' class='table-bordered table-striped'>
                 <col style='width:5%;'>
                 <col style='width:15%'>
                 <col style='width:20%'>
@@ -3001,7 +3002,7 @@ def func_mac_sd():
                 <col style='width:5%'>
                 <thead>
                     <tr style='background-color: #c1edd6;' rowspan='1'>
-                        <th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción de actividades</th>
+                        <th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción de actividades realizadas</th>
                         <th colspan='2' style='text-align: center;'>Fechas</th>
                         <th colspan='1' style='text-align: center;'>Total</th>
                         <th colspan='1' style='text-align: center;'>Extra</th>
@@ -3062,6 +3063,7 @@ def func_mac_sd():
                     </tr>
                 </tfoot>
             </table>
+			
             """
         
         # Consulta subactividades
