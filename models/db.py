@@ -4,7 +4,6 @@ is_timezone_unknown = (session.user_timezone is None)
 user_timezone = session.user_timezone or 'UTC' 
 
 
-
 # Fuerzo el idioma
 T.force('es')
 
@@ -34,6 +33,7 @@ if request.global_settings.web2py_version < "2.15.5":
 # -------------------------------------------------------------------------
 configuration = AppConfig(reload=True)
 
+
 if not request.env.web2py_runtime_gae:
     # ---------------------------------------------------------------------
     # if NOT running on Google App Engine use SQLite or other DB
@@ -42,7 +42,7 @@ if not request.env.web2py_runtime_gae:
              pool_size=configuration.get('db.pool_size'),
              migrate_enabled=configuration.get('db.migrate'),
              db_codec='utf-8',
-             check_reserved=['postgres']
+             check_reserved=['postgres'],
              )
 else:
     # ---------------------------------------------------------------------
