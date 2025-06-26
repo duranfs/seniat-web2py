@@ -1,0 +1,322 @@
+{{extend 'layout.html'}}
+
+<!-- 
+========================================
+DASHBOARD - VERSIÓN OPTIMIZADA
+========================================
+Este archivo usa el CSS común de SENIAT y
+el CSS modular de dashboard con recursos locales
+Se eliminó CSS duplicado (185 líneas → 25 líneas)
+-->
+
+<!-- Cargar CSS modular para dashboard -->
+<link rel="stylesheet" href="{{=URL('static','css/modules/dashboard.css')}}">
+
+<!-- Solo estilos específicos para esta instancia -->
+<style>
+/* Override específico para el refresh automático */
+.refresh-countdown {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Ajustes específicos para el grid de bases de datos */
+.db-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Estado específico para bases de datos offline */
+.db-card.offline {
+    border-left-color: var(--danger-color) !important;
+    animation: border-pulse 2s infinite;
+}
+</style>
+
+<body class="dashboard-body">
+
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando información de monitoreo...</div>
+    <div class="loading-details">Conectando con bases de datos...</div>
+</div>
+
+<div class="dashboard-container" id="content-container" style="display: none;">
+    <!-- Header del Dashboard -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Monitor de Infraestructura Base de Datos</h1>
+            <div class="dashboard-subtitle">Última actualización: {{=time}}</div>
+        </div>
+        
+        <div class="header-controls">
+            <div class="refresh-info">
+                <i class="fas fa-clock"></i>
+                <span>Próxima actualización en:</span>
+                <span id="countdown" class="refresh-countdown">2:00</span>
+            </div>
+            <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
+                <i class="fas fa-home"></i> Volver a Inicio
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen de Estadísticas -->
+    <div class="stats-summary">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div class="stat-title">Bases de Datos Monitoreadas</div>
+                <i class="fas fa-database stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=len(bases_datos)}}</div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div class="stat-title">Bases Activas</div>
+                <i class="fas fa-check-circle stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=sum(db['status'] for db in bases_datos)}}</div>
+        </div>
+        
+        <div class="stat-card danger">
+            <div class="stat-header">
+                <div class="stat-title">Bases Inactivas</div>
+                <i class="fas fa-times-circle stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=len(bases_datos) - sum(db['status'] for db in bases_datos)}}</div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div class="stat-title">Tiempo Resp. Promedio</div>
+                <i class="fas fa-stopwatch stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=round(sum(db['response_time'] for db in bases_datos if db['status']) / max(sum(db['status'] for db in bases_datos), 1), 1)}} ms</div>
+        </div>
+    </div>
+
+    <!-- Agrupación por Ambiente -->
+    {{ambientes = {}}}
+    {{for db in bases_datos:}}
+        {{ambiente = db['ambiente'].lower()}}
+        {{if ambiente not in ambientes:}}
+            {{ambientes[ambiente] = []}}
+        {{pass}}
+        {{ambientes[ambiente].append(db)}}
+    {{pass}}
+
+    {{for ambiente, dbs in ambientes.items():}}
+    <div class="ambiente-container">
+        <div class="ambiente-title {{=ambiente}}">
+            <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
+            <span class="ambiente-count">{{=len(dbs)}} instancias</span>
+        </div>
+        
+        <div class="instancias-grid">
+            {{for db in sorted(dbs, key=lambda x: x['nombre']):}}
+            <div class="instancia-card {{=ambiente}} {{='alerta' if not db['status'] else ''}}">
+                <div class="instancia-header">
+                    <div class="instancia-name">{{=db['nombre']}}</div>
+                    <div class="instancia-status {{='online' if db['status'] else 'offline'}}"></div>
+                </div>
+                
+                <div class="instancia-details">
+                    <div class="instancia-detail">
+                        <strong>Aplicación:</strong> {{=db['aplicacion'].capitalize() if db['aplicacion'] else 'N/A'}}
+                    </div>
+                    <div class="instancia-detail">
+                        <strong>Servidor:</strong> {{=db['servidor_id']['nombre'] if db['servidor_id'] else 'N/A'}}
+                    </div>
+                    <div class="instancia-detail">
+                        <strong>Tiempo Respuesta:</strong> 
+                        <span class="rutina-result {{='ok' if db['status'] else 'alerta'}}">
+                            {{=db['response_time']}} ms
+                        </span>
+                    </div>
+                </div>
+
+                <div class="rutinas-section">
+                    <div class="rutinas-title">Estado de Conexión</div>
+                    <div class="instancia-detail">
+                        <strong>TNS Entry:</strong> {{=db['tns_entry']}}
+                    </div>
+                    {{if db['output']:}}
+                    <div class="tooltip-dashboard">
+                        <small style="color: #666; cursor: help;">Ver detalles técnicos</small>
+                        <div class="tooltiptext">
+                            <pre style="font-size: 10px; text-align: left;">{{=db['output'][:200]}}{{='...' if len(db['output']) > 200 else ''}}</pre>
+                        </div>
+                    </div>
+                    {{pass}}
+                </div>
+
+                <div class="acciones-rapidas">
+                    <a href="{{=URL(r=request, c='default', f='view_basedatos', args=[db['id']])}}" class="accion-link">
+                        <i class="fas fa-eye"></i> Ver Detalle
+                    </a>
+                    <a href="{{=URL(r=request, c='default', f='monitor_basedatos', args=[db['id']])}}" class="accion-link">
+                        <i class="fas fa-chart-line"></i> Monitorear
+                    </a>
+                    {{if not db['status']:}}
+                    <a href="{{=URL(r=request, c='default', f='test_connection', args=[db['id']])}}" class="accion-link" style="background-color: #e74c3c; color: white;">
+                        <i class="fas fa-sync"></i> Reconectar
+                    </a>
+                    {{pass}}
+                </div>
+            </div>
+            {{pass}}
+        </div>
+    </div>
+    {{pass}}
+</div>
+
+<!-- JavaScript usando recursos locales -->
+<script>
+// Variables globales para el manejo de refresh
+const REFRESH_INTERVAL = 25; // 25 segundos según el meta refresh original
+let countdownTimer;
+let refreshTimer;
+
+// Función para actualizar la página
+function refreshPage() {
+    // Mostrar overlay de carga antes de recargar
+    document.getElementById('loading-overlay').style.display = 'flex';
+    setTimeout(() => {
+        location.reload(true);
+    }, 500);
+}
+
+// Función para actualizar el contador
+function updateCountdown() {
+    let countdown = REFRESH_INTERVAL;
+    const countdownElement = document.getElementById('countdown');
+    
+    // Limpiar timer existente si lo hay
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+    
+    // Actualizar el contador cada segundo
+    countdownTimer = setInterval(function() {
+        countdown--;
+        const minutes = Math.floor(countdown / 60);
+        const seconds = countdown % 60;
+        if (countdownElement) {
+            countdownElement.textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+        }
+        
+        if (countdown <= 0) {
+            refreshPage();
+        }
+    }, 1000);
+
+    // Programar el refresh
+    refreshTimer = setTimeout(refreshPage, REFRESH_INTERVAL * 1000);
+}
+
+// Función para mostrar el contenido cuando esté listo
+function showContent() {
+    const contentContainer = document.getElementById('content-container');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    if (contentContainer && loadingOverlay) {
+        // Simular tiempo de carga para efecto visual
+        setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+            contentContainer.style.display = 'block';
+            contentContainer.classList.add('fade-in');
+            
+            // Iniciar el countdown después de mostrar el contenido
+            updateCountdown();
+        }, 1000);
+    }
+}
+
+// Función para pausar auto-refresh al interactuar
+function pauseAutoRefresh() {
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+    }
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+    
+    // Reiniciar después de 10 segundos de inactividad
+    setTimeout(() => {
+        updateCountdown();
+    }, 10000);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    showContent();
+    
+    // Pausar auto-refresh cuando el usuario interactúa
+    const interactiveElements = document.querySelectorAll('.accion-link, .instancia-card, .exit-button');
+    interactiveElements.forEach(element => {
+        element.addEventListener('click', pauseAutoRefresh);
+        element.addEventListener('mouseover', function() {
+            // Pausar temporalmente el refresh al hacer hover en elementos importantes
+            if (this.classList.contains('instancia-card')) {
+                clearInterval(countdownTimer);
+            }
+        });
+        element.addEventListener('mouseout', function() {
+            // Reanudar el countdown
+            if (this.classList.contains('instancia-card')) {
+                updateCountdown();
+            }
+        });
+    });
+});
+
+// Manejar visibilidad de la página (pausar cuando no está visible)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(countdownTimer);
+        clearTimeout(refreshTimer);
+    } else {
+        updateCountdown();
+    }
+});
+
+// Función para añadir efectos visuales a las tarjetas
+function addCardEffects() {
+    const cards = document.querySelectorAll('.instancia-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+    });
+}
+
+// Aplicar efectos después de cargar
+setTimeout(addCardEffects, 1200);
+
+// Función para el manejo de errores de conexión
+function handleConnectionError(element) {
+    element.style.border = '2px solid #e74c3c';
+    element.style.animation = 'border-pulse 1s ease-in-out 3';
+}
+
+// Detectar tarjetas con errores y aplicar efectos
+document.addEventListener('DOMContentLoaded', function() {
+    const errorCards = document.querySelectorAll('.instancia-card.alerta');
+    errorCards.forEach(card => {
+        setTimeout(() => handleConnectionError(card), 1500);
+    });
+});
+</script>
+
+</body>
+</html>

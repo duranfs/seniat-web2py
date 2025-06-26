@@ -1,0 +1,658 @@
+/*
+ * ========================================
+ * SENIAT - SISTEMA DE GESTIÓN OPERATIVA
+ * CSS COMÚN PARA TODA LA APLICACIÓN
+ * ========================================
+ * 
+ * Este archivo contiene todos los estilos comunes
+ * que se repiten en múltiples vistas de la aplicación
+ * 
+ * Creado: 2025-06-26
+ * Versión: 1.0
+ */
+
+/* ========================================
+ * VARIABLES CSS (ROOT)
+ * ======================================== */
+:root {
+    /* Colores principales */
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #3498db;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --info-color: #17a2b8;
+    
+    /* Colores de texto */
+    --text-light: #ecf0f1;
+    --text-dark: #2c3e50;
+    --text-muted: #7f8c8d;
+    
+    /* Colores de fondo */
+    --bg-primary: #f5f7fa;
+    --bg-secondary: #f8f9fa;
+    --bg-container: rgb(208, 216, 230);
+    --bg-card: #ffffff;
+    
+    /* Espaciados */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 25px;
+    
+    /* Bordes y sombras */
+    --border-radius: 8px;
+    --border-radius-sm: 4px;
+    --border-radius-lg: 12px;
+    --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    --box-shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* ========================================
+ * ESTILOS GLOBALES
+ * ======================================== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    color: var(--text-dark);
+}
+
+/* ========================================
+ * CONTENEDORES PRINCIPALES
+ * ======================================== */
+.container {
+    max-width: 95%;
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-lg);
+    background-color: var(--bg-container);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.container-sm {
+    max-width: 80%;
+}
+
+.container-lg {
+    max-width: 98%;
+}
+
+/* ========================================
+ * ENCABEZADOS DE PÁGINA
+ * ======================================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid #e1e5eb;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: var(--spacing-xs);
+}
+
+/* ========================================
+ * BOTONES Y ACCIONES
+ * ======================================== */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-sm);
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+    background-color: rgba(255,255,255,0.1);
+}
+
+.action-button img {
+    width: 28px;
+    height: 28px;
+}
+
+.action-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.action-icon:hover {
+    opacity: 1;
+}
+
+/* Botones estándar */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 2px;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #27ae60;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #e67e22;
+}
+
+/* ========================================
+ * TABLAS Y LISTADOS
+ * ======================================== */
+.table-container {
+    overflow-x: auto;
+    margin-top: var(--spacing-lg);
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Estilos comunes para tablas */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background-color: var(--bg-card);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+}
+
+.data-table thead th {
+    background-color: var(--accent-color);
+    color: white;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 500;
+    border: none;
+}
+
+.data-table tbody td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e1e5eb;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f1f7fd;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Celdas de acciones */
+.actions-cell {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ========================================
+ * FORMULARIOS
+ * ======================================== */
+.form-container {
+    background-color: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: none; /* Por defecto oculto, se muestra con JavaScript */
+}
+
+.form-container.show {
+    display: block;
+}
+
+/* Estilos para formularios de web2py */
+.w2p_form {
+    margin: var(--spacing-lg) 0;
+}
+
+.w2p_form label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.w2p_form input:not([type="submit"]),
+.w2p_form select,
+.w2p_form textarea {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: var(--spacing-md);
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius-sm);
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.w2p_form input:focus,
+.w2p_form select:focus,
+.w2p_form textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.w2p_form input[type="submit"] {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.w2p_form input[type="submit"]:hover {
+    background-color: #2980b9;
+}
+
+/* Validación de formularios */
+input:invalid {
+    border: 2px dashed var(--danger-color);
+}
+
+input:valid {
+    border: 2px solid var(--success-color);
+}
+
+textarea:invalid {
+    border: 2px dashed var(--danger-color);
+}
+
+textarea:valid {
+    border: 2px solid var(--success-color);
+}
+
+/* ========================================
+ * ESTADOS DE APLICACIONES Y BD
+ * ======================================== */
+.status-indicator {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Estados de bases de datos */
+.ONLINE, .INICIADO, .COMPLETADA, .COMPLETADO, .REGISTRADO {
+    color: var(--success-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+.PENDIENTE {
+    background-color: white;
+    color: black;
+    padding: 0px;
+}
+
+.SIN, .NO, .POR {
+    color: var(--danger-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+.EN {
+    color: var(--info-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+/* Tipos de bases de datos */
+.oracle {
+    color: #ff6600 !important;
+    font-weight: bold;
+    padding: 0px;
+}
+
+.postgres {
+    color: #336791 !important;
+    font-weight: bold;
+    padding: 0px;
+}
+
+.mysql {
+    color: #00758f !important;
+    font-weight: bold;
+    padding: 0px;
+}
+
+.db2 {
+    color: magenta !important;
+    background-color: black;
+    font-weight: bold;
+    padding: 0px;
+}
+
+/* Tecnologías */
+.RAC-SI, .ASM-SI, .NETWORKER {
+    color: var(--success-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+.VERITAS {
+    color: var(--info-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+.PRODUCCIÓN {
+    color: var(--success-color) !important;
+    font-weight: bold !important;
+    padding: 0px;
+}
+
+/* ========================================
+ * TARJETAS Y PANELES
+ * ======================================== */
+.card {
+    background-color: var(--bg-card);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.card-header {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid #e1e5eb;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+/* ========================================
+ * ALERTAS Y NOTIFICACIONES
+ * ======================================== */
+.alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* ========================================
+ * UTILIDADES
+ * ======================================== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--primary-color); }
+.text-success { color: var(--success-color); }
+.text-danger { color: var(--danger-color); }
+.text-warning { color: var(--warning-color); }
+.text-info { color: var(--info-color); }
+.text-muted { color: var(--text-muted); }
+
+.bg-primary { background-color: var(--primary-color); }
+.bg-success { background-color: var(--success-color); }
+.bg-danger { background-color: var(--danger-color); }
+.bg-warning { background-color: var(--warning-color); }
+.bg-info { background-color: var(--info-color); }
+
+.margin-0 { margin: 0; }
+.margin-sm { margin: var(--spacing-sm); }
+.margin-md { margin: var(--spacing-md); }
+.margin-lg { margin: var(--spacing-lg); }
+
+.padding-0 { padding: 0; }
+.padding-sm { padding: var(--spacing-sm); }
+.padding-md { padding: var(--spacing-md); }
+.padding-lg { padding: var(--spacing-lg); }
+
+.hidden { display: none; }
+.show { display: block; }
+
+/* ========================================
+ * RESPONSIVE DESIGN
+ * ======================================== */
+@media (max-width: 768px) {
+    .container {
+        max-width: 98%;
+        margin: var(--spacing-sm) auto;
+        padding: var(--spacing-md);
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+    
+    .action-buttons {
+        align-self: flex-end;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .actions-cell {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    
+    .data-table {
+        font-size: 12px;
+    }
+    
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 6px 4px;
+    }
+    
+    .card {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+    
+    .action-button img {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ========================================
+ * ANIMACIONES
+ * ======================================== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.slide-down {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* ========================================
+ * COMPATIBILIDAD CON ESTILOS EXISTENTES
+ * ======================================== */
+/* Mantener compatibilidad con IDs y clases específicas existentes */
+#list_basedatos,
+#list_servidores,
+#list_actividades {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background-color: var(--bg-card);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+}
+
+.titulo_ppal {
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.form_wrapper {
+    display: inline-block;
+    background-color: var(--bg-card);
+    border-radius: var(--border-radius-sm);
+    height: auto;
+    padding: var(--spacing-md) 18px;
+    margin: 10% auto;
+    color: #5F9EA0;
+}
+
+/* ========================================
+ * PRINT STYLES
+ * ======================================== */
+@media print {
+    .action-buttons,
+    .action-button,
+    .btn {
+        display: none;
+    }
+    
+    .container {
+        box-shadow: none;
+        margin: 0;
+        padding: var(--spacing-sm);
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
