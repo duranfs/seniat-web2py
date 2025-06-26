@@ -393,7 +393,7 @@
             {{ pass }}
         {{ pass }}
         {{ # Orden deseado de tipos de base de datos }}
-        {{ orden_tipobd = ['ORACLE', 'MSSQLSERVER', 'POSTGRES', 'SQLSERVER', 'MYSQL', 'OTRO'] }}
+        {{ orden_tipobd = ['MSSQLSERVER', 'POSTGRES', 'SQLSERVER', 'MYSQL', 'OTRO'] }}
         {{ # Mostrar primero los de la lista, luego el resto }}
         {{ for tipobd in orden_tipobd + [k for k in tipobd_dict.keys() if k not in orden_tipobd]: }}
             {{ if tipobd in tipobd_dict: }}

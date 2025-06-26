@@ -127,8 +127,9 @@ monitor =[
             (T('Rutinas'), URL('default','list_rutinas')==URL(),URL('default','list_rutinas'),[]),
             (T('Asignar Rutinas'), URL('default','asignar_rutinas')==URL(),URL('default','asignar_rutinas'),[]),
 			(T('Administrar Rutinas'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
-            (T('Monitor Rutinas'), URL('default','monitor_graf')==URL(),URL('default','monitor_graf'),[]),
-            (T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
+            (T('Monitor Rutinas Oracle'), URL('default','monitor_oracle')==URL(),URL('default','monitor_oracle'),[]),
+            (T('Monitor Rutinas SQLserver'), URL('default','monitor_mssqlserver')==URL(),URL('default','monitor_mssqlserver'),[]),
+			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
             (T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
@@ -140,7 +141,7 @@ monitor =[
 
 monitor_OPERADOR =[
 	(T('Monitor'), False, '#', [
-            (T('Monitor Rutinas'), URL('default','monitor_graf')==URL(),URL('default','monitor_graf'),[]),
+            (T('Monitor Rutinas'), URL('default','monitor_oracle')==URL(),URL('default','monitor_oracle'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
