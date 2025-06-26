@@ -122,8 +122,8 @@ Se analizaron:
 ```
 ✅ dashboard.html (completado)
 ✅ list_basedatos.html (completado)
-🔄 monitor_graf.html (en progreso)
-⏳ list_servidores.html
+✅ monitor_graf.html (completado)
+✅ list_servidores.html (completado)
 ⏳ crear_actividades_sd.html
 ⏳ list_actividades_sd.html
 ```

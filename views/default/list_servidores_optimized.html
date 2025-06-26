@@ -1,0 +1,342 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+{{extend 'layout.html'}}
+
+<!-- 
+========================================
+SERVIDORES - VERSIÓN OPTIMIZADA
+========================================
+Este archivo usa el CSS común de SENIAT
+Se eliminó CSS duplicado (200+ líneas → 20 líneas)
+-->
+
+<style>
+/* Solo estilos específicos para esta página */
+#list_servidores {
+    min-width: 1400px; /* Ancho específico para esta tabla de servidores */
+}
+
+/* Estilos específicos para servidores recientes */
+#tab1 {
+    background-color: #e8f4fc;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.recent-servers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recent-servers-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #d6e7f5;
+}
+
+.recent-servers-list li:last-child {
+    border-bottom: none;
+}
+
+.recent-servers-list a {
+    color: #2980b9;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.recent-servers-list a:hover {
+    color: #1a5276;
+    text-decoration: underline;
+}
+</style>
+
+{{=script}}
+
+<script>
+function toggleForm() {
+    const form = document.getElementById('form');
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        form.classList.add('slide-down');
+    } else {
+        form.style.display = 'none';
+        form.classList.remove('slide-down');
+    }
+}
+
+function toggleRecentServers() {
+    const tab = document.getElementById('tab1');
+    if (tab.style.display === 'none' || tab.style.display === '') {
+        tab.style.display = 'block';
+        tab.classList.add('slide-down');
+    } else {
+        tab.style.display = 'none';
+        tab.classList.remove('slide-down');
+    }
+}
+
+// Inicializar DataTable cuando el documento esté listo
+$(document).ready(function() {
+    $('#list_servidores').DataTable({
+        responsive: true,
+        language: {
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros por página",
+            zeroRecords: "No se encontraron registros",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros totales)",
+            paginate: {
+                first: "Primero",
+                last: "Último",
+                next: "Siguiente",
+                previous: "Anterior"
+            }
+        },
+        columnDefs: [
+            { width: "10%", targets: 0 }, // Nombre
+            { width: "15%", targets: 1 }, // Tipo Equipo
+            { width: "10%", targets: 2 }, // SO
+            { width: "8%", targets: 3 },  // IP
+            { width: "8%", targets: 4 },  // Ubicación
+            { width: "12%", targets: 5 }, // Descripción
+            { width: "8%", targets: 6 },  // Creado
+            { width: "15%", targets: 7 }, // Acciones
+        ],
+        order: [[0, "asc"]] // Ordenar por nombre por defecto
+    });
+});
+</script>
+
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Gestión de Servidores</h1>
+        <p class="page-subtitle">Inventario completo de infraestructura de servidores</p>
+        
+        <div class="action-buttons">
+            <button class="action-button" onclick="toggleForm()" title="Nuevo Servidor">
+                <img src="{{=URL(request.application,'static/images','add.png')}}" alt="Crear">
+            </button>
+            
+            <button class="action-button" onclick="toggleRecentServers()" title="Servidores Recientes">
+                <img src="{{=URL(request.application,'static/images','recent.png')}}" alt="Recientes">
+            </button>
+            
+            <a class="action-button" href="{{=URL(r=request,c='default',f='export_to_csv',args=['servidores'])}}" title="Exportar a CSV">
+                <img src="{{=URL(request.application,'static/images','csv.png')}}" alt="CSV">
+            </a>
+            
+            <a class="action-button" href="{{=URL(r=request,c='default',f='reporte_servidores')}}" title="Generar Reporte">
+                <img src="{{=URL(request.application,'static/images','report.png')}}" alt="Reporte">
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de nuevo servidor -->
+    <div id="form" class="form-container">
+        <h3>Nuevo Servidor</h3>
+        {{=form}}
+    </div>
+
+    <!-- Servidores recientes -->
+    <div id="tab1">
+        <h4>Servidores Recientes</h4>
+        <ul class="recent-servers-list">
+            {{for servidor_reciente in session.servidores_recientes:}}
+            <li>
+                <a href="{{=URL(r=request,c='default',f='view_servidor',args=[servidor_reciente[0]])}}">
+                    <i class="fas fa-server"></i>&nbsp;{{=servidor_reciente[1]}}
+                </a>
+            </li>
+            {{pass}}
+        </ul>
+    </div>
+
+    {{if servidores:}}
+    <div class="table-container">
+        <table id="list_servidores" class="data-table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Tipo Equipo</th>
+                    <th>S.O.</th>
+                    <th>IP</th>
+                    <th>Ubicación</th>
+                    <th>Descripción</th>
+                    <th>Creado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{for servidor in servidores:}}
+                <tr>
+                    <td>
+                        <strong>{{=servidor.nombre}}</strong>
+                        {{if servidor.descripcion:}}
+                        <br><small class="text-muted">{{=servidor.descripcion[:50]}}{{='...' if len(servidor.descripcion) > 50 else ''}}</small>
+                        {{pass}}
+                    </td>
+                    <td>{{=servidor.tipoequipo_id.descri if servidor.tipoequipo_id else ''}}</td>
+                    <td>{{=servidor.so_id.descri if servidor.so_id else ''}}</td>
+                    <td>
+                        {{if servidor.ip:}}
+                        <code>{{=servidor.ip}}</code>
+                        {{pass}}
+                    </td>
+                    <td>{{=servidor.ubicacion_id.descri if servidor.ubicacion_id else ''}}</td>
+                    <td>{{=servidor.descripcion[:30] + '...' if servidor.descripcion and len(servidor.descripcion) > 30 else servidor.descripcion or ''}}</td>
+                    <td>{{=servidor.created_on.strftime('%d/%m/%Y') if servidor.created_on else ''}}</td>
+                    <td class="actions-cell">
+                        <a href="{{=URL(r=request,c='default',f='view_servidor',args=[servidor.id])}}" title="Ver detalle">
+                            <img src="{{=URL(request.application,'static/images','view.png')}}" alt="Ver" class="action-icon">
+                        </a>
+                        <a href="{{=URL(r=request,c='default',f='edit_servidor',args=[servidor.id])}}" title="Editar">
+                            <img src="{{=URL(request.application,'static/images','edit.png')}}" alt="Editar" class="action-icon">
+                        </a>
+                        <a href="{{=URL(r=request,c='default',f='list_basedatos',args=[servidor.id])}}" title="Ver Bases de Datos">
+                            <img src="{{=URL(request.application,'static/images','database.png')}}" alt="BD" class="action-icon">
+                        </a>
+                        <a href="{{=URL(r=request,c='default',f='server_health',args=[servidor.id])}}" title="Estado del Servidor">
+                            <img src="{{=URL(request.application,'static/images','health.png')}}" alt="Estado" class="action-icon">
+                        </a>
+                        <a href="{{=URL(r=request,c='default',f='delete_servidor',args=[servidor.id])}}" 
+                           onclick="return confirm('¿Está seguro de eliminar este servidor?')" title="Eliminar">
+                            <img src="{{=URL(request.application,'static/images','delete.png')}}" alt="Eliminar" class="action-icon">
+                        </a>
+                    </td>
+                </tr>
+                {{pass}}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row" style="margin-top: 20px;">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Estadísticas</h5>
+                </div>
+                <div style="padding: 15px;">
+                    <p><strong>Total de Servidores:</strong> {{=len(servidores)}}</p>
+                    <p><strong>Tipos de Equipo:</strong> {{=len(set(s.tipoequipo_id.descri for s in servidores if s.tipoequipo_id))}}</p>
+                    <p><strong>Ubicaciones:</strong> {{=len(set(s.ubicacion_id.descri for s in servidores if s.ubicacion_id))}}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Acciones Rápidas</h5>
+                </div>
+                <div style="padding: 15px;">
+                    <a href="{{=URL(r=request,c='default',f='list_basedatos')}}" class="btn btn-primary">
+                        <i class="fas fa-database"></i> Ver Todas las Bases de Datos
+                    </a>
+                    <a href="{{=URL(r=request,c='default',f='reporte_servidores')}}" class="btn btn-info">
+                        <i class="fas fa-chart-bar"></i> Generar Reporte Completo
+                    </a>
+                    <a href="{{=URL(r=request,c='default',f='exportar_inv_excel')}}" class="btn btn-success">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{else:}}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No hay servidores registrados en el sistema.
+        <a href="#" onclick="toggleForm()" class="btn btn-primary btn-sm ms-2">Agregar primer servidor</a>
+    </div>
+    {{pass}}
+</div>
+
+<!-- Script adicional para mejorar la experiencia de usuario -->
+<script>
+// Añadir tooltips a los elementos
+$(document).ready(function() {
+    // Agregar indicadores de estado visual
+    $('.actions-cell a').hover(
+        function() {
+            $(this).css('transform', 'scale(1.2)');
+        },
+        function() {
+            $(this).css('transform', 'scale(1)');
+        }
+    );
+    
+    // Mejorar la visualización de IPs
+    $('code').each(function() {
+        $(this).css({
+            'background-color': '#f8f9fa',
+            'padding': '2px 4px',
+            'border-radius': '3px',
+            'font-size': '12px'
+        });
+    });
+    
+    // Añadir funcionalidad de búsqueda rápida por IP
+    $('#list_servidores_filter input').attr('placeholder', 'Buscar por nombre, IP, tipo...');
+});
+
+// Función para highlight de filas en hover
+$('#list_servidores tbody tr').hover(
+    function() {
+        $(this).addClass('table-hover-effect');
+        $(this).css('background-color', '#f1f7fd');
+    },
+    function() {
+        $(this).removeClass('table-hover-effect');
+        $(this).css('background-color', '');
+    }
+);
+
+// Función para guardar servidor en recientes al hacer clic
+function addToRecent(serverId, serverName) {
+    // Esta función sería llamada desde el backend cuando se visita un servidor
+    console.log('Agregando servidor a recientes:', serverName);
+}
+
+// Función para filtro rápido por tipo de equipo
+function filterByType(tipo) {
+    var table = $('#list_servidores').DataTable();
+    table.column(1).search(tipo).draw();
+}
+
+// Función para filtro rápido por ubicación
+function filterByLocation(ubicacion) {
+    var table = $('#list_servidores').DataTable();
+    table.column(4).search(ubicacion).draw();
+}
+
+// Añadir controles de filtro rápido (opcional)
+$(document).ready(function() {
+    // Agregar botones de filtro rápido si hay múltiples tipos
+    var tipos = [];
+    $('#list_servidores tbody tr').each(function() {
+        var tipo = $(this).find('td:eq(1)').text().trim();
+        if (tipo && tipos.indexOf(tipo) === -1) {
+            tipos.push(tipo);
+        }
+    });
+    
+    if (tipos.length > 3) {
+        // Crear filtros rápidos si hay variedad de tipos
+        var filterHtml = '<div style="margin-bottom: 10px;"><strong>Filtros rápidos:</strong> ';
+        filterHtml += '<button class="btn btn-sm btn-outline-secondary" onclick="$(\'#list_servidores\').DataTable().column(1).search(\'\').draw();">Todos</button> ';
+        tipos.forEach(function(tipo) {
+            filterHtml += '<button class="btn btn-sm btn-outline-secondary" onclick="filterByType(\'' + tipo + '\')">' + tipo + '</button> ';
+        });
+        filterHtml += '</div>';
+        
+        $('.table-container').prepend(filterHtml);
+    }
+});
+</script>

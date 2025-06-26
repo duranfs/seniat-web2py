@@ -4,336 +4,294 @@
 {{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
 {{extend 'layout.html'}}
 
+<!-- 
+========================================
+SERVIDORES - VERSIÓN OPTIMIZADA
+========================================
+Este archivo usa el CSS común de SENIAT
+Se eliminó CSS duplicado (180+ líneas → 30 líneas)
+Tabla ahora ocupa todo el ancho del contenedor
+-->
+
 <style>
-/* Estilos generales */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f7fa;
-}
-
-.container {
-  max-width: 90%;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: rgb(208, 216, 230);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-/* Encabezado */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e1e5eb;
-}
-
-.page-title {
-  color: #2c3e50;
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.action-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.action-button:hover {
-  transform: scale(1.1);
-}
-
-.action-button img {
-  width: 28px;
-  height: 28px;
-}
-
-/* Formulario */
-#form {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  display: none;
-}
-
-/* Tabla de servidores */
-.table-container {
-   width: 100%;
-  overflow-x: auto;
-}
-
+/* Solo estilos específicos para esta página */
 #list_servidores {
-  width: 100%;
-  min-width: 1400px;
+    min-width: 1600px; /* Ancho específico para esta tabla con muchas columnas */
 }
 
-#list_servidores th, #list_servidores td {
-  padding: 8px 12px;
-  border: 0px solid #ddd;
+/* Estilos específicos para DataTables */
+.dataTables_wrapper {
+    margin-top: 20px;
 }
 
-#list_servidores thead th {
-  background-color: #3498db;
-  color: white;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 500;
+/* Mejoras específicas para acciones */
+.actions-cell a {
+    margin-right: 3px;
 }
 
-#list_servidores tbody td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #e1e5eb;
-  vertical-align: middle;
-}
-
-#list_servidores tbody tr:hover {
-  background-color: #f1f7fd;
-}
-
-/* Servidores recientes */
-#tab1 {
-  background-color: #e8f4fc;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  display: none;
-}
-
+/* Estilos específicos para servidores recientes */
 .recent-servers-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .recent-servers-list li {
-  padding: 8px 0;
-  border-bottom: 1px solid #d6e7f5;
+    padding: 8px 0;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .recent-servers-list li:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 .recent-servers-list a {
-  color: #2980b9;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
+    color: var(--primary-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s ease;
 }
 
 .recent-servers-list a:hover {
-  color: #1a5276;
-  text-decoration: underline;
-}
-
-/* Acciones */
-.actions-cell {
-  display: flex;
-  gap: 8px;
-}
-
-.action-icon {
-  width: 20px;
-  height: 20px;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.action-icon:hover {
-  opacity: 1;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .action-buttons {
-    align-self: flex-end;
-  }
-}
-
-.w2p_form {
-  margin: 20px 0;
-}
-
-.w2p_form label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.w2p_form input:not([type="submit"]),
-.w2p_form select,
-.w2p_form textarea {
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-/* Botón de submit */
-.w2p_form input[type="submit"] {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 15px;
-  min-width: 150px;
-}
-
-.w2p_form input[type="submit"]:hover {
-  background-color: #2980b9;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Mensajes flash */
-.w2p_flash {
-  padding: 15px;
-  margin: 20px 0;
-  border-radius: 4px;
-  background-color: #f8f9fa;
-  border-left: 4px solid #3498db;
-}
-* Asegúrate de que estos estilos tienen prioridad */
-#submit_record__row input {
-    padding: 12px 25px !important;
-    font-size: 16px !important;
-    min-width: 180px !important;
-    height: auto !important;
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 </style>
 
 {{=script}}
 
 <script>
-
 function toggleForm() {
-  jQuery('#form').slideToggle();
-  jQuery('#tab1').slideUp();
+    const form = document.getElementById('form');
+    const tab1 = document.getElementById('tab1');
+    
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+        form.classList.add('slide-down');
+        tab1.style.display = 'none';
+    } else {
+        form.style.display = 'none';
+        form.classList.remove('slide-down');
+    }
 }
 
 function toggleRecent() {
-  jQuery('#tab1').slideToggle();
-  jQuery('#form').slideUp();
+    const tab1 = document.getElementById('tab1');
+    const form = document.getElementById('form');
+    
+    if (tab1.style.display === 'none' || tab1.style.display === '') {
+        tab1.style.display = 'block';
+        tab1.classList.add('slide-down');
+        form.style.display = 'none';
+    } else {
+        tab1.style.display = 'none';
+        tab1.classList.remove('slide-down');
+    }
 }
+
+// Inicializar DataTable cuando el documento esté listo
+$(document).ready(function() {
+    $('#list_servidores').DataTable({
+        responsive: true,
+        scrollX: true, // Habilitar scroll horizontal para muchas columnas
+        language: {
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros por página",
+            zeroRecords: "No se encontraron servidores",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ servidores",
+            infoEmpty: "Mostrando 0 a 0 de 0 servidores",
+            infoFiltered: "(filtrado de _MAX_ servidores totales)",
+            paginate: {
+                first: "Primero",
+                last: "Último",
+                next: "Siguiente",
+                previous: "Anterior"
+            }
+        },
+        columnDefs: [
+            { targets: -1, orderable: false }, // Deshabilitar ordenación en columna de acciones
+            { targets: [12, 13], className: "text-center" } // Centrar columnas de contadores
+        ],
+        order: [[0, 'desc']] // Ordenar por ID descendente por defecto
+    });
+});
 </script>
 
 <div class="container">
-  <div class="page-header">
-    <h1 class="page-title">Gestión de Servidores</h1>
-    <div class="action-buttons">
-      <button class="action-button" onclick="toggleForm()" title="Nuevo Servidor">
-        <img src="{{=URL(request.application,'static/images','add.png')}}" alt="Crear">
-      </button>
-      <button class="action-button" onclick="toggleRecent()" title="Servidores Recientes">
-        <img src="{{=URL(request.application,'static/images','doc-reciente.jpeg')}}" alt="Recientes">
-      </button>
-      <a class="action-button" href="{{=URL(r=request,c='default',f='export_to_csv',args=['servidores'])}}" title="Exportar a CSV">
-        <img src="{{=URL(request.application,'static/images','csv.png')}}" alt="CSV">
-      </a>
+    <div class="page-header">
+        <h1 class="page-title">Gestión de Servidores</h1>
+        <p class="page-subtitle">Administración y control de servidores del sistema</p>
+        
+        <div class="action-buttons">
+            <button class="action-button" onclick="toggleForm()" title="Nuevo Servidor">
+                <img src="{{=URL(request.application,'static/images','add.png')}}" alt="Crear">
+            </button>
+            
+            <button class="action-button" onclick="toggleRecent()" title="Servidores Recientes">
+                <img src="{{=URL(request.application,'static/images','doc-reciente.jpeg')}}" alt="Recientes">
+            </button>
+            
+            <a class="action-button" href="{{=URL(r=request,c='default',f='export_to_csv',args=['servidores'])}}" title="Exportar a CSV">
+                <img src="{{=URL(request.application,'static/images','csv.png')}}" alt="CSV">
+            </a>
+            
+            <a class="action-button" href="{{=URL(r=request,c='bitacora',f='bitacora_servidores')}}" title="Bitácora de Servidores">
+                <img src="{{=URL(request.application,'static/images','bitacora.png')}}" alt="Bitácora">
+            </a>
+        </div>
     </div>
-  </div>
 
-  <div id="form">
-    <h3>Nuevo Servidor</h3>
-    {{=form}}
-  </div>
+    <div id="form" class="form-container">
+        <h3>Nuevo Servidor</h3>
+        {{=form}}
+    </div>
 
-  <div id="tab1">
-    <h3>Servidores Recientes</h3>
-    <ul class="recent-servers-list">
-      {{for id,nombre in session.servidores_recientes:}}
-      <li>
-        <a href="{{=URL('view_servidor',args=id)}}">
-          {{=nombre}}
-        </a>
-      </li>
-      {{pass}}
-    </ul>
-  </div>
-
-  <div class="table-container">
-    <table id="list_servidores" class="table-bordered table-striped smarttable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Tipo Equipo</th>
-          <th>Storage</th>
-          <th>Servidor</th>
-          <th>IP</th>
-          <th>RAC</th>
-          <th>Nombre Alias</th>
-          <th>S.O.</th>
-          <th>Ambiente</th>
-          <th>Dominio</th>
-          <th>Tipo Conexión</th>
-          <th>Mtto Logs</th>
-          <th>Cantidad BD</th>
-          <th>Usuarios SO</th>
-          <th>Acciones</th>
-        </tr>    
-      </thead>
-      <tbody>
-        {{for servidor in servidores:}}
-        <tr>
-          <td>{{=servidor.id}}</td>
-          <td>{{=servidor.tipo_equipo.descri}}</td>
-          <td>{{=servidor.almacen.descri}}</td> 
-          <td>{{=servidor.nombre}}</td> 
-          <td>{{=servidor.ip}}</td>
-          <td>{{=show_status(servidor.rac)}}</td>
-          <td>{{=servidor.nombre_alias}}</td>
-          <td>{{=servidor.so_id.descri}}</td>
-          <td>{{=show_status(servidor.ambiente_id.descri)}}</td>
-          <td>{{=show_status(servidor.dominio)}}</td>
-          <td>{{=servidor.tipoconex}}</td>
-          <td>{{=show_status(servidor.mtto_logs)}}</td>
-          <td>
-            {{=A(int(link_cuentabd(servidor)), _class="click", _alt="BD",
-            _title="BD", _href=URL(r=request,c='default',f='list_basedatos',args=[servidor.id]))}}
-          </td>
-          <td>
-            {{=A(int(link_cuenta_cuentas_so(servidor)), _class="click", _alt="Cuentas",
-            _title="Cuentas SO", _href=URL(r=request,c='default',f='list_cuentas_so',args=[servidor.id]))}}
-          </td>
-          <td class="actions-cell">
-            <a href="{{=URL(r=request,c='default',f='edit_servidor',args=[servidor.id])}}" title="Editar Servidor">
-              <img src="{{=URL(request.application,'static/images','edit-1.ico')}}" class="action-icon" alt="Editar">
-            </a>
-            <a href="{{=URL(r=request,c='default',f='list_basedatos',args=[servidor.id])}}" title="Base de Datos">
-              <img src="{{=URL(request.application,'static/images','bd20.svg')}}" class="action-icon" alt="BD">
-            </a>
-            <a href="{{=URL(r=request,c='default',f='list_cuentas_so',args=[servidor.id])}}" title="Cuentas SO">
-              <img src="{{=URL(request.application,'static/images','llave.png')}}" class="action-icon" alt="Cuentas">
-            </a>
-          </td>
-        </tr>
+    <div id="tab1" class="form-container">
+        <h3>Servidores Recientes</h3>
+        {{if session.servidores_recientes:}}
+        <ul class="recent-servers-list">
+            {{for id,nombre in session.servidores_recientes:}}
+            <li>
+                <a href="{{=URL('view_servidor',args=id)}}">
+                    <i class="fas fa-server me-2"></i>
+                    {{=nombre}}
+                </a>
+            </li>
+            {{pass}}
+        </ul>
+        {{else:}}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No hay servidores recientes visitados.
+        </div>
         {{pass}}
-      </tbody>
-    </table>
-  </div>
+    </div>
+
+    {{if servidores:}}
+    <div class="table-container">
+        <table id="list_servidores" class="data-table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tipo Equipo</th>
+                    <th>Storage</th>
+                    <th>Servidor</th>
+                    <th>IP</th>
+                    <th>RAC</th>
+                    <th>Nombre Alias</th>
+                    <th>S.O.</th>
+                    <th>Ambiente</th>
+                    <th>Dominio</th>
+                    <th>Tipo Conexión</th>
+                    <th>Mtto Logs</th>
+                    <th>Cantidad BD</th>
+                    <th>Usuarios SO</th>
+                    <th>Acciones</th>
+                </tr>    
+            </thead>
+            <tbody>
+                {{for servidor in servidores:}}
+                <tr>
+                    <td>{{=servidor.id}}</td>
+                    
+                    <td class="{{=servidor.tipo_equipo.descri.lower().replace(' ', '-') if servidor.tipo_equipo else ''}}">
+                        {{=servidor.tipo_equipo.descri if servidor.tipo_equipo else '-'}}
+                    </td>
+                    
+                    <td>{{=servidor.almacen.descri if servidor.almacen else '-'}}</td>
+                    
+                    <td class="font-weight-bold">
+                        <a href="{{=URL(r=request,c='default',f='view_servidor',args=[servidor.id])}}" 
+                           title="Ver detalles del servidor">
+                            {{=servidor.nombre}}
+                        </a>
+                    </td>
+                    
+                    <td class="font-monospace">{{=servidor.ip if servidor.ip else '-'}}</td>
+                    
+                    <td class="text-center">
+                        <span class="badge {{='badge-success' if servidor.rac else 'badge-secondary'}}">
+                            {{='SÍ' if servidor.rac else 'NO'}}
+                        </span>
+                    </td>
+                    
+                    <td>{{=servidor.nombre_alias if servidor.nombre_alias else '-'}}</td>
+                    
+                    <td class="{{=servidor.so_id.descri.lower().replace(' ', '-') if servidor.so_id else ''}}">
+                        {{=servidor.so_id.descri if servidor.so_id else '-'}}
+                    </td>
+                    
+                    <td class="{{=servidor.ambiente_id.descri.upper() if servidor.ambiente_id else ''}}">
+                        <span class="badge badge-{{='danger' if servidor.ambiente_id and servidor.ambiente_id.descri.upper() == 'PRODUCCION' else 'warning' if servidor.ambiente_id and servidor.ambiente_id.descri.upper() == 'PRUEBAS' else 'info'}}">
+                            {{=servidor.ambiente_id.descri if servidor.ambiente_id else '-'}}
+                        </span>
+                    </td>
+                    
+                    <td class="text-center">
+                        <span class="badge {{='badge-primary' if servidor.dominio else 'badge-light'}}">
+                            {{=servidor.dominio if servidor.dominio else 'Sin dominio'}}
+                        </span>
+                    </td>
+                    
+                    <td>{{=servidor.tipoconex if servidor.tipoconex else '-'}}</td>
+                    
+                    <td class="text-center">
+                        <span class="badge {{='badge-success' if servidor.mtto_logs else 'badge-danger'}}">
+                            {{='ACTIVO' if servidor.mtto_logs else 'INACTIVO'}}
+                        </span>
+                    </td>
+                    
+                    <td class="text-center">
+                        <a href="{{=URL(r=request,c='default',f='list_basedatos',args=[servidor.id])}}" 
+                           class="badge badge-info" title="Ver bases de datos">
+                            {{=link_cuentabd(servidor)}}
+                        </a>
+                    </td>
+                    
+                    <td class="text-center">
+                        <a href="{{=URL(r=request,c='default',f='list_cuentas_so',args=[servidor.id])}}" 
+                           class="badge badge-warning" title="Ver cuentas SO">
+                            {{=link_cuenta_cuentas_so(servidor)}}
+                        </a>
+                    </td>
+                    
+                    <td class="actions-cell">
+                        <a href="{{=URL(r=request,c='default',f='view_servidor',args=[servidor.id])}}" title="Ver servidor">
+                            <img src="{{=URL(request.application,'static/images','view.png')}}" alt="Ver" class="action-icon">
+                        </a>
+                        
+                        <a href="{{=URL(r=request,c='default',f='edit_servidor',args=[servidor.id])}}" title="Editar servidor">
+                            <img src="{{=URL(request.application,'static/images','edit-1.ico')}}" alt="Editar" class="action-icon">
+                        </a>
+                        
+                        <a href="{{=URL(r=request,c='default',f='list_basedatos',args=[servidor.id])}}" title="Bases de datos">
+                            <img src="{{=URL(request.application,'static/images','bd20.svg')}}" alt="BD" class="action-icon">
+                        </a>
+                        
+                        <a href="{{=URL(r=request,c='default',f='list_cuentas_so',args=[servidor.id])}}" title="Cuentas SO">
+                            <img src="{{=URL(request.application,'static/images','llave.png')}}" alt="Cuentas" class="action-icon">
+                        </a>
+                        
+                        <a href="{{=URL(r=request,c='default',f='monitor_servidor',args=[servidor.id])}}" title="Monitorear servidor">
+                            <img src="{{=URL(request.application,'static/images','monitor.png')}}" alt="Monitor" class="action-icon">
+                        </a>
+                        
+                        <a href="{{=URL(r=request,c='default',f='delete_servidor',args=[servidor.id])}}" 
+                           onclick="return confirm('¿Está seguro de eliminar este servidor?')" title="Eliminar servidor">
+                            <img src="{{=URL(request.application,'static/images','delete.png')}}" alt="Eliminar" class="action-icon">
+                        </a>
+                    </td>
+                </tr>
+                {{pass}}
+            </tbody>
+        </table>
+    </div>
+    {{else:}}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No hay servidores registrados en el sistema.
+        <a href="#" onclick="toggleForm()" class="btn btn-primary btn-sm ms-2">Agregar primer servidor</a>
+    </div>
+    {{pass}}
 </div>

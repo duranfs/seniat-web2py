@@ -1,0 +1,428 @@
+{{extend 'layout.html'}}
+
+<!-- 
+========================================
+MONITOR GRÁFICO - VERSIÓN OPTIMIZADA
+========================================
+Este archivo usa el CSS común de SENIAT y
+el CSS modular de dashboard con recursos locales
+Se eliminó CSS duplicado (300+ líneas → 35 líneas)
+-->
+
+<!-- Cargar CSS modular para dashboard -->
+<link rel="stylesheet" href="{{=URL('static','css/modules/dashboard.css')}}">
+
+<!-- Solo estilos específicos para esta página -->
+<style>
+/* Configuración específica para monitor gráfico */
+.monitor-body {
+    background: var(--dashboard-bg);
+    color: var(--dashboard-text-light);
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+/* Override para intervalos de refresh específicos */
+.refresh-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+}
+
+/* Estilos específicos para popup de monitoreo */
+#monitoring-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    z-index: 1000;
+    display: none;
+}
+
+/* Grid específico para el monitor */
+.monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+</style>
+
+<body class="monitor-body">
+
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando monitor de rutinas...</div>
+    <div class="loading-details">Verificando estado de instancias...</div>
+</div>
+
+<div id="monitoring-popup">
+    <div>🔄 Actualizando monitoreo...</div>
+</div>
+
+<div class="dashboard-container" id="content-container" style="display: none;">
+    <!-- Header del Monitor -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Monitor de Rutinas de Bases de Datos</h1>
+            <div class="dashboard-subtitle">Monitoreo en tiempo real - {{=time}}</div>
+        </div>
+        
+        <div class="header-controls">
+            <div class="refresh-controls">
+                <i class="fas fa-sync-alt"></i>
+                <span>Auto-refresh:</span>
+                <span id="countdown" class="countdown-timer">2:00</span>
+            </div>
+            <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
+                <i class="fas fa-arrow-left"></i> Volver
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen de Estado Global -->
+    <div class="stats-summary">
+        {{total_instancias = 0}}
+        {{instancias_activas = 0}}
+        {{instancias_con_alertas = 0}}
+        {{tiempo_promedio = 0}}
+        
+        {{for ambiente_data in monitor_data.values():}}
+            {{for instancia in ambiente_data:}}
+                {{total_instancias += 1}}
+                {{if instancia.get('status_ok', False):}}
+                    {{instancias_activas += 1}}
+                {{pass}}
+                {{if instancia.get('tiene_alertas', False):}}
+                    {{instancias_con_alertas += 1}}
+                {{pass}}
+            {{pass}}
+        {{pass}}
+        
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div class="stat-title">Total Instancias</div>
+                <i class="fas fa-server stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=total_instancias}}</div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div class="stat-title">Funcionando OK</div>
+                <i class="fas fa-check-circle stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=instancias_activas}}</div>
+        </div>
+        
+        <div class="stat-card danger">
+            <div class="stat-header">
+                <div class="stat-title">Con Alertas</div>
+                <i class="fas fa-exclamation-triangle stat-icon"></i>
+            </div>
+            <div class="stat-value">{{=instancias_con_alertas}}</div>
+        </div>
+        
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div class="stat-title">Última Actualización</div>
+                <i class="fas fa-clock stat-icon"></i>
+            </div>
+            <div class="stat-value" style="font-size: 16px;">{{=time}}</div>
+        </div>
+    </div>
+
+    <!-- Monitor por Ambiente -->
+    {{for ambiente, instancias in monitor_data.items():}}
+    <div class="ambiente-container">
+        <div class="ambiente-title {{=ambiente.lower()}}">
+            <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
+            <span class="ambiente-count">{{=len(instancias)}} instancias</span>
+        </div>
+        
+        <div class="monitor-grid">
+            {{for instancia in instancias:}}
+            <div class="instancia-card {{=ambiente.lower()}} {{='alerta' if instancia.get('tiene_alertas') else ''}}">
+                <div class="instancia-header">
+                    <div class="instancia-name">{{=instancia.get('nombre', 'N/A')}}</div>
+                    <div class="instancia-status {{='online' if instancia.get('status_ok') else 'offline'}}"></div>
+                </div>
+                
+                <div class="instancia-details">
+                    <div class="instancia-detail">
+                        <strong>Servidor:</strong> {{=instancia.get('servidor', 'N/A')}}
+                    </div>
+                    <div class="instancia-detail">
+                        <strong>Tipo BD:</strong> {{=instancia.get('tipo_bd', 'N/A')}}
+                    </div>
+                    <div class="instancia-detail">
+                        <strong>Fecha:</strong> {{=instancia.get('fecha', 'N/A')}}
+                    </div>
+                </div>
+
+                <div class="rutinas-section">
+                    <div class="rutinas-title">Estado de Rutinas</div>
+                    <table class="rutinas-table">
+                        <thead>
+                            <tr>
+                                <th>Rutina</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Base de Datos</td>
+                                <td>
+                                    <span class="rutina-result {{='ok' if instancia.get('st_bd') == 'up' else 'alerta' if instancia.get('st_bd') == 'down' else 'warning'}}">
+                                        {{=instancia.get('st_bd', 'N/C').upper()}}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Servicio</td>
+                                <td>
+                                    <span class="rutina-result {{='ok' if instancia.get('st_servicio') == 'up' else 'alerta' if instancia.get('st_servicio') == 'down' else 'warning'}}">
+                                        {{=instancia.get('st_servicio', 'N/C').upper()}}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Backup Log</td>
+                                <td>
+                                    <span class="rutina-result {{='ok' if instancia.get('st_backuplog') == 'up' else 'alerta' if instancia.get('st_backuplog') == 'down' else 'warning'}}">
+                                        {{=instancia.get('st_backuplog', 'N/C').upper()}}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Backup Físico</td>
+                                <td>
+                                    <span class="rutina-result {{='ok' if instancia.get('st_backupfis') == 'up' else 'alerta' if instancia.get('st_backupfis') == 'down' else 'warning'}}">
+                                        {{=instancia.get('st_backupfis', 'N/C').upper()}}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RMAN</td>
+                                <td>
+                                    <span class="rutina-result {{='ok' if instancia.get('st_rman') == 'up' else 'alerta' if instancia.get('st_rman') == 'down' else 'warning'}}">
+                                        {{=instancia.get('st_rman', 'N/C').upper()}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="acciones-rapidas">
+                    <a href="{{=URL(r=request, c='default', f='view_monitor', args=[instancia.get('id')])}}" class="accion-link">
+                        <i class="fas fa-eye"></i> Detalle
+                    </a>
+                    <a href="{{=URL(r=request, c='default', f='edit_rutinas', args=[instancia.get('id')])}}" class="accion-link">
+                        <i class="fas fa-cog"></i> Configurar
+                    </a>
+                    {{if instancia.get('tiene_alertas'):}}
+                    <a href="{{=URL(r=request, c='default', f='resolve_alert', args=[instancia.get('id')])}}" class="accion-link" style="background-color: #e74c3c; color: white;">
+                        <i class="fas fa-wrench"></i> Resolver
+                    </a>
+                    {{pass}}
+                </div>
+            </div>
+            {{pass}}
+        </div>
+    </div>
+    {{pass}}
+</div>
+
+<!-- JavaScript usando recursos locales -->
+<script>
+// Variables globales para el monitoreo
+const REFRESH_INTERVAL = 120; // 2 minutos
+let countdownTimer;
+let refreshTimer;
+let isUserInteracting = false;
+
+// Función para actualizar la página
+function refreshPage() {
+    // Mostrar popup de actualización
+    document.getElementById('monitoring-popup').style.display = 'block';
+    
+    // Simular tiempo de actualización
+    setTimeout(() => {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        setTimeout(() => {
+            location.reload(true);
+        }, 1000);
+    }, 500);
+}
+
+// Función para actualizar el contador
+function updateCountdown() {
+    let countdown = REFRESH_INTERVAL;
+    const countdownElement = document.getElementById('countdown');
+    
+    // Limpiar timer existente
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+    
+    // Actualizar cada segundo
+    countdownTimer = setInterval(function() {
+        if (!isUserInteracting) {
+            countdown--;
+            const minutes = Math.floor(countdown / 60);
+            const seconds = countdown % 60;
+            if (countdownElement) {
+                countdownElement.textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            }
+            
+            if (countdown <= 0) {
+                refreshPage();
+            }
+        }
+    }, 1000);
+
+    // Programar refresh automático
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+    }
+    refreshTimer = setTimeout(() => {
+        if (!isUserInteracting) {
+            refreshPage();
+        }
+    }, REFRESH_INTERVAL * 1000);
+}
+
+// Función para mostrar contenido
+function showContent() {
+    const contentContainer = document.getElementById('content-container');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    if (contentContainer && loadingOverlay) {
+        setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+            contentContainer.style.display = 'block';
+            contentContainer.classList.add('fade-in');
+            updateCountdown();
+        }, 1500);
+    }
+}
+
+// Función para pausar refresh durante interacción
+function pauseRefreshDuringInteraction() {
+    isUserInteracting = true;
+    
+    // Reanudar después de 30 segundos de inactividad
+    setTimeout(() => {
+        isUserInteracting = false;
+        updateCountdown(); // Reiniciar countdown
+    }, 30000);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    showContent();
+    
+    // Pausar refresh durante interacciones importantes
+    const interactiveElements = document.querySelectorAll('.instancia-card, .accion-link, .exit-button');
+    interactiveElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            if (this.classList.contains('instancia-card')) {
+                pauseRefreshDuringInteraction();
+            }
+        });
+        
+        element.addEventListener('click', function() {
+            isUserInteracting = true;
+        });
+    });
+    
+    // Pausar cuando la página no está visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            isUserInteracting = true;
+        } else {
+            isUserInteracting = false;
+            updateCountdown();
+        }
+    });
+});
+
+// Función para manejo de errores de conexión
+function highlightErrorCards() {
+    const errorCards = document.querySelectorAll('.instancia-card.alerta');
+    errorCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.animation = 'border-pulse 2s infinite';
+            
+            // Agregar sonido de notificación (opcional)
+            if (index === 0) { // Solo para la primera alerta
+                try {
+                    // Crear un beep corto si hay alertas
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (e) {
+                    // Silenciosamente fallar si no se puede reproducir audio
+                    console.log('Audio notification not available');
+                }
+            }
+        }, index * 200);
+    });
+}
+
+// Aplicar efectos visuales después de cargar
+setTimeout(() => {
+    highlightErrorCards();
+    
+    // Añadir efectos hover a las tarjetas
+    const cards = document.querySelectorAll('.instancia-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = 'var(--box-shadow-lg)';
+        });
+    });
+}, 2000);
+
+// Función para forzar actualización manual
+function forceRefresh() {
+    clearInterval(countdownTimer);
+    clearTimeout(refreshTimer);
+    refreshPage();
+}
+
+// Agregar evento para refresh manual (opcional)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+        e.preventDefault();
+        forceRefresh();
+    }
+});
+</script>
+
+</body>
+</html>
