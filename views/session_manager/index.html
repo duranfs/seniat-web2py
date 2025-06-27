@@ -1,0 +1,131 @@
+{{extend 'layout.html'}}
+
+<div class="session-manager-container">
+    <h2>
+        <i class="glyphicon glyphicon-dashboard"></i> 
+        Sesiones Activas
+        <small class="pull-right">
+            <span class="badge">{{=total_sessions}}</span> sesiones encontradas
+        </small>
+    </h2>
+
+    {{if error:}}
+        <div class="alert alert-danger">{{=error}}</div>
+    {{pass}}
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h4 class="panel-title">Listado de Sesiones</h4>
+                </div>
+                <div class="col-sm-6 text-right">
+                    <form method="get" class="form-inline">
+                        <div class="form-group">
+                            <input type="text" name="search" class="form-control input-sm" placeholder="Buscar..." value="{{=request.vars.search or ''}}">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="glyphicon glyphicon-search"></i> Filtrar
+                        </button>
+                        <a href="{{=URL(args=None, vars={})}}" class="btn btn-sm btn-default">
+                            <i class="glyphicon glyphicon-refresh"></i> Limpiar
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-body">
+            {{if not sessions:}}
+                <div class="alert alert-info">No hay sesiones activas en este momento</div>
+            {{else:}}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID Sesión</th>
+                                <th>Usuario</th>
+                                <th>IP</th>
+                                <th>Última Actividad</th>
+                                <th>Tiempo Activo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{for session in sessions:}}
+                            <tr>
+                                <td><code>{{=session.session_id[:8]}}...</code></td>
+                                <td>
+                                    {{if session.auth_user:}}
+                                        {{=session.auth_user.first_name}} {{=session.auth_user.last_name}}
+                                        <small>({{=session.auth_user.email}})</small>
+                                    {{else:}}
+                                        <span class="text-muted">No autenticado</span>
+                                    {{pass}}
+                                </td>
+                                <td>{{=session.client_ip}}</td>
+                                <td>
+                                    <span title="{{=session.last_activity}}">
+                                        {{=prettydate(session.last_activity)}}
+                                    </span>
+                                </td>
+                                <td>{{=session.duration}}</td>
+                                <td>
+                                    <div class="btn-group btn-group-xs">
+                                        <a href="{{=URL('kill_session', args=session.session_id)}}" class="btn btn-danger" title="Terminar Sesión"
+                                           onclick="return confirm('¿Está seguro de terminar esta sesión?')">
+                                            <i class="glyphicon glyphicon-remove-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{pass}}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {{if total_pages > 1:}}
+                    <nav>
+                        <ul class="pagination">
+                            {{if current_page > 0:}}
+                                <li><a href="{{=URL(vars={'page':current_page-1})}}">&laquo; Anterior</a></li>
+                            {{pass}}
+                            
+                            {{for page_num in range(max(0, current_page-2), min(total_pages, current_page+3)):}}
+                                <li class="{{='active' if page_num == current_page else ''}}">
+                                    <a href="{{=URL(vars={'page':page_num})}}">{{=page_num+1}}</a>
+                                </li>
+                            {{pass}}
+                            
+                            {{if current_page < total_pages-1:}}
+                                <li><a href="{{=URL(vars={'page':current_page+1})}}">Siguiente &raquo;</a></li>
+                            {{pass}}
+                        </ul>
+                    </nav>
+                {{pass}}
+            {{pass}}
+        </div>
+    </div>
+</div>
+
+<style>
+.session-manager-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.badge {
+    background-color: #337ab7;
+    font-weight: normal;
+}
+
+.pagination {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+</style>

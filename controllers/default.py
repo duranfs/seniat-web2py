@@ -325,97 +325,6 @@ def monitor_bd():
 	)
 
 
-@auth.requires_login()
-def monitor_mssqlserver():
-	from gluon.cache import Cache
-	from gluon.scheduler import Scheduler
-	import datetime
-	
-	cache = Cache(request)
-	now = datetime.datetime.now()
-	mensajes = None
-	
-	# 1. Obtener datos de monitoreo con caché inteligente
-	def obtener_datos_actualizados():
-		# Solo datos de los últimos 5 minutos
-		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == 'MSSQLSERVER') \
-			  .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
-	
-	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=300)
-	
-	# 2. Verificar si necesitamos actualización (versión corregida)
-	necesita_actualizar = True
-	ultima_actualizacion = db(db.bdmon.tx_tipobd=='MSSQLSERVER').select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
-	
-	if ultima_actualizacion and ultima_actualizacion.f_corrida:
-		# Convertir datetime.date a datetime.datetime si es necesario
-		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-			ultima_actualizacion_dt = datetime.datetime.combine(
-				ultima_actualizacion.f_corrida, 
-				datetime.time.min
-			)
-		else:
-			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-		
-		diferencia = now - ultima_actualizacion_dt
-		if diferencia.total_seconds() < 300:  # 5 minutos
-			necesita_actualizar = False
-	
-	# 3. Procesamiento asíncrono si es necesario
-	if necesita_actualizar:
-		try:
-			scheduler = Scheduler(db)
-			# Verificar si ya hay una tarea en progreso
-			if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-				scheduler.queue_task(
-					'actualizar_monitoreo_async', 
-					timeout=1200,  # 20 minutos de timeout
-					sync_output=5,
-					immediate=True
-				)
-				mensajes = "Los datos se están actualizando en segundo plano..."
-			else:
-				mensajes = "Actualización en progreso... (por favor espere)"
-		except Exception as e:
-			# Fallback seguro con logging
-			import traceback
-			tb = traceback.format_exc()
-			#db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
-			
-			mensajes = "Iniciando actualización directa (modo seguro)..."
-			try:
-				resultado = actualizar_y_mostrar_monitor_parallel()
-				if resultado and 'resumen' in resultado:
-					mensajes = resultado['resumen']
-				mon = obtener_datos_actualizados()
-			except Exception as e2:
-				mensajes = "Error en actualización directa"
-				#db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
-	
-	# 4. Obtener lista de bases de datos (con caché extendido)
-	def obtener_basedatos():
-		return db(db.basedatos.status_mon.upper() == 'SI').select(
-			db.basedatos.id,
-			db.basedatos.nombre,
-			db.basedatos.servidor,
-			db.basedatos.tipobd_id,
-			db.basedatos.version_id,
-			db.basedatos.puerto,
-			db.basedatos.ambiente_id,
-			cache=(cache.ram, 10),  # Cache por 1 hora 3600
-			cacheable=True
-		)
-	
-	basedatos_mon = obtener_basedatos()
-	
-	return dict(
-		mon=mon, 
-		mensajes=mensajes, 
-		ultima_actualizacion=now, 
-		basedatos_mon=basedatos_mon,
-		necesita_actualizar=necesita_actualizar
-	)
-
 #------- en paralelo ------------------------------------------------------------------------
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -699,97 +608,6 @@ def update_monitor_record(db, monitor, resultado, mensaje, success):
 #------ en paralelo ------------------------------------------------------------------------
 
 
-def actualizar_y_mostrar_monitor():
-	# Obtener todas las instancias activas de bdmon
-	monitoreos = db(db.bdmon).select()
-	
-	mensajes = []
-	conexiones_exitosas = 0
-	conexiones_fallidas = 0
-	
-	for m in monitoreos:
-		servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
-		if not servidor:
-			continue
-			
-		resultado = None
-		mensaje = ""
-
-		# si el servicio o instancia de base de datos tiene dominio 
-		if servidor.dominio:
-			service_name = f"{m.tx_instancia}" + "." + (servidor.dominio).lower()
-		else:	
-			service_name = f"{m.tx_instancia}"
-
-		bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia)\
-		.select(db.basedatos.puerto, db.basedatos.version_id).first()
-		#ver=int(bdatos.version_id.descri[0:2].replace('.', ''))
-		try:
-			ver_str = bdatos.version_id.descri[0:2].replace('.', '')
-			ver = int(ver_str) if ver_str.isdigit() else 0  # or some default value
-		except (AttributeError, ValueError):
-			ver = 0  # or handle the error appropriately
-
-
-		try:
-			connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
-
-			cursor = connection.cursor()
-			comando = m.tx_comando.strip().strip('"').strip("'")
-			cursor.execute(m.tx_comando)
-			resultado = cursor.fetchone()
-			resultado = resultado[0]
-			mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
-			conexiones_exitosas += 1
-			m.update_record(
-				tx_resultado=resultado,
-				tx_resultado_detalle=mensaje,
-				fe_ultima_ejecucion=datetime.datetime.now(),
-				f_corrida=datetime.datetime.now())
-			
-		except Exception as e:
-			error_msg = str(e)
-			m.update_record(
-				tx_resultado=resultado,
-				tx_resultado_detalle="Sin conectar: " + error_msg + " " + servidor.ip +" " + service_name +" "+bdatos.puerto +" "+ str(ver),
-				fe_ultima_ejecucion=datetime.datetime.now(),
-				f_corrida=datetime.datetime.now()
-			)
-			
-			mensaje = f"Error al conectar a {service_name}: {error_msg}"
-			conexiones_fallidas += 1
-			
-		finally:
-			# Cerrar recursos de manera segura
-			try:
-				if 'cursor' in locals() and cursor is not None:
-					cursor.close()
-			except:
-				pass
-				
-			try:
-				if 'connection' in locals() and connection is not None:
-					connection.close()
-					redirect(URL('index'))
-			except:
-				pass
-		
-		mensajes.append(mensaje)
-	
-	# Crear resumen final
-	resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
-	mensajes.insert(0, resumen)
-	
-	# Devuelve el diccionario de variables para la vista
-	return dict(
-		#mon=db(db.bdmon).select(),
-		mensajes=mensajes,
-		resumen=resumen
-	)
-
-
-
-
 
 def prueba_9i():
 	mensaje = []
@@ -1027,7 +845,7 @@ def rutinas_asignadas():
 	# Esta función ahora es muy simple porque la vista hace las consultas directamente
 	return dict()
 
-def manage_assignment():
+def manage_assignmentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	response.view = 'generic.json'
 	
 	try:
@@ -1068,7 +886,7 @@ def manage_assignment():
 
 
 @auth.requires_login()
-def detalle_estructura():
+def detalle_estructuraXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	basedatos_nombre=request.args[0]
 	#basedatos_nombre=request.args(0) es diferente a tener []
 	
@@ -1122,14 +940,14 @@ def claves_manage():
 
 
 @auth.requires_login()
-def todas_las_clavesxx(): #maestro de claves query
+def todas_las_clavesxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(): #maestro de claves query
 	todas_las_claves = db(db.servidores.id>0)\
 	(db.basedatos.servidor==db.servidores.id).\
 	select(orderby=db.servidores.nombre|db.basedatos.tipobd_id|db.basedatos.nombre,  cacheable=True)
 	return dict(todas_las_claves=todas_las_claves)
 
 @auth.requires_login()
-def todas_las_claves(): #maestro de claves query
+def todas_las_clavesXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(): #maestro de claves query
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
 	script = SCRIPT('''$(document).ready(function(){
@@ -1141,7 +959,7 @@ def todas_las_claves(): #maestro de claves query
 	return dict(todas_las_claves=todas_las_claves, script=script)
 
 @auth.requires_login()
-def claves_managex():
+def claves_managexXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	
 	servidores = db(db.t_claves.id>0).select()
 	
@@ -1158,13 +976,13 @@ def error(message="No autorizado"):
 
 
 
-def indexxxx():
+def indexxxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	now = datetime.datetime.now()
 	span = datetime.timedelta(days=10)
 	product_list = db(db.task.created_on >= (now-span)).select(limitby=(0,3), orderby=~db.task.created_on)
 	return locals()
 
-def reporte_novedadesx():
+def reporte_novedadesxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	#generates a html form to filter the data to be displayed in the report
 	form = plugin_appreport.REPORTFORM(table=task_guardias)
 
@@ -1176,7 +994,7 @@ def reporte_novedadesx():
 
 
 
-def createReport():
+def createReportXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import os
 	import uuid
 	import subprocess   
@@ -1211,7 +1029,7 @@ def createReport():
 	
 
 
-def reportxxx():
+def reportxxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	response.title = "web2py sample report"
 
 	# include a google chart (download it dynamically!)
@@ -1262,7 +1080,7 @@ def reportxxx():
 #SQLEDITABLE.init()
 
 #Funcion para probar si es accesible todos los servidores y si el proceso esta levantado
-def test_port_ssh():
+def test_port_sshXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import socket
 	import sys
 	server_id=request.args[0]
@@ -1284,7 +1102,7 @@ def test_port_ssh():
 
 
 
-def test_connect_ssh():
+def test_connect_sshXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import sys, paramiko
 	server_id=request.args[0]
 	server=systemd(systemd.server.id==server_id).select(systemd.server.name, systemd.server.ip, systemd.server.port)
@@ -1312,7 +1130,7 @@ def test_connect_ssh():
 		message='<span style="color:red;">ORCA stoped</span>'
 		return '<span style="color:green;">OK, '+message+'</span>'
 
-def demo10():
+def demo10XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	response.title = 'demo10'
 	response.view = 'plugin_sqleditable/sample.html'
 	editable = SQLEDITABLE(db.rutina_status, showid=False, maxrow=20).process()
@@ -1387,11 +1205,11 @@ def get_command_result(command):
 	finally:
 		return output_stdout.decode(), output_error.decode()
 
-def lista_rman12_online():
+def lista_rman12_onlineXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	return locals()
 
-def reporte_rman12():
+def reporte_rman12XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	from gluon.tools import Expose
 	output_stdout, output_error = "None1", "None2"
 	usuario="oracle12"
@@ -1421,7 +1239,7 @@ def reporte_rman12():
 #return output_stdout.decode(), output_error.decode()
 
 
-def lista_bd_online():
+def lista_bd_onlineXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	print ("Servidor seleccionado: %s"% (request.args(0)))
 	usuario="postgres"
@@ -1439,7 +1257,7 @@ def lista_bd_online():
 	salida = proceso.communicate()
 	return salida
 
-def func_lista_bd_online_bd():
+def func_lista_bd_online_bdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	home=None
 	comando=None
@@ -1527,7 +1345,7 @@ def func_limpia_cuentasSO():
 	redirect(URL('list_cuentas_so'))
 	return
 
-def desbloq_usuarios():
+def desbloq_usuariosXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	comando=''
 	salida=''
@@ -1586,7 +1404,7 @@ def desbloq_usuarios():
 	return dict(forma=forma, salida=salida,nombre_bd=nombre_bd)
 
 
-def ejecuta_df():
+def ejecuta_dfXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	home=None
 	comando=None
@@ -1650,7 +1468,7 @@ def ejecuta_df():
 	#session.flash=comando
 	return salida
 
-def sysinfo():
+def sysinfoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	home=None
 	comando=None
@@ -1669,7 +1487,7 @@ def sysinfo():
 	#session.flash=comando
 	return salida	
 
-def ejecuta_procesos_bd():
+def ejecuta_procesos_bdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	home=None
 	comando=None
@@ -1735,17 +1553,17 @@ def ejecuta_procesos_bd():
 
 
 
-def abre_terminal():
+def abre_terminalXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	sh("ls -a")
 	return dict(result=result, salida=salida)
 
-def sh(cmd, input=""):
+def shXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(cmd, input=""):
 	import subprocess
 	rst = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, input=input.encode("utf-8")) 
 	assert rst.returncode == 0, rst.stderr.decode("utf-8")
 	return rst.stdout.decode("utf-8")
 	
-def ejecuta_shell():
+def ejecuta_shellXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import subprocess
 	archivo_salida = open("/tmp/output.txt", "w")
 	comando = request.folder + "/private/lista.sh" #son muchos asÃ­ que por eso los asigno a una variable
@@ -1763,7 +1581,7 @@ def ejecuta_shell():
 		#sal = run_comando('ls -l /home')
 	return locals()
 
-def run_comando(self, *args):
+def run_comandoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(self, *args):
 	import subprocess
 	p = subprocess.Popen(str(args),	
 		shell=False, 
@@ -1773,7 +1591,7 @@ def run_comando(self, *args):
 		universal_newlines=True)
 	return p.communicate()
 
-def lee_archivo():
+def lee_archivoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	import os
 	os.system('ls -l > tmp')
 	print (open('tmp', 'r').read())

@@ -109,6 +109,7 @@ administracion =[
 	(T('Administración'), False, '#', [
             (T('Usuarios'), URL(request.application,'plugin_useradmin','index')==URL(),URL(request.application,'plugin_useradmin','index'),[]),
             (T('Grupos'), URL(request.application,'plugin_manage_groups','index')==URL(),URL(request.application,'plugin_manage_groups','index'),[]),
+			(T('Control de Sesiones'), URL(request.application,'session_manager','index')==URL(),URL(request.application,'session_manager','index'),[]),
         ]),
 		]
 
