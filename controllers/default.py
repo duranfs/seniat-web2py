@@ -6,12 +6,12 @@ from gluon import *
 # -------------------------------------------------------------------------
 import logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler('monitor_oracle.log', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
+	level=logging.INFO,
+	format='%(asctime)s [%(levelname)s] %(message)s',
+	handlers=[
+		logging.FileHandler('monitor_oracle.log', encoding='utf-8'),
+		logging.StreamHandler()
+	]
 )
 # para evitar que se vea el codigo html cuando le dan F12
 response.minify = True  # En tu modelo o controlador
@@ -255,187 +255,193 @@ def user_conn():
 
 
 @auth.requires_login()
-def monitor_oracle():
-    from gluon.cache import Cache
-    from gluon.scheduler import Scheduler
-    import datetime
-    
-    cache = Cache(request)
-    now = datetime.datetime.now()
-    mensajes = None
-    
-    # 1. Obtener datos de monitoreo con caché inteligente
-    def obtener_datos_actualizados_ORACLE():
-        # Solo datos de los últimos 5 minutos
-        return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == 'ORACLE') \
-              .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
-    
-    mon = cache.ram('datos_monitoreo', obtener_datos_actualizados_ORACLE, time_expire=300)
-    
-    # 2. Verificar si necesitamos actualización (versión corregida)
-    necesita_actualizar = True
-    ultima_actualizacion = db(db.bdmon.tx_tipobd=='ORACLE').select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
-    
-    if ultima_actualizacion and ultima_actualizacion.f_corrida:
-        # Convertir datetime.date a datetime.datetime si es necesario
-        if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-            ultima_actualizacion_dt = datetime.datetime.combine(
-                ultima_actualizacion.f_corrida, 
-                datetime.time.min
-            )
-        else:
-            ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-        
-        diferencia = now - ultima_actualizacion_dt
-        if diferencia.total_seconds() < 300:  # 5 minutos
-            necesita_actualizar = False
-    
-    # 3. Procesamiento asíncrono si es necesario
-    if necesita_actualizar:
-        try:
-            scheduler = Scheduler(db)
-            # Verificar si ya hay una tarea en progreso
-            if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-                scheduler.queue_task(
-                    'actualizar_monitoreo_async', 
-                    timeout=1200,  # 20 minutos de timeout
-                    sync_output=5,
-                    immediate=True
-                )
-                mensajes = "Los datos se están actualizando en segundo plano..."
-            else:
-                mensajes = "Actualización en progreso... (por favor espere)"
-        except Exception as e:
-            # Fallback seguro con logging
-            import traceback
-            tb = traceback.format_exc()
-            #db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
-            
-            mensajes = "Iniciando actualización directa (modo seguro)..."
-            try:
-                resultado = actualizar_y_mostrar_monitor_parallel()
-                if resultado and 'resumen' in resultado:
-                    mensajes = resultado['resumen']
-                mon = obtener_datos_actualizados_ORACLE()
-            except Exception as e2:
-                mensajes = "Error en actualización directa"
-                #db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
-    
-    # 4. Obtener lista de bases de datos (con caché extendido)
-    def obtener_basedatos():
-        return db(db.basedatos.status_mon.upper() == 'SI').select(
-            db.basedatos.id,
-            db.basedatos.nombre,
-            db.basedatos.servidor,
-            db.basedatos.tipobd_id,
-            db.basedatos.version_id,
-            db.basedatos.puerto,
-            db.basedatos.ambiente_id,
-            cache=(cache.ram, 10),  # Cache por 1 hora
-            cacheable=True
-        )
-    
-    basedatos_mon = obtener_basedatos()
-    
-    return dict(
-        mon=mon, 
-        mensajes=mensajes, 
-        ultima_actualizacion=now, 
-        basedatos_mon=basedatos_mon,
-        necesita_actualizar=necesita_actualizar
-    )
+def monitor_bd():
+	from gluon.cache import Cache
+	from gluon.scheduler import Scheduler
+	import datetime
+	tipo_bd = request.args(0) or 9  # Default to 9 if no argument is provided
+	#tipo_bd_descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+	descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+	tipo_bd_descri = descri._extra['UPPER("tipobd"."descri")']
+	# Resultado: 'ORACLE'
+	cache = Cache(request)
+	now = datetime.datetime.now()
+	mensajes = None
+	
+	# 1. Obtener datos de monitoreo con caché inteligente
+	def obtener_datos_actualizados_ORACLE():
+		# Solo datos de los últimos 5 minutos
+		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == tipo_bd_descri) \
+			  .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+	
+	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados_ORACLE, time_expire=1)
+	
+	# 2. Verificar si necesitamos actualización (versión corregida)
+	necesita_actualizar = True
+	ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
+	
+	if ultima_actualizacion and ultima_actualizacion.f_corrida:
+		# Convertir datetime.date a datetime.datetime si es necesario
+		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+			ultima_actualizacion_dt = datetime.datetime.combine(
+				ultima_actualizacion.f_corrida, 
+				datetime.time.min
+			)
+		else:
+			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+		
+		diferencia = now - ultima_actualizacion_dt
+		if diferencia.total_seconds() < 3:  # 5 minutos
+			necesita_actualizar = False
+	
+	# 3. Procesamiento asíncrono si es necesario
+	if necesita_actualizar:
+		try:
+			scheduler = Scheduler(db)
+			# Verificar si ya hay una tarea en progreso
+			if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+				scheduler.queue_task(
+					'actualizar_monitoreo_async', 
+					timeout=1,  # 20 minutos de timeout
+					sync_output=5,
+					immediate=True
+				)
+				mensajes = "Los datos se están actualizando en segundo plano..."
+			else:
+				mensajes = "Actualización en progreso... (por favor espere)"
+		except Exception as e:
+			# Fallback seguro con logging
+			import traceback
+			tb = traceback.format_exc()
+			#db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
+			
+			mensajes = "Iniciando actualización directa (modo seguro)..."
+			try:
+				resultado = actualizar_y_mostrar_monitor_parallel()
+				if resultado and 'resumen' in resultado:
+					mensajes = resultado['resumen']
+				mon = obtener_datos_actualizados_ORACLE()
+			except Exception as e2:
+				mensajes = "Error en actualización directa"
+				#db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
+	
+	# 4. Obtener lista de bases de datos (con caché extendido)
+	def obtener_basedatos():
+		return db(db.basedatos.status_mon.upper() == 'SI').select(
+			db.basedatos.id,
+			db.basedatos.nombre,
+			db.basedatos.servidor,
+			db.basedatos.tipobd_id,
+			db.basedatos.version_id,
+			db.basedatos.puerto,
+			db.basedatos.ambiente_id,
+			cache=(cache.ram, 10),  # Cache por 1 hora
+			cacheable=True
+		)
+	
+	basedatos_mon = obtener_basedatos()
+	
+	return dict(
+		mon=mon, 
+		mensajes=mensajes, 
+		ultima_actualizacion=now, 
+		basedatos_mon=basedatos_mon,
+		necesita_actualizar=necesita_actualizar,
+		tipo_bd_descri=tipo_bd_descri
+
+	)
 
 
 @auth.requires_login()
 def monitor_mssqlserver():
-    from gluon.cache import Cache
-    from gluon.scheduler import Scheduler
-    import datetime
-    
-    cache = Cache(request)
-    now = datetime.datetime.now()
-    mensajes = None
-    
-    # 1. Obtener datos de monitoreo con caché inteligente
-    def obtener_datos_actualizados():
-        # Solo datos de los últimos 5 minutos
-        return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == 'MSSQLSERVER') \
-              .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
-    
-    mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=300)
-    
-    # 2. Verificar si necesitamos actualización (versión corregida)
-    necesita_actualizar = True
-    ultima_actualizacion = db(db.bdmon.tx_tipobd=='MSSQLSERVER').select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
-    
-    if ultima_actualizacion and ultima_actualizacion.f_corrida:
-        # Convertir datetime.date a datetime.datetime si es necesario
-        if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-            ultima_actualizacion_dt = datetime.datetime.combine(
-                ultima_actualizacion.f_corrida, 
-                datetime.time.min
-            )
-        else:
-            ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-        
-        diferencia = now - ultima_actualizacion_dt
-        if diferencia.total_seconds() < 300:  # 5 minutos
-            necesita_actualizar = False
-    
-    # 3. Procesamiento asíncrono si es necesario
-    if necesita_actualizar:
-        try:
-            scheduler = Scheduler(db)
-            # Verificar si ya hay una tarea en progreso
-            if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-                scheduler.queue_task(
-                    'actualizar_monitoreo_async', 
-                    timeout=1200,  # 20 minutos de timeout
-                    sync_output=5,
-                    immediate=True
-                )
-                mensajes = "Los datos se están actualizando en segundo plano..."
-            else:
-                mensajes = "Actualización en progreso... (por favor espere)"
-        except Exception as e:
-            # Fallback seguro con logging
-            import traceback
-            tb = traceback.format_exc()
-            #db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
-            
-            mensajes = "Iniciando actualización directa (modo seguro)..."
-            try:
-                resultado = actualizar_y_mostrar_monitor_parallel()
-                if resultado and 'resumen' in resultado:
-                    mensajes = resultado['resumen']
-                mon = obtener_datos_actualizados()
-            except Exception as e2:
-                mensajes = "Error en actualización directa"
-                #db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
-    
-    # 4. Obtener lista de bases de datos (con caché extendido)
-    def obtener_basedatos():
-        return db(db.basedatos.status_mon.upper() == 'SI').select(
-            db.basedatos.id,
-            db.basedatos.nombre,
-            db.basedatos.servidor,
-            db.basedatos.tipobd_id,
-            db.basedatos.version_id,
-            db.basedatos.puerto,
-            db.basedatos.ambiente_id,
-            cache=(cache.ram, 10),  # Cache por 1 hora 3600
-            cacheable=True
-        )
-    
-    basedatos_mon = obtener_basedatos()
-    
-    return dict(
-        mon=mon, 
-        mensajes=mensajes, 
-        ultima_actualizacion=now, 
-        basedatos_mon=basedatos_mon,
-        necesita_actualizar=necesita_actualizar
-    )
+	from gluon.cache import Cache
+	from gluon.scheduler import Scheduler
+	import datetime
+	
+	cache = Cache(request)
+	now = datetime.datetime.now()
+	mensajes = None
+	
+	# 1. Obtener datos de monitoreo con caché inteligente
+	def obtener_datos_actualizados():
+		# Solo datos de los últimos 5 minutos
+		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == 'MSSQLSERVER') \
+			  .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+	
+	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=300)
+	
+	# 2. Verificar si necesitamos actualización (versión corregida)
+	necesita_actualizar = True
+	ultima_actualizacion = db(db.bdmon.tx_tipobd=='MSSQLSERVER').select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
+	
+	if ultima_actualizacion and ultima_actualizacion.f_corrida:
+		# Convertir datetime.date a datetime.datetime si es necesario
+		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+			ultima_actualizacion_dt = datetime.datetime.combine(
+				ultima_actualizacion.f_corrida, 
+				datetime.time.min
+			)
+		else:
+			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+		
+		diferencia = now - ultima_actualizacion_dt
+		if diferencia.total_seconds() < 300:  # 5 minutos
+			necesita_actualizar = False
+	
+	# 3. Procesamiento asíncrono si es necesario
+	if necesita_actualizar:
+		try:
+			scheduler = Scheduler(db)
+			# Verificar si ya hay una tarea en progreso
+			if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+				scheduler.queue_task(
+					'actualizar_monitoreo_async', 
+					timeout=1200,  # 20 minutos de timeout
+					sync_output=5,
+					immediate=True
+				)
+				mensajes = "Los datos se están actualizando en segundo plano..."
+			else:
+				mensajes = "Actualización en progreso... (por favor espere)"
+		except Exception as e:
+			# Fallback seguro con logging
+			import traceback
+			tb = traceback.format_exc()
+			#db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
+			
+			mensajes = "Iniciando actualización directa (modo seguro)..."
+			try:
+				resultado = actualizar_y_mostrar_monitor_parallel()
+				if resultado and 'resumen' in resultado:
+					mensajes = resultado['resumen']
+				mon = obtener_datos_actualizados()
+			except Exception as e2:
+				mensajes = "Error en actualización directa"
+				#db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
+	
+	# 4. Obtener lista de bases de datos (con caché extendido)
+	def obtener_basedatos():
+		return db(db.basedatos.status_mon.upper() == 'SI').select(
+			db.basedatos.id,
+			db.basedatos.nombre,
+			db.basedatos.servidor,
+			db.basedatos.tipobd_id,
+			db.basedatos.version_id,
+			db.basedatos.puerto,
+			db.basedatos.ambiente_id,
+			cache=(cache.ram, 10),  # Cache por 1 hora 3600
+			cacheable=True
+		)
+	
+	basedatos_mon = obtener_basedatos()
+	
+	return dict(
+		mon=mon, 
+		mensajes=mensajes, 
+		ultima_actualizacion=now, 
+		basedatos_mon=basedatos_mon,
+		necesita_actualizar=necesita_actualizar
+	)
 
 #------- en paralelo ------------------------------------------------------------------------
 
@@ -446,274 +452,274 @@ import logging
 import threading
 
 def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connection):
-    """Versión final adaptada para múltiples tipos de bases de datos"""
-    try:
-        thread_id = threading.current_thread().ident
-        logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo: {m.tx_instancia}@{m.tx_servidor}")
-        
-        try:
-            servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
-            if not servidor:
-                error_msg = f"Servidor no encontrado: {m.tx_servidor}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-        except Exception as e:
-            error_msg = f"Error al buscar servidor: {str(e)}"
-            logging.error(f"[THREAD-{thread_id}] {error_msg}")
-            update_monitor_record(db, m, None, error_msg, False)
-            return m.id, error_msg, False
+	"""Versión final adaptada para múltiples tipos de bases de datos"""
+	try:
+		thread_id = threading.current_thread().ident
+		logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo: {m.tx_instancia}@{m.tx_servidor}")
+		
+		try:
+			servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
+			if not servidor:
+				error_msg = f"Servidor no encontrado: {m.tx_servidor}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+		except Exception as e:
+			error_msg = f"Error al buscar servidor: {str(e)}"
+			logging.error(f"[THREAD-{thread_id}] {error_msg}")
+			update_monitor_record(db, m, None, error_msg, False)
+			return m.id, error_msg, False
 
-        # Obtener información completa de la base de datos
-        try:
-            bdatos = db((db.basedatos.servidor == servidor.id) & 
-                       (db.basedatos.nombre == m.tx_instancia)).select(
-                       db.basedatos.puerto, 
-                       db.basedatos.version_id,
-                       db.basedatos.tipobd_id).first()
-            
-            if not bdatos:
-                error_msg = f"Base de datos no encontrada: {m.tx_instancia}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-        except Exception as e:
-            error_msg = f"Error al buscar base de datos: {str(e)}"
-            logging.error(f"[THREAD-{thread_id}] {error_msg}")
-            update_monitor_record(db, m, None, error_msg, False)
-            return m.id, error_msg, False
+		# Obtener información completa de la base de datos
+		try:
+			bdatos = db((db.basedatos.servidor == servidor.id) & 
+					   (db.basedatos.nombre == m.tx_instancia)).select(
+					   db.basedatos.puerto, 
+					   db.basedatos.version_id,
+					   db.basedatos.tipobd_id).first()
+			
+			if not bdatos:
+				error_msg = f"Base de datos no encontrada: {m.tx_instancia}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+		except Exception as e:
+			error_msg = f"Error al buscar base de datos: {str(e)}"
+			logging.error(f"[THREAD-{thread_id}] {error_msg}")
+			update_monitor_record(db, m, None, error_msg, False)
+			return m.id, error_msg, False
 
-        # Obtener tipo de base de datos
-        tipo_bd = db(db.tipobd.id == bdatos.tipobd_id).select(db.tipobd.descri).first()
-        if not tipo_bd:
-            error_msg = f"Tipo de base de datos no definido para: {m.tx_instancia}"
-            logging.error(f"[THREAD-{thread_id}] {error_msg}")
-            update_monitor_record(db, m, None, error_msg, False)
-            return m.id, error_msg, False
+		# Obtener tipo de base de datos
+		tipo_bd = db(db.tipobd.id == bdatos.tipobd_id).select(db.tipobd.descri).first()
+		if not tipo_bd:
+			error_msg = f"Tipo de base de datos no definido para: {m.tx_instancia}"
+			logging.error(f"[THREAD-{thread_id}] {error_msg}")
+			update_monitor_record(db, m, None, error_msg, False)
+			return m.id, error_msg, False
 
-        tipo_bd = tipo_bd.descri.strip().upper()
-        
-        resultado = None
-        mensaje = ""
-        success = False
-        connection = None
-        cursor = None
-        rutina = m.tx_rutina
-        
-        try:
-            comando = (m.tx_comando or "").strip()
-            if not comando:
-                raise ValueError("Comando SQL vacío o nulo")
-                
-            if comando.count("'") % 2 != 0 or comando.count('"') % 2 != 0:
-                raise ValueError("Comando SQL con comillas sin cerrar")
-                
-            comando = comando.rstrip(';')
-            
-            # Conexión según tipo de base de datos
-            if tipo_bd in ['ORACLE', 'CONTENEDOR ORACLE']:
-                # Configuración específica para Oracle
-                dominio = servidor.dominio.lower() if servidor.dominio else ""
-                service_name = f"{m.tx_instancia}.{dominio}" if dominio else m.tx_instancia
-                ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
-                ver = int(ver_str) if ver_str.isdigit() else 0
-                
-                logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
-                connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
-                cursor = connection.cursor()
-                
-            elif tipo_bd == 'MSSQLSERVER':
-                # Configuración específica para SQL Server
-                logging.info(f"[THREAD-{thread_id}] Conectando a SQL Server: {servidor.ip}:{bdatos.puerto}/{m.tx_instancia}")
-                connection = get_sqlserver_connection(
-                    servidor=servidor.ip,
-                    base_datos=m.tx_instancia,
-                    puerto=bdatos.puerto,
-                    controlador='ODBC Driver 17 for SQL Server'
-                )
-                cursor = connection.cursor()
-                
-            elif tipo_bd in ['POSTGRESQL', 'DOCKER-KUBERNETES-PGSQL']:
-                # Configuración para PostgreSQL (requiere implementación)
-                error_msg = f"Conexión PostgreSQL no implementada aún para: {m.tx_instancia}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-                
-            elif tipo_bd in ['MYSQL', 'MARIADB', 'DOCKER-KUBERNETES-MYSQL']:
-                # Configuración para MySQL/MariaDB (requiere implementación)
-                error_msg = f"Conexión MySQL/MariaDB no implementada aún para: {m.tx_instancia}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-                
-            elif tipo_bd == 'MONGODB':
-                # Configuración para MongoDB (requiere implementación)
-                error_msg = f"Conexión MongoDB no implementada aún para: {m.tx_instancia}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-                
-            else:
-                error_msg = f"Tipo de base de datos no soportado: {tipo_bd}"
-                logging.error(f"[THREAD-{thread_id}] {error_msg}")
-                update_monitor_record(db, m, None, error_msg, False)
-                return m.id, error_msg, False
-                
-            # Ejecución del comando (común para todos los tipos)
-            logging.info(f"[THREAD-{thread_id}] Ejecutando comando en {m.tx_instancia} ({tipo_bd})")
-            cursor.execute(comando)
-            
-            # Procesamiento de resultados
-            try:
-                raw_result = cursor.fetchone()
-                if raw_result:
-                    resultado = raw_result[0] if len(raw_result) == 1 else raw_result
-                    if isinstance(resultado, (int, float)) and resultado == 0:
-                        mensaje = f"Advertencia: Resultado cero en {m.tx_instancia}"
-                    else:
-                        mensaje = f"Éxito - Resultado: {resultado}"
-                else:
-                    mensaje = "Éxito - Sin resultados"
-                success = True
-                
-            except Exception as fetch_error:
-                mensaje = f"Error al obtener resultados: {str(fetch_error)}"
-                logging.warning(f"[THREAD-{thread_id}] {mensaje}")
-                
-        except Exception as db_error:
-            mensaje = f"Error de {tipo_bd}: {servidor.ip} {rutina} {m.tx_instancia} - {str(db_error)}"
-            logging.error(f"[THREAD-{thread_id}] {mensaje}")
-            
-        finally:
-            # Cierre seguro de recursos
-            for resource in [cursor, connection]:
-                if resource:
-                    try:
-                        resource.close()
-                    except Exception as close_error:
-                        logging.warning(f"[THREAD-{thread_id}] Error al cerrar recurso: {str(close_error)}")
-        
-        # Actualización de resultados
-        try:
-            update_monitor_record(db, m, resultado, mensaje, success)
-        except Exception as update_error:
-            logging.error(f"[THREAD-{thread_id}] Error al actualizar registro: {str(update_error)}")
-            return m.id, f"Error al guardar resultados: {str(update_error)}", False
-        
-        return m.id, mensaje, success
-        
-    except Exception as e:
-        error_msg = f"Error inesperado: {str(e)}"
-        logging.error(f"[THREAD-{thread_id}] {error_msg}\n{traceback.format_exc()}")
-        try:
-            update_monitor_record(db, m, None, error_msg, False)
-        except:
-            pass
-        return m.id, error_msg, False
+		tipo_bd = tipo_bd.descri.strip().upper()
+		
+		resultado = None
+		mensaje = ""
+		success = False
+		connection = None
+		cursor = None
+		rutina = m.tx_rutina
+		
+		try:
+			comando = (m.tx_comando or "").strip()
+			if not comando:
+				raise ValueError("Comando SQL vacío o nulo")
+				
+			if comando.count("'") % 2 != 0 or comando.count('"') % 2 != 0:
+				raise ValueError("Comando SQL con comillas sin cerrar")
+				
+			comando = comando.rstrip(';')
+			
+			# Conexión según tipo de base de datos
+			if tipo_bd in ['ORACLE', 'CONTENEDOR ORACLE']:
+				# Configuración específica para Oracle
+				dominio = servidor.dominio.lower() if servidor.dominio else ""
+				service_name = f"{m.tx_instancia}.{dominio}" if dominio else m.tx_instancia
+				ver_str = bdatos.version_id.descri[0:2].replace('.', '') if bdatos.version_id else '0'
+				ver = int(ver_str) if ver_str.isdigit() else 0
+				
+				logging.info(f"[THREAD-{thread_id}] Conectando a Oracle: {servidor.ip}:{bdatos.puerto}/{service_name}")
+				connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
+				cursor = connection.cursor()
+				
+			elif tipo_bd == 'MSSQLSERVER':
+				# Configuración específica para SQL Server
+				logging.info(f"[THREAD-{thread_id}] Conectando a SQL Server: {servidor.ip}:{bdatos.puerto}/{m.tx_instancia}")
+				connection = get_sqlserver_connection(
+					servidor=servidor.ip,
+					base_datos=m.tx_instancia,
+					puerto=bdatos.puerto,
+					controlador='ODBC Driver 17 for SQL Server'
+				)
+				cursor = connection.cursor()
+				
+			elif tipo_bd in ['POSTGRESQL', 'DOCKER-KUBERNETES-PGSQL']:
+				# Configuración para PostgreSQL (requiere implementación)
+				error_msg = f"Conexión PostgreSQL no implementada aún para: {m.tx_instancia}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+				
+			elif tipo_bd in ['MYSQL', 'MARIADB', 'DOCKER-KUBERNETES-MYSQL']:
+				# Configuración para MySQL/MariaDB (requiere implementación)
+				error_msg = f"Conexión MySQL/MariaDB no implementada aún para: {m.tx_instancia}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+				
+			elif tipo_bd == 'MONGODB':
+				# Configuración para MongoDB (requiere implementación)
+				error_msg = f"Conexión MongoDB no implementada aún para: {m.tx_instancia}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+				
+			else:
+				error_msg = f"Tipo de base de datos no soportado: {tipo_bd}"
+				logging.error(f"[THREAD-{thread_id}] {error_msg}")
+				update_monitor_record(db, m, None, error_msg, False)
+				return m.id, error_msg, False
+				
+			# Ejecución del comando (común para todos los tipos)
+			logging.info(f"[THREAD-{thread_id}] Ejecutando comando en {m.tx_instancia} ({tipo_bd})")
+			cursor.execute(comando)
+			
+			# Procesamiento de resultados
+			try:
+				raw_result = cursor.fetchone()
+				if raw_result:
+					resultado = raw_result[0] if len(raw_result) == 1 else raw_result
+					if isinstance(resultado, (int, float)) and resultado == 0:
+						mensaje = f"Advertencia: Resultado cero en {m.tx_instancia}"
+					else:
+						mensaje = f"Éxito - Resultado: {resultado}"
+				else:
+					mensaje = "Éxito - Sin resultados"
+				success = True
+				
+			except Exception as fetch_error:
+				mensaje = f"Error al obtener resultados: {str(fetch_error)}"
+				logging.warning(f"[THREAD-{thread_id}] {mensaje}")
+				
+		except Exception as db_error:
+			mensaje = f"Error de {tipo_bd}: {servidor.ip} {rutina} {m.tx_instancia} - {str(db_error)}"
+			logging.error(f"[THREAD-{thread_id}] {mensaje}")
+			
+		finally:
+			# Cierre seguro de recursos
+			for resource in [cursor, connection]:
+				if resource:
+					try:
+						resource.close()
+					except Exception as close_error:
+						logging.warning(f"[THREAD-{thread_id}] Error al cerrar recurso: {str(close_error)}")
+		
+		# Actualización de resultados
+		try:
+			update_monitor_record(db, m, resultado, mensaje, success)
+		except Exception as update_error:
+			logging.error(f"[THREAD-{thread_id}] Error al actualizar registro: {str(update_error)}")
+			return m.id, f"Error al guardar resultados: {str(update_error)}", False
+		
+		return m.id, mensaje, success
+		
+	except Exception as e:
+		error_msg = f"Error inesperado: {str(e)}"
+		logging.error(f"[THREAD-{thread_id}] {error_msg}\n{traceback.format_exc()}")
+		try:
+			update_monitor_record(db, m, None, error_msg, False)
+		except:
+			pass
+		return m.id, error_msg, False
 
 def actualizar_y_mostrar_monitor_parallel():
-    """Función principal para monitoreo paralelo multi-BD"""
-    logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
-    
-    monitoreos = db(db.bdmon).select()
-    
-    conexiones_exitosas = 0
-    conexiones_fallidas = 0
-    resultados = {}
-    
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {
-            executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection): m
-            for m in monitoreos
-        }
-        
-        for future in as_completed(futures):
-            m = futures[future]
-            try:
-                m_id, mensaje, success = future.result()
-                logging.info(f"[MAIN] Resultado para {m.tx_instancia} ({m.id}): {mensaje[:100]}...")
-                if success:
-                    conexiones_exitosas += 1
-                else:
-                    conexiones_fallidas += 1
-                resultados[m_id] = mensaje
-            except Exception as e:
-                conexiones_fallidas += 1
-                resultados[m.id] = f"Error inesperado: {str(e)}"
-                logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}\n{traceback.format_exc()}")
-    
-    # Generar reporte resumen por tipo de BD
-    resumen = (
-        f"Proceso completado. Total: {len(monitoreos)}, "
-        f"Exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
-    )
-    
-    # Ordenar mensajes por ID de monitor
-    mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
-    mensajes_ordenados.insert(0, resumen)
-    logging.info(f"[MAIN] {resumen}")
-    
-    return dict(
-        mensajes=mensajes_ordenados,
-        resumen=resumen,
-        exitosas=conexiones_exitosas,
-        fallidas=conexiones_fallidas
-    )
+	"""Función principal para monitoreo paralelo multi-BD"""
+	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
+	
+	monitoreos = db(db.bdmon).select()
+	
+	conexiones_exitosas = 0
+	conexiones_fallidas = 0
+	resultados = {}
+	
+	with ThreadPoolExecutor(max_workers=10) as executor:
+		futures = {
+			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection): m
+			for m in monitoreos
+		}
+		
+		for future in as_completed(futures):
+			m = futures[future]
+			try:
+				m_id, mensaje, success = future.result()
+				logging.info(f"[MAIN] Resultado para {m.tx_instancia} ({m.id}): {mensaje[:100]}...")
+				if success:
+					conexiones_exitosas += 1
+				else:
+					conexiones_fallidas += 1
+				resultados[m_id] = mensaje
+			except Exception as e:
+				conexiones_fallidas += 1
+				resultados[m.id] = f"Error inesperado: {str(e)}"
+				logging.error(f"[MAIN] ERROR inesperado en {m.tx_instancia}: {str(e)}\n{traceback.format_exc()}")
+	
+	# Generar reporte resumen por tipo de BD
+	resumen = (
+		f"Proceso completado. Total: {len(monitoreos)}, "
+		f"Exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
+	)
+	
+	# Ordenar mensajes por ID de monitor
+	mensajes_ordenados = [resultados[id] for id in sorted(resultados.keys())]
+	mensajes_ordenados.insert(0, resumen)
+	logging.info(f"[MAIN] {resumen}")
+	
+	return dict(
+		mensajes=mensajes_ordenados,
+		resumen=resumen,
+		exitosas=conexiones_exitosas,
+		fallidas=conexiones_fallidas
+	)
 
 def update_monitor_record(db, monitor, resultado, mensaje, success):
-    """Función mejorada con caché inteligente y manejo robusto de errores"""
-    try:
-        # Obtener el timestamp actual una sola vez
-        ahora = datetime.datetime.now()
-        
-        # Verificar si necesitamos actualizar
-        necesita_actualizar = True
-        
-        # Comprobar si podemos usar caché (solo si tenemos un resultado previo válido)
-        registro_actual = db(db.bdmon.id == monitor.id).select(
-            db.bdmon.f_corrida, 
-            db.bdmon.tx_resultado
-        ).first()
-        
-        if registro_actual and registro_actual.f_corrida and registro_actual.tx_resultado is not None:
-            # Convertir a datetime si es necesario
-            fecha_corrida = registro_actual.f_corrida
-            if isinstance(fecha_corrida, datetime.date):
-                fecha_corrida = datetime.datetime.combine(fecha_corrida, datetime.time.min)
-            
-            # Calcular diferencia
-            diferencia = ahora - fecha_corrida
-            
-            # Usar caché si los datos son recientes (menos de 5 minutos)
-            if diferencia < datetime.timedelta(minutes=5):
-                logging.info(f"[CACHÉ] Usando datos recientes para {monitor.id} (actualizado hace {diferencia.total_seconds()} segundos)")
-                necesita_actualizar = False
-        
-        # Actualizar solo si es necesario
-        if necesita_actualizar:
-            update_data = {
-                'tx_resultado': str(resultado) if resultado is not None else None,
-                'tx_resultado_detalle': mensaje[:4000] if mensaje else None,
-                'f_corrida': ahora,
-                'estado': 'OK' if success else 'ERROR'
-            }
-            
-            # Actualización con verificación
-            try:
-                db(db.bdmon.id == monitor.id).update(**update_data)
-                db.commit()
-                logging.info(f"[ACTUALIZACIÓN] Registro {monitor.id} actualizado correctamente")
-            except Exception as e:
-                db.rollback()
-                logging.error(f"[ERROR] Fallo al actualizar {monitor.id}: {str(e)}")
-                raise
-        
-        return necesita_actualizar
-        
-    except Exception as e:
-        logging.error(f"[ERROR CRÍTICO] En update_monitor_record: {str(e)}\n{traceback.format_exc()}")
-        raise
+	"""Función mejorada con caché inteligente y manejo robusto de errores"""
+	try:
+		# Obtener el timestamp actual una sola vez
+		ahora = datetime.datetime.now()
+		
+		# Verificar si necesitamos actualizar
+		necesita_actualizar = True
+		
+		# Comprobar si podemos usar caché (solo si tenemos un resultado previo válido)
+		registro_actual = db(db.bdmon.id == monitor.id).select(
+			db.bdmon.f_corrida, 
+			db.bdmon.tx_resultado
+		).first()
+		
+		if registro_actual and registro_actual.f_corrida and registro_actual.tx_resultado is not None:
+			# Convertir a datetime si es necesario
+			fecha_corrida = registro_actual.f_corrida
+			if isinstance(fecha_corrida, datetime.date):
+				fecha_corrida = datetime.datetime.combine(fecha_corrida, datetime.time.min)
+			
+			# Calcular diferencia
+			diferencia = ahora - fecha_corrida
+			
+			# Usar caché si los datos son recientes (menos de 5 minutos)
+			if diferencia < datetime.timedelta(minutes=5):
+				logging.info(f"[CACHÉ] Usando datos recientes para {monitor.id} (actualizado hace {diferencia.total_seconds()} segundos)")
+				necesita_actualizar = False
+		
+		# Actualizar solo si es necesario
+		if necesita_actualizar:
+			update_data = {
+				'tx_resultado': str(resultado) if resultado is not None else None,
+				'tx_resultado_detalle': mensaje[:4000] if mensaje else None,
+				'f_corrida': ahora,
+				'estado': 'OK' if success else 'ERROR'
+			}
+			
+			# Actualización con verificación
+			try:
+				db(db.bdmon.id == monitor.id).update(**update_data)
+				db.commit()
+				logging.info(f"[ACTUALIZACIÓN] Registro {monitor.id} actualizado correctamente")
+			except Exception as e:
+				db.rollback()
+				logging.error(f"[ERROR] Fallo al actualizar {monitor.id}: {str(e)}")
+				raise
+		
+		return necesita_actualizar
+		
+	except Exception as e:
+		logging.error(f"[ERROR CRÍTICO] En update_monitor_record: {str(e)}\n{traceback.format_exc()}")
+		raise
 
 
 
@@ -721,168 +727,168 @@ def update_monitor_record(db, monitor, resultado, mensaje, success):
 
 
 def actualizar_y_mostrar_monitor():
-    # Obtener todas las instancias activas de bdmon
-    monitoreos = db(db.bdmon).select()
-    
-    mensajes = []
-    conexiones_exitosas = 0
-    conexiones_fallidas = 0
-    
-    for m in monitoreos:
-        servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
-        if not servidor:
-            continue
-            
-        resultado = None
-        mensaje = ""
+	# Obtener todas las instancias activas de bdmon
+	monitoreos = db(db.bdmon).select()
+	
+	mensajes = []
+	conexiones_exitosas = 0
+	conexiones_fallidas = 0
+	
+	for m in monitoreos:
+		servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
+		if not servidor:
+			continue
+			
+		resultado = None
+		mensaje = ""
 
-        # si el servicio o instancia de base de datos tiene dominio 
-        if servidor.dominio:
-        	service_name = f"{m.tx_instancia}" + "." + (servidor.dominio).lower()
-        else:	
-        	service_name = f"{m.tx_instancia}"
+		# si el servicio o instancia de base de datos tiene dominio 
+		if servidor.dominio:
+			service_name = f"{m.tx_instancia}" + "." + (servidor.dominio).lower()
+		else:	
+			service_name = f"{m.tx_instancia}"
 
-        bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia)\
-        .select(db.basedatos.puerto, db.basedatos.version_id).first()
-        #ver=int(bdatos.version_id.descri[0:2].replace('.', ''))
-        try:
-        	ver_str = bdatos.version_id.descri[0:2].replace('.', '')
-        	ver = int(ver_str) if ver_str.isdigit() else 0  # or some default value
-        except (AttributeError, ValueError):
-        	ver = 0  # or handle the error appropriately
+		bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia)\
+		.select(db.basedatos.puerto, db.basedatos.version_id).first()
+		#ver=int(bdatos.version_id.descri[0:2].replace('.', ''))
+		try:
+			ver_str = bdatos.version_id.descri[0:2].replace('.', '')
+			ver = int(ver_str) if ver_str.isdigit() else 0  # or some default value
+		except (AttributeError, ValueError):
+			ver = 0  # or handle the error appropriately
 
 
-        try:
-        	connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
+		try:
+			connection = get_oracle_connection(servidor.ip, service_name, bdatos.puerto, ver)
 
-        	cursor = connection.cursor()
-        	comando = m.tx_comando.strip().strip('"').strip("'")
-        	cursor.execute(m.tx_comando)
-        	resultado = cursor.fetchone()
-        	resultado = resultado[0]
-        	mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
-        	conexiones_exitosas += 1
-        	m.update_record(
-        		tx_resultado=resultado,
-        		tx_resultado_detalle=mensaje,
-        		fe_ultima_ejecucion=datetime.datetime.now(),
-        		f_corrida=datetime.datetime.now())
-            
-        except Exception as e:
-            error_msg = str(e)
-            m.update_record(
-                tx_resultado=resultado,
-                tx_resultado_detalle="Sin conectar: " + error_msg + " " + servidor.ip +" " + service_name +" "+bdatos.puerto +" "+ str(ver),
-                fe_ultima_ejecucion=datetime.datetime.now(),
-                f_corrida=datetime.datetime.now()
-            )
-            
-            mensaje = f"Error al conectar a {service_name}: {error_msg}"
-            conexiones_fallidas += 1
-            
-        finally:
-            # Cerrar recursos de manera segura
-            try:
-                if 'cursor' in locals() and cursor is not None:
-                    cursor.close()
-            except:
-                pass
-                
-            try:
-                if 'connection' in locals() and connection is not None:
-                    connection.close()
-                    redirect(URL('index'))
-            except:
-                pass
-        
-        mensajes.append(mensaje)
-    
-    # Crear resumen final
-    resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
-    mensajes.insert(0, resumen)
-    
-    # Devuelve el diccionario de variables para la vista
-    return dict(
-        #mon=db(db.bdmon).select(),
-        mensajes=mensajes,
-        resumen=resumen
-    )
+			cursor = connection.cursor()
+			comando = m.tx_comando.strip().strip('"').strip("'")
+			cursor.execute(m.tx_comando)
+			resultado = cursor.fetchone()
+			resultado = resultado[0]
+			mensaje = f"Conexión exitosa a {service_name} - Resultado: {resultado}"
+			conexiones_exitosas += 1
+			m.update_record(
+				tx_resultado=resultado,
+				tx_resultado_detalle=mensaje,
+				fe_ultima_ejecucion=datetime.datetime.now(),
+				f_corrida=datetime.datetime.now())
+			
+		except Exception as e:
+			error_msg = str(e)
+			m.update_record(
+				tx_resultado=resultado,
+				tx_resultado_detalle="Sin conectar: " + error_msg + " " + servidor.ip +" " + service_name +" "+bdatos.puerto +" "+ str(ver),
+				fe_ultima_ejecucion=datetime.datetime.now(),
+				f_corrida=datetime.datetime.now()
+			)
+			
+			mensaje = f"Error al conectar a {service_name}: {error_msg}"
+			conexiones_fallidas += 1
+			
+		finally:
+			# Cerrar recursos de manera segura
+			try:
+				if 'cursor' in locals() and cursor is not None:
+					cursor.close()
+			except:
+				pass
+				
+			try:
+				if 'connection' in locals() and connection is not None:
+					connection.close()
+					redirect(URL('index'))
+			except:
+				pass
+		
+		mensajes.append(mensaje)
+	
+	# Crear resumen final
+	resumen = f"Proceso completado. Conexiones exitosas: {conexiones_exitosas}, Fallidas: {conexiones_fallidas}"
+	mensajes.insert(0, resumen)
+	
+	# Devuelve el diccionario de variables para la vista
+	return dict(
+		#mon=db(db.bdmon).select(),
+		mensajes=mensajes,
+		resumen=resumen
+	)
 
 
 
 
 
 def prueba_9i():
-    mensaje = []
-    resultado = []
-    rutina = ""
-    ver = ""
-    conexiones_exitosas = 0
-    conexiones_fallidas = 0
-    
-    # Obtener todos los registros a procesar
-    #registros = db(db.bdmon)(db.bdmon.tx_servidor=='LAGUAIRA1')(db.bdmon.tx_rutina=='SESIONES>90%').select()
-    registros = db(db.bdmon)(db.bdmon.tx_servidor=='LAGUAIRA1').select()
-    
-    for m in registros:
-        try:
-            servidor = db(db.servidores.nombre==m.tx_servidor).select().first()
-            if not servidor:
-                mensaje.append(f"Servidor no encontrado: {m.tx_servidor}")
-                continue
-                
-            bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia)\
-                     .select(db.basedatos.puerto, db.basedatos.version_id).first()
-            if not bdatos:
-                mensaje.append(f"Base de datos no encontrada: {m.tx_instancia}")
-                continue
-                
-            ver = int(bdatos.version_id.descri[0:2].replace('.', ''))
-            
-            try:
-                connection = get_oracle_connection_9i("172.16.32.147", "ASY_DB1", 1525, ver)
-                conexiones_exitosas += 1
-            except Exception as e:
-                mensaje.append(f"Error de conexión: {str(e)}")
-                conexiones_fallidas += 1
-                continue
-                
-            try:
-                cursor = connection.cursor()
-                rutina += m.tx_rutina + " , "
-                comando = m.tx_comando
-                
-                cursor.execute(comando)
-                resultado_query = cursor.fetchone()
-                if resultado_query:
-                    resultado.append(resultado_query[0])
-                else:
-                    resultado.append("Sin resultados")
-                    
-                mensaje.append(f"Conexión exitosa a: {connection}")
-                
-            except Exception as e:
-                mensaje.append(f"Error ejecutando query: {str(e)}")
-                resultado.append(f"Error en query: {m.tx_rutina}")
-                
-            finally:
-                if 'cursor' in locals() and cursor is not None:
-                    cursor.close()
-                if 'connection' in locals() and connection is not None:
-                    connection.close()
-                    
-        except Exception as e:
-            mensaje.append(f"Error general procesando registro: {str(e)}")
-            continue
-            
-    return dict(
-        resultado=resultado, 
-        mensaje=mensaje, 
-        rutina=rutina, 
-        ver=ver,
-        conexiones_exitosas=conexiones_exitosas,
-        conexiones_fallidas=conexiones_fallidas
-    )
+	mensaje = []
+	resultado = []
+	rutina = ""
+	ver = ""
+	conexiones_exitosas = 0
+	conexiones_fallidas = 0
+	
+	# Obtener todos los registros a procesar
+	#registros = db(db.bdmon)(db.bdmon.tx_servidor=='LAGUAIRA1')(db.bdmon.tx_rutina=='SESIONES>90%').select()
+	registros = db(db.bdmon)(db.bdmon.tx_servidor=='LAGUAIRA1').select()
+	
+	for m in registros:
+		try:
+			servidor = db(db.servidores.nombre==m.tx_servidor).select().first()
+			if not servidor:
+				mensaje.append(f"Servidor no encontrado: {m.tx_servidor}")
+				continue
+				
+			bdatos = db(db.basedatos.servidor == servidor.id)(db.basedatos.nombre == m.tx_instancia)\
+					 .select(db.basedatos.puerto, db.basedatos.version_id).first()
+			if not bdatos:
+				mensaje.append(f"Base de datos no encontrada: {m.tx_instancia}")
+				continue
+				
+			ver = int(bdatos.version_id.descri[0:2].replace('.', ''))
+			
+			try:
+				connection = get_oracle_connection_9i("172.16.32.147", "ASY_DB1", 1525, ver)
+				conexiones_exitosas += 1
+			except Exception as e:
+				mensaje.append(f"Error de conexión: {str(e)}")
+				conexiones_fallidas += 1
+				continue
+				
+			try:
+				cursor = connection.cursor()
+				rutina += m.tx_rutina + " , "
+				comando = m.tx_comando
+				
+				cursor.execute(comando)
+				resultado_query = cursor.fetchone()
+				if resultado_query:
+					resultado.append(resultado_query[0])
+				else:
+					resultado.append("Sin resultados")
+					
+				mensaje.append(f"Conexión exitosa a: {connection}")
+				
+			except Exception as e:
+				mensaje.append(f"Error ejecutando query: {str(e)}")
+				resultado.append(f"Error en query: {m.tx_rutina}")
+				
+			finally:
+				if 'cursor' in locals() and cursor is not None:
+					cursor.close()
+				if 'connection' in locals() and connection is not None:
+					connection.close()
+					
+		except Exception as e:
+			mensaje.append(f"Error general procesando registro: {str(e)}")
+			continue
+			
+	return dict(
+		resultado=resultado, 
+		mensaje=mensaje, 
+		rutina=rutina, 
+		ver=ver,
+		conexiones_exitosas=conexiones_exitosas,
+		conexiones_fallidas=conexiones_fallidas
+	)
 
 
 @auth.requires_login()
@@ -957,9 +963,9 @@ def asignar_rutinas():
 					tipobd = db(db.basedatos.servidor == servidor_id).select().first()
 					if tipobd:
 						db.rutina_status.bulk_insert([
-        					{'servidor_id': servidor_id, 'rutina': rutina_id, 'tipobd_id': tipobd.tipobd_id}
-        					for rutina_id in rutina_ids
-    					])
+							{'servidor_id': servidor_id, 'rutina': rutina_id, 'tipobd_id': tipobd.tipobd_id}
+							for rutina_id in rutina_ids
+						])
 				
 				db.commit()
 				response.flash = 'Rutinas asignadas correctamente'
@@ -1000,90 +1006,90 @@ def asignar_rutinas():
 	)
 
 def guarda_log_bdmon():
-    from datetime import datetime
-    
-    # En lugar de TRUNCATE que bloquea toda la tabla
-    db(db.bdmon).delete()  # DELETE es menos bloqueante
-    db.commit()  # Commit inmediato para liberar locks
-    
-    todas_rutinas = db(db.rutina_status).select()
-    fecha_actual = datetime.now()
-    
-    # Pre-cargar relaciones para evitar N+1
-    rutinas = db(db.rutinas.id.belongs([r.rutina for r in todas_rutinas])).select()
-    servidores = db(db.servidores.id.belongs([r.servidor_id for r in todas_rutinas])).select()
-    
-    # Procesamiento por lotes
-    batch_size = 100
-    batch = []
-    
-    for rutina in todas_rutinas:
-        bases_datos = db(db.basedatos.servidor == rutina.servidor_id)(
-                      db.basedatos.status_mon == 'SI').select()
-        
-        for bd in bases_datos:
-            batch.append({
-                'tx_ambiente': next(s.ambiente_id.descri for s in servidores if s.id == rutina.servidor_id),
-                'tx_servidor': next(s.nombre for s in servidores if s.id == rutina.servidor_id),
-                'tx_instancia': bd.nombre,
-                'tx_puerto': bd.puerto,
-                'tx_tipobd': rutina.tipobd_id.descri,
-                'tx_rutina': next(r.nombre for r in rutinas if r.id == rutina.rutina),
-                'tx_comando': next(r.sql_code for r in rutinas if r.id == rutina.rutina),
-                'tx_resultado': "",
-                'f_corrida': fecha_actual
-            })
-            
-            if len(batch) >= batch_size:
-                db.bdmon.bulk_insert(batch)
-                batch = []
-    
-    if batch:
-        db.bdmon.bulk_insert(batch)
-    
-    db.commit()
+	from datetime import datetime
+	
+	# En lugar de TRUNCATE que bloquea toda la tabla
+	db(db.bdmon).delete()  # DELETE es menos bloqueante
+	db.commit()  # Commit inmediato para liberar locks
+	
+	todas_rutinas = db(db.rutina_status).select()
+	fecha_actual = datetime.now()
+	
+	# Pre-cargar relaciones para evitar N+1
+	rutinas = db(db.rutinas.id.belongs([r.rutina for r in todas_rutinas])).select()
+	servidores = db(db.servidores.id.belongs([r.servidor_id for r in todas_rutinas])).select()
+	
+	# Procesamiento por lotes
+	batch_size = 100
+	batch = []
+	
+	for rutina in todas_rutinas:
+		bases_datos = db(db.basedatos.servidor == rutina.servidor_id)(
+					  db.basedatos.status_mon == 'SI').select()
+		
+		for bd in bases_datos:
+			batch.append({
+				'tx_ambiente': next(s.ambiente_id.descri for s in servidores if s.id == rutina.servidor_id),
+				'tx_servidor': next(s.nombre for s in servidores if s.id == rutina.servidor_id),
+				'tx_instancia': bd.nombre,
+				'tx_puerto': bd.puerto,
+				'tx_tipobd': rutina.tipobd_id.descri,
+				'tx_rutina': next(r.nombre for r in rutinas if r.id == rutina.rutina),
+				'tx_comando': next(r.sql_code for r in rutinas if r.id == rutina.rutina),
+				'tx_resultado': "",
+				'f_corrida': fecha_actual
+			})
+			
+			if len(batch) >= batch_size:
+				db.bdmon.bulk_insert(batch)
+				batch = []
+	
+	if batch:
+		db.bdmon.bulk_insert(batch)
+	
+	db.commit()
 
 
 def rutinas_asignadas():
-    # Esta función ahora es muy simple porque la vista hace las consultas directamente
-    return dict()
+	# Esta función ahora es muy simple porque la vista hace las consultas directamente
+	return dict()
 
 def manage_assignment():
-    response.view = 'generic.json'
-    
-    try:
-        rutina_id = request.vars.rutina_id
-        servidor_id = request.vars.servidor_id
-        action = request.vars.action
-        
-        if not (rutina_id and servidor_id and action):
-            return dict(success=False, message="Parámetros incompletos")
-        
-        if action == 'add' or action == 'update':
-            status = request.vars.status or 'HABILITADO'
-            
-            # Buscar si ya existe
-            registro = db((db.rutina_status.rutina == rutina_id) & 
-                         (db.rutina_status.servidor_id == servidor_id)).select().first()
-            
-            if registro:
-                registro.update_record(status=status)
-            else:
-                db.rutina_status.insert(
-                    rutina=rutina_id,
-                    servidor_id=servidor_id,
-                    status=status,
-                    is_active='T'
-                )
-                
-        elif action == 'remove':
-            db((db.rutina_status.rutina == rutina_id) & 
-               (db.rutina_status.servidor_id == servidor_id)).delete()
-        
-        return dict(success=True)
-        
-    except Exception as e:
-        return dict(success=False, message=str(e))
+	response.view = 'generic.json'
+	
+	try:
+		rutina_id = request.vars.rutina_id
+		servidor_id = request.vars.servidor_id
+		action = request.vars.action
+		
+		if not (rutina_id and servidor_id and action):
+			return dict(success=False, message="Parámetros incompletos")
+		
+		if action == 'add' or action == 'update':
+			status = request.vars.status or 'HABILITADO'
+			
+			# Buscar si ya existe
+			registro = db((db.rutina_status.rutina == rutina_id) & 
+						 (db.rutina_status.servidor_id == servidor_id)).select().first()
+			
+			if registro:
+				registro.update_record(status=status)
+			else:
+				db.rutina_status.insert(
+					rutina=rutina_id,
+					servidor_id=servidor_id,
+					status=status,
+					is_active='T'
+				)
+				
+		elif action == 'remove':
+			db((db.rutina_status.rutina == rutina_id) & 
+			   (db.rutina_status.servidor_id == servidor_id)).delete()
+		
+		return dict(success=True)
+		
+	except Exception as e:
+		return dict(success=False, message=str(e))
 
 
 
@@ -3044,201 +3050,201 @@ def func_amb():
 	return XML(result)
 
 def func_mac_sd():
-    from datetime import date, datetime
-    from dateutil.parser import parse
-    from gluon.html import XML
-    
-    try:
-        # Validar autenticación
-        if not auth.user:
-            return XML("<div class='alert alert-danger'>Error: Usuario no autenticado</div>")
-            
-        me = auth.user_id
-        total_horas = 0
-        total_extra = 0
-        cant_act = 0
-        tablaHTML = ""
-        
-        # Validar parámetro fecha_inicio
-        if not request.vars.fecha_inicio or len(request.vars.fecha_inicio) < 10:
-            return XML("<div class='alert alert-danger'>Error: Parámetro fecha_inicio no proporcionado o inválido</div>")
-            
-        fecha = request.vars.fecha_inicio[0:10]
-        
-        try:
-            start = parse('%s 00:00:00' % fecha)
-            end = parse('%s 23:59:59' % fecha)
-        except Exception as e:
-            return XML("<div class='alert alert-danger'>Error al procesar fechas: %s</div>" % str(e))
-        
-        format_date = '%d-%m-%Y %H:%M%p'
-        
-        # Consulta actividades principales
-        mis_actividades_sd = db((db.actividades_sd.id > 0) &
-                              (db.actividades_sd.fecha_inicio >= start) &
-                              (db.actividades_sd.fecha_inicio <= end) &
-                              (db.actividades_sd.analista == me)
-                             ).select(orderby=~db.actividades_sd.fecha_inicio)
-        
-        if mis_actividades_sd:
-            tablaHTML = """
-			   
-            <table cellpadding='3' id='' style='max-width:100%; font-size: 12px;' class='table-bordered table-striped'>
-                <col style='width:5%;'>
-                <col style='width:15%'>
-                <col style='width:20%'>
-                <col style='width:10%'>
-                <col style='width:34%'>
-                <col style='width:8%'>
-                <col style='width:8%'>
-                <col style='width:5%'>
-                <col style='width:5%'>
-                <thead>
-                    <tr style='background-color: #c1edd6;' rowspan='1'>
-                        <th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción de actividades realizadas</th>
-                        <th colspan='2' style='text-align: center;'>Fechas</th>
-                        <th colspan='1' style='text-align: center;'>Total</th>
-                        <th colspan='1' style='text-align: center;'>Extra</th>
-                        <th colspan='2' style='text-align: center;'>Tipo</th>
-                    </tr>
-                </thead>
-                <tbody>
-            """
-            
-            for datos in mis_actividades_sd:
-                # Validar campos relacionales
-                ambiente = str(show_status(datos.ambiente_id.descri)) if datos.ambiente_id else ''
-                proyecto = str(datos.cod_proy.descri) if datos.cod_proy else ''
-                subproyecto = str(datos.cod_subp.descri) if datos.cod_subp else ''
-                basedatos = str(datos.cod_bd.nombre) if datos.cod_bd and datos.cod_bd > 0 else ''
-                
-                # Determinar estilo según tipo de incidencia
-                if datos.incid_bd:
-                    desc_style = "color: red; font-weight: bold; font-size: 16px;"
-                    desc_text = "** BD **: " + str(datos.descripcion)
-                elif datos.incid_otros:
-                    desc_style = "color: red; font-weight: bold; font-size: 16px;"
-                    desc_text = "** Otros **: " + str(datos.descripcion) + " (" + str(datos.obs_otros or '') + ")"
-                else:
-                    desc_style = "color: black; font-weight: bold; font-size: 16px;"
-                    desc_text = str(datos.descripcion)
-                
-                # Validar fechas
-                fecha_inicio = datos.fecha_inicio.strftime(format_date) if datos.fecha_inicio else ''
-                fecha_fin = datos.fecha_fin.strftime(format_date) if datos.fecha_fin else ''
-                
-                tablaHTML += f"""
-                <tr>
-                    <td style='background-color: rgb(51,255,153)'>{ambiente}</td>
-                    <td>{proyecto}</td>
-                    <td>{subproyecto}</td>
-                    <td>{basedatos}</td>
-                    <td><a style='{desc_style}' href='editar_actividades3?act={datos.id}'>{desc_text}</a></td>
-                    <td colspan='1'>{fecha_inicio}</td>
-                    <td colspan='1'>{fecha_fin}</td>
-                    <td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_laboradas or 0}</td>
-                    <td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_extras or 0}</td>
-                    <td>{datos.tipo or ''}</td>
-                </tr>
-                """
-                total_horas += datos.horas_laboradas or 0
-                total_extra += datos.horas_extras or 0
-                cant_act += 1
-            
-            tablaHTML += f"""
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th style='font-size: 14px; color: #40b5e1;' id='total' colspan='7'>Total horas:</th>
-                        <td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_horas}</td>
-                        <td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_extra}</td>
-                        <td style='color: black; font-weight: bold; font-size: 18px;'>{cant_act}</td>
-                    </tr>
-                </tfoot>
-            </table>
+	from datetime import date, datetime
+	from dateutil.parser import parse
+	from gluon.html import XML
+	
+	try:
+		# Validar autenticación
+		if not auth.user:
+			return XML("<div class='alert alert-danger'>Error: Usuario no autenticado</div>")
 			
-            """
-        
-        # Consulta subactividades
-        mis_subactividades_sd = db((db.subactividades_sd.id > 0) &
-                                 (db.subactividades_sd.fecha_inicio >= start) &
-                                 (db.subactividades_sd.fecha_fin <= end) &
-                                 (db.subactividades_sd.analista == me)
-                                ).select(orderby=~db.subactividades_sd.fecha_inicio)
-        
-        if mis_subactividades_sd:
-            tablaHTML += """
-            <table cellpadding='3' id='' style='max-width:100%; font-size: 12px; margin-top: 20px;' class='table-bordered'>
-                <col style='width:5%;'>
-                <col style='width:15%'>
-                <col style='width:20%'>
-                <col style='width:10%'>
-                <col style='width:34%'>
-                <col style='width:8%'>
-                <col style='width:8%'>
-                <col style='width:5%'>
-                <col style='width:5%'>
-                <thead>
-                    <tr style='background-color: #c1edd6;' rowspan='1'>
-                        <th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción actividades de Bitácora</th>
-                        <th colspan='2' style='text-align: center;'>Fechas</th>
-                        <th colspan='1' style='text-align: center;'>Total</th>
-                        <th colspan='1' style='text-align: center;'>Extra</th>
-                        <th colspan='2' style='text-align: center;'>Tipo</th>
-                    </tr>
-                </thead>
-                <tbody>
-            """
-            
-            total_horas = 0
-            total_extra = 0
-            cant_act = 0
-            
-            for datos in mis_subactividades_sd:
-                proyecto = str(datos.cod_proy.descri) if datos.cod_proy else ''
-                subproyecto = str(datos.cod_subp.descri) if datos.cod_subp else ''
-                basedatos = str(datos.cod_bd.nombre) if datos.cod_bd and datos.cod_bd > 0 else ''
-                
-                fecha_inicio = datos.fecha_inicio.strftime(format_date) if datos.fecha_inicio else ''
-                fecha_fin = datos.fecha_fin.strftime(format_date) if datos.fecha_fin else ''
-                
-                tablaHTML += f"""
-                <tr>
-                    <td></td>
-                    <td>{proyecto}</td>
-                    <td>{subproyecto}</td>
-                    <td>{basedatos}</td>
-                    <td>{datos.descripcion or ''}</td>
-                    <td colspan='1'>{fecha_inicio}</td>
-                    <td colspan='1'>{fecha_fin}</td>
-                    <td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_laboradas or 0}</td>
-                    <td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_extras or 0}</td>
-                    <td>{datos.tipo or ''}</td>
-                </tr>
-                """
-                total_horas += datos.horas_laboradas or 0
-                total_extra += datos.horas_extras or 0
-                cant_act += 1
-            
-            tablaHTML += f"""
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th style='font-size: 14px; color: #40b5e1;' id='total' colspan='7'>Total horas:</th>
-                        <td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_horas}</td>
-                        <td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_extra}</td>
-                        <td style='color: black; font-weight: bold; font-size: 18px;'>{cant_act}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            """
-        
-        return XML(tablaHTML if tablaHTML else "<div class='alert alert-info'>No se encontraron actividades para esta fecha</div>")
-        
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        return XML(f"<div class='alert alert-danger'>Error inesperado: {str(e)}<br><pre>{tb}</pre></div>")
+		me = auth.user_id
+		total_horas = 0
+		total_extra = 0
+		cant_act = 0
+		tablaHTML = ""
+		
+		# Validar parámetro fecha_inicio
+		if not request.vars.fecha_inicio or len(request.vars.fecha_inicio) < 10:
+			return XML("<div class='alert alert-danger'>Error: Parámetro fecha_inicio no proporcionado o inválido</div>")
+			
+		fecha = request.vars.fecha_inicio[0:10]
+		
+		try:
+			start = parse('%s 00:00:00' % fecha)
+			end = parse('%s 23:59:59' % fecha)
+		except Exception as e:
+			return XML("<div class='alert alert-danger'>Error al procesar fechas: %s</div>" % str(e))
+		
+		format_date = '%d-%m-%Y %H:%M%p'
+		
+		# Consulta actividades principales
+		mis_actividades_sd = db((db.actividades_sd.id > 0) &
+							  (db.actividades_sd.fecha_inicio >= start) &
+							  (db.actividades_sd.fecha_inicio <= end) &
+							  (db.actividades_sd.analista == me)
+							 ).select(orderby=~db.actividades_sd.fecha_inicio)
+		
+		if mis_actividades_sd:
+			tablaHTML = """
+			   
+			<table cellpadding='3' id='' style='max-width:100%; font-size: 12px;' class='table-bordered table-striped'>
+				<col style='width:5%;'>
+				<col style='width:15%'>
+				<col style='width:20%'>
+				<col style='width:10%'>
+				<col style='width:34%'>
+				<col style='width:8%'>
+				<col style='width:8%'>
+				<col style='width:5%'>
+				<col style='width:5%'>
+				<thead>
+					<tr style='background-color: #c1edd6;' rowspan='1'>
+						<th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción de actividades realizadas</th>
+						<th colspan='2' style='text-align: center;'>Fechas</th>
+						<th colspan='1' style='text-align: center;'>Total</th>
+						<th colspan='1' style='text-align: center;'>Extra</th>
+						<th colspan='2' style='text-align: center;'>Tipo</th>
+					</tr>
+				</thead>
+				<tbody>
+			"""
+			
+			for datos in mis_actividades_sd:
+				# Validar campos relacionales
+				ambiente = str(show_status(datos.ambiente_id.descri)) if datos.ambiente_id else ''
+				proyecto = str(datos.cod_proy.descri) if datos.cod_proy else ''
+				subproyecto = str(datos.cod_subp.descri) if datos.cod_subp else ''
+				basedatos = str(datos.cod_bd.nombre) if datos.cod_bd and datos.cod_bd > 0 else ''
+				
+				# Determinar estilo según tipo de incidencia
+				if datos.incid_bd:
+					desc_style = "color: red; font-weight: bold; font-size: 16px;"
+					desc_text = "** BD **: " + str(datos.descripcion)
+				elif datos.incid_otros:
+					desc_style = "color: red; font-weight: bold; font-size: 16px;"
+					desc_text = "** Otros **: " + str(datos.descripcion) + " (" + str(datos.obs_otros or '') + ")"
+				else:
+					desc_style = "color: black; font-weight: bold; font-size: 16px;"
+					desc_text = str(datos.descripcion)
+				
+				# Validar fechas
+				fecha_inicio = datos.fecha_inicio.strftime(format_date) if datos.fecha_inicio else ''
+				fecha_fin = datos.fecha_fin.strftime(format_date) if datos.fecha_fin else ''
+				
+				tablaHTML += f"""
+				<tr>
+					<td style='background-color: rgb(51,255,153)'>{ambiente}</td>
+					<td>{proyecto}</td>
+					<td>{subproyecto}</td>
+					<td>{basedatos}</td>
+					<td><a style='{desc_style}' href='editar_actividades3?act={datos.id}'>{desc_text}</a></td>
+					<td colspan='1'>{fecha_inicio}</td>
+					<td colspan='1'>{fecha_fin}</td>
+					<td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_laboradas or 0}</td>
+					<td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_extras or 0}</td>
+					<td>{datos.tipo or ''}</td>
+				</tr>
+				"""
+				total_horas += datos.horas_laboradas or 0
+				total_extra += datos.horas_extras or 0
+				cant_act += 1
+			
+			tablaHTML += f"""
+				</tbody>
+				<tfoot>
+					<tr>
+						<th style='font-size: 14px; color: #40b5e1;' id='total' colspan='7'>Total horas:</th>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_horas}</td>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_extra}</td>
+						<td style='color: black; font-weight: bold; font-size: 18px;'>{cant_act}</td>
+					</tr>
+				</tfoot>
+			</table>
+			
+			"""
+		
+		# Consulta subactividades
+		mis_subactividades_sd = db((db.subactividades_sd.id > 0) &
+								 (db.subactividades_sd.fecha_inicio >= start) &
+								 (db.subactividades_sd.fecha_fin <= end) &
+								 (db.subactividades_sd.analista == me)
+								).select(orderby=~db.subactividades_sd.fecha_inicio)
+		
+		if mis_subactividades_sd:
+			tablaHTML += """
+			<table cellpadding='3' id='' style='max-width:100%; font-size: 12px; margin-top: 20px;' class='table-bordered'>
+				<col style='width:5%;'>
+				<col style='width:15%'>
+				<col style='width:20%'>
+				<col style='width:10%'>
+				<col style='width:34%'>
+				<col style='width:8%'>
+				<col style='width:8%'>
+				<col style='width:5%'>
+				<col style='width:5%'>
+				<thead>
+					<tr style='background-color: #c1edd6;' rowspan='1'>
+						<th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción actividades de Bitácora</th>
+						<th colspan='2' style='text-align: center;'>Fechas</th>
+						<th colspan='1' style='text-align: center;'>Total</th>
+						<th colspan='1' style='text-align: center;'>Extra</th>
+						<th colspan='2' style='text-align: center;'>Tipo</th>
+					</tr>
+				</thead>
+				<tbody>
+			"""
+			
+			total_horas = 0
+			total_extra = 0
+			cant_act = 0
+			
+			for datos in mis_subactividades_sd:
+				proyecto = str(datos.cod_proy.descri) if datos.cod_proy else ''
+				subproyecto = str(datos.cod_subp.descri) if datos.cod_subp else ''
+				basedatos = str(datos.cod_bd.nombre) if datos.cod_bd and datos.cod_bd > 0 else ''
+				
+				fecha_inicio = datos.fecha_inicio.strftime(format_date) if datos.fecha_inicio else ''
+				fecha_fin = datos.fecha_fin.strftime(format_date) if datos.fecha_fin else ''
+				
+				tablaHTML += f"""
+				<tr>
+					<td></td>
+					<td>{proyecto}</td>
+					<td>{subproyecto}</td>
+					<td>{basedatos}</td>
+					<td>{datos.descripcion or ''}</td>
+					<td colspan='1'>{fecha_inicio}</td>
+					<td colspan='1'>{fecha_fin}</td>
+					<td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_laboradas or 0}</td>
+					<td style='color: red; font-weight: bold; font-size: 12px;'>{datos.horas_extras or 0}</td>
+					<td>{datos.tipo or ''}</td>
+				</tr>
+				"""
+				total_horas += datos.horas_laboradas or 0
+				total_extra += datos.horas_extras or 0
+				cant_act += 1
+			
+			tablaHTML += f"""
+				</tbody>
+				<tfoot>
+					<tr>
+						<th style='font-size: 14px; color: #40b5e1;' id='total' colspan='7'>Total horas:</th>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_horas}</td>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_extra}</td>
+						<td style='color: black; font-weight: bold; font-size: 18px;'>{cant_act}</td>
+					</tr>
+				</tfoot>
+			</table>
+			"""
+		
+		return XML(tablaHTML if tablaHTML else "<div class='alert alert-info'>No se encontraron actividades para esta fecha</div>")
+		
+	except Exception as e:
+		import traceback
+		tb = traceback.format_exc()
+		return XML(f"<div class='alert alert-danger'>Error inesperado: {str(e)}<br><pre>{tb}</pre></div>")
 
 
 #====================== prueba
@@ -9216,358 +9222,358 @@ from gluon.tools import Service
 service = Service()
 
 def check_ping(ip):
-    try:
-        start = time.time()
-        output = subprocess.check_output(
-            ['ping', '-c', '1', '-W', '2', ip],
-            stderr=subprocess.STDOUT,
-            universal_newlines=True
-        )
-        latency = round((time.time() - start) * 1000, 2)  # ms
-        return {
-            'status': True,
-            'latency': latency,
-            'last_response': request.now
-        }
-    except Exception as e:
-        return {
-            'status': False,
-            'latency': None,
-            'last_response': request.now
-        }
+	try:
+		start = time.time()
+		output = subprocess.check_output(
+			['ping', '-c', '1', '-W', '2', ip],
+			stderr=subprocess.STDOUT,
+			universal_newlines=True
+		)
+		latency = round((time.time() - start) * 1000, 2)  # ms
+		return {
+			'status': True,
+			'latency': latency,
+			'last_response': request.now
+		}
+	except Exception as e:
+		return {
+			'status': False,
+			'latency': None,
+			'last_response': request.now
+		}
 
 
 def construir_tns_entry(record):
-    if record.tns_entry:
-        return record.tns_entry
-    return f"""(DESCRIPTION=
-                (ADDRESS=(PROTOCOL=TCP)(HOST={record.servidor_id.ip})(PORT={record.puerto}))
-                (CONNECT_DATA=(SERVER=DEDICATED)
-                    {f"(SID={record.sid})" if record.sid else ""}
-                    {f"(SERVICE_NAME={record.service_name})" if record.service_name else ""}
-                ))"""
+	if record.tns_entry:
+		return record.tns_entry
+	return f"""(DESCRIPTION=
+				(ADDRESS=(PROTOCOL=TCP)(HOST={record.servidor_id.ip})(PORT={record.puerto}))
+				(CONNECT_DATA=(SERVER=DEDICATED)
+					{f"(SID={record.sid})" if record.sid else ""}
+					{f"(SERVICE_NAME={record.service_name})" if record.service_name else ""}
+				))"""
 
 def check_tnsping(record):
-    try:
-        # Construir la cadena de conexión directa (EZCONNECT)
-        if record.nombre:
-            connect_string = f"{record.servidor.ip}:{record.puerto}/{record.nombre}"
-        else:
-            connect_string = f"{record.servidor.ip}:{record.puerto}/{record.service_name}"
-        
-        start = time.time()
-        
-        # Ejecutar tnsping con timeout
-        process = subprocess.Popen(
-            ['tnsping', connect_string],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            env={'ORACLE_HOME': record.servidor.oracle_home} if record.servidor.oracle_home else None
-        )
-        
-        try:
-            stdout, stderr = process.communicate(timeout=15)
-            
-            # Analizar respuesta
-            if "OK" in stdout:
-                return {
-                    'status': True,
-                    'output': stdout,
-                    'response_time': round((time.time() - start) * 1000, 2),
-                    'connect_string': connect_string,
-                    'last_check': request.now
-                }
-            else:
-                return {
-                    'status': False,
-                    'error': 'TNS Error',
-                    'output': stdout or stderr,
-                    'connect_string': connect_string,
-                    'last_check': request.now
-                }
-                
-        except subprocess.TimeoutExpired:
-            process.kill()
-            return {
-                'status': False,
-                'error': 'Timeout',
-                'output': 'El comando tnsping excedió el tiempo de espera (15s)',
-                'connect_string': connect_string,
-                'last_check': request.now
-            }
-        
-    except Exception as e:
-        return {
-            'status': False,
-            'error': str(e),
-            'output': f"Error al ejecutar tnsping: {str(e)}",
-            'connect_string': connect_string,
-            'last_check': request.now
-        }
+	try:
+		# Construir la cadena de conexión directa (EZCONNECT)
+		if record.nombre:
+			connect_string = f"{record.servidor.ip}:{record.puerto}/{record.nombre}"
+		else:
+			connect_string = f"{record.servidor.ip}:{record.puerto}/{record.service_name}"
+		
+		start = time.time()
+		
+		# Ejecutar tnsping con timeout
+		process = subprocess.Popen(
+			['tnsping', connect_string],
+			stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE,
+			universal_newlines=True,
+			env={'ORACLE_HOME': record.servidor.oracle_home} if record.servidor.oracle_home else None
+		)
+		
+		try:
+			stdout, stderr = process.communicate(timeout=15)
+			
+			# Analizar respuesta
+			if "OK" in stdout:
+				return {
+					'status': True,
+					'output': stdout,
+					'response_time': round((time.time() - start) * 1000, 2),
+					'connect_string': connect_string,
+					'last_check': request.now
+				}
+			else:
+				return {
+					'status': False,
+					'error': 'TNS Error',
+					'output': stdout or stderr,
+					'connect_string': connect_string,
+					'last_check': request.now
+				}
+				
+		except subprocess.TimeoutExpired:
+			process.kill()
+			return {
+				'status': False,
+				'error': 'Timeout',
+				'output': 'El comando tnsping excedió el tiempo de espera (15s)',
+				'connect_string': connect_string,
+				'last_check': request.now
+			}
+		
+	except Exception as e:
+		return {
+			'status': False,
+			'error': str(e),
+			'output': f"Error al ejecutar tnsping: {str(e)}",
+			'connect_string': connect_string,
+			'last_check': request.now
+		}
 
 @auth.requires_login()
 def dashboard():
-    # Obtener y verificar servidores (igual que antes)
-    servidores = []
-    for server in db(db.servidores)(db.servidores.ip != "1.1.1.1").select():
-        ping_result = check_ping(server.ip)
-        servidores.append({
-            'id': server.id,
-            'nombre': server.nombre,
-            'ip': server.ip,
-            'status': ping_result['status'],
-            'latency': ping_result.get('latency', 0),
-            'last_response': ping_result.get('last_response', 'N/A')
-        })
-    
-    # Obtener y verificar instancias de BD
-    bases_datos = []
-    for db_record in db(db.basedatos)(db.basedatos.nombre != 'BD NUEVA').select(orderby=db.basedatos.nombre):
-        # Determinar el tipo de verificación según el tipo de BD
-        if db_record.tipobd_id and db_record.tipobd_id.descri.lower() == 'mssqlserver':
-            # Verificación para SQL Server
-            sqlserver_result = check_sqlserver(db_record)
-            bases_datos.append({
-                'id': db_record.id,
-                'nombre': db_record.nombre,
-                'servidor_id': db_record.servidor,
-                'aplicacion': db_record.appl,
-                'ambiente': db_record.ambiente_id.descri,
-                'status': sqlserver_result['status'],
-                'output': sqlserver_result.get('output', ''),
-                'response_time': sqlserver_result.get('response_time', 0),
-                'tns_entry': sqlserver_result.get('connection_string', ''),
-                'last_check': sqlserver_result.get('last_check', 'N/A')
-            })
-        else:
-            # Verificación para Oracle (tnsping) como antes
-            tnsping_result = check_tnsping(db_record)
-            bases_datos.append({
-                'id': db_record.id,
-                'nombre': db_record.nombre,
-                'servidor_id': db_record.servidor,
-                'aplicacion': db_record.appl,
-                'ambiente': db_record.ambiente_id.descri,
-                'status': tnsping_result['status'],
-                'output': tnsping_result.get('output', ''),
-                'response_time': tnsping_result.get('response_time', 0),
-                'tns_entry': tnsping_result.get('connect_string', ''),
-                'last_check': tnsping_result.get('last_check', 'N/A')
-            })
-    
-    return dict(
-        servidores=servidores,
-        bases_datos=bases_datos,
-        time=request.now
-    )
+	# Obtener y verificar servidores (igual que antes)
+	servidores = []
+	for server in db(db.servidores)(db.servidores.ip != "1.1.1.1").select():
+		ping_result = check_ping(server.ip)
+		servidores.append({
+			'id': server.id,
+			'nombre': server.nombre,
+			'ip': server.ip,
+			'status': ping_result['status'],
+			'latency': ping_result.get('latency', 0),
+			'last_response': ping_result.get('last_response', 'N/A')
+		})
+	
+	# Obtener y verificar instancias de BD
+	bases_datos = []
+	for db_record in db(db.basedatos)(db.basedatos.nombre != 'BD NUEVA').select(orderby=db.basedatos.nombre):
+		# Determinar el tipo de verificación según el tipo de BD
+		if db_record.tipobd_id and db_record.tipobd_id.descri.lower() == 'mssqlserver':
+			# Verificación para SQL Server
+			sqlserver_result = check_sqlserver(db_record)
+			bases_datos.append({
+				'id': db_record.id,
+				'nombre': db_record.nombre,
+				'servidor_id': db_record.servidor,
+				'aplicacion': db_record.appl,
+				'ambiente': db_record.ambiente_id.descri,
+				'status': sqlserver_result['status'],
+				'output': sqlserver_result.get('output', ''),
+				'response_time': sqlserver_result.get('response_time', 0),
+				'tns_entry': sqlserver_result.get('connection_string', ''),
+				'last_check': sqlserver_result.get('last_check', 'N/A')
+			})
+		else:
+			# Verificación para Oracle (tnsping) como antes
+			tnsping_result = check_tnsping(db_record)
+			bases_datos.append({
+				'id': db_record.id,
+				'nombre': db_record.nombre,
+				'servidor_id': db_record.servidor,
+				'aplicacion': db_record.appl,
+				'ambiente': db_record.ambiente_id.descri,
+				'status': tnsping_result['status'],
+				'output': tnsping_result.get('output', ''),
+				'response_time': tnsping_result.get('response_time', 0),
+				'tns_entry': tnsping_result.get('connect_string', ''),
+				'last_check': tnsping_result.get('last_check', 'N/A')
+			})
+	
+	return dict(
+		servidores=servidores,
+		bases_datos=bases_datos,
+		time=request.now
+	)
 
 
 def check_sqlserver(db_record):
-    import pyodbc
-    from datetime import datetime
-    import json
-    import os
-    from dotenv import load_dotenv
-    
-    try:
-        # Construir cadena de conexión
-        server = db_record.servidor.ip if db_record.servidor else 'localhost'
-        database = db_record.nombre
-        username = os.getenv('SQLSERVER_USER')  # Valor por defecto solo para desarrollo
-        password = os.getenv('SQLSERVER_PASSWORD')
-        
-        # Cadena de conexión directa para pyodbc
-        connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server},1433;DATABASE={database};UID={username};PWD={password}"
-        start_time = datetime.now()
-        
-        # Intentar conexión
-        conn = pyodbc.connect(connection_string, timeout=10)
-        cursor = conn.cursor()
-        
-        # Ejecutar una consulta simple para verificar
-        cursor.execute("SELECT 1")
-        result = cursor.fetchone()
-        
-        end_time = datetime.now()
-        response_time = (end_time - start_time).total_seconds() * 1000  # ms
-        
-        conn.close()
-        
-        return {
-            'status': 1,
-            'output': "Conexión exitosa a SQL Server",
-            'response_time': round(response_time, 2),
-            'connection_string': connection_string,
-            'last_check': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-    except Exception as e:
-        return {
-            'status': 0,
-            'output': f'Conexion fallida: {str(e)}',
-            'response_time': 0,
-            'connection_string': connection_string if 'connection_string' in locals() else 'No se pudo construir',
-            'last_check': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+	import pyodbc
+	from datetime import datetime
+	import json
+	import os
+	from dotenv import load_dotenv
+	
+	try:
+		# Construir cadena de conexión
+		server = db_record.servidor.ip if db_record.servidor else 'localhost'
+		database = db_record.nombre
+		username = os.getenv('SQLSERVER_USER')  # Valor por defecto solo para desarrollo
+		password = os.getenv('SQLSERVER_PASSWORD')
+		
+		# Cadena de conexión directa para pyodbc
+		connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server},1433;DATABASE={database};UID={username};PWD={password}"
+		start_time = datetime.now()
+		
+		# Intentar conexión
+		conn = pyodbc.connect(connection_string, timeout=10)
+		cursor = conn.cursor()
+		
+		# Ejecutar una consulta simple para verificar
+		cursor.execute("SELECT 1")
+		result = cursor.fetchone()
+		
+		end_time = datetime.now()
+		response_time = (end_time - start_time).total_seconds() * 1000  # ms
+		
+		conn.close()
+		
+		return {
+			'status': 1,
+			'output': "Conexión exitosa a SQL Server",
+			'response_time': round(response_time, 2),
+			'connection_string': connection_string,
+			'last_check': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		}
+		
+	except Exception as e:
+		return {
+			'status': 0,
+			'output': f'Conexion fallida: {str(e)}',
+			'response_time': 0,
+			'connection_string': connection_string if 'connection_string' in locals() else 'No se pudo construir',
+			'last_check': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		}
 
 #----- area de graficas -----------
 def horas_por_bd():
-    import datetime
-    
-    # Obtener parámetros de mes y año (o usar el actual)
-    mes_param = request.vars.mes  # Formato esperado: "YYYY-MM"
-    
-    if mes_param:
-        try:
-            año_seleccionado, mes_seleccionado = map(int, mes_param.split('-'))
-        except:
-            # Si el formato es incorrecto, usar el mes actual
-            hoy = datetime.date.today()
-            mes_seleccionado = hoy.month
-            año_seleccionado = hoy.year
-    else:
-        hoy = datetime.date.today()
-        mes_seleccionado = hoy.month
-        año_seleccionado = hoy.year
-    
-    # Consulta SQL para obtener los meses disponibles con datos
-    sql_meses = """
-    SELECT DISTINCT 
-           EXTRACT(YEAR FROM fecha_inicio) as año,
-           EXTRACT(MONTH FROM fecha_inicio) as mes
-    FROM actividades_sd
-    ORDER BY año DESC, mes DESC
-    """
-    
-    # Consulta SQL principal modificada para incluir el nombre del servidor
-    sql = """
-    SELECT b.nombre, ser.nombre as servidor, 
-           SUM(a.horas_laboradas + a.horas_extras) as total_horas
-    FROM actividades_sd a
-    JOIN servidores ser ON ser.id = a.cod_servidor
-    JOIN basedatos b ON b.servidor = ser.id
-    WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
-    AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
-    GROUP BY b.nombre, ser.nombre
-    ORDER BY total_horas DESC
-    """
-    
-    try:
-        # Obtener meses disponibles
-        meses_db = db.executesql(sql_meses, as_dict=True)
-        meses_disponibles = [
-            f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db
-        ]
-        
-        # Obtener datos para el mes seleccionado
-        registros = db.executesql(sql, (mes_seleccionado, año_seleccionado), as_dict=True)
-        
-        # Preparar datos para el gráfico incluyendo servidor
-        chart_data = [['Base de Datos', 'Horas']]
-        for r in registros:
-            # Mostrar "BD (Servidor)" como etiqueta
-            label = f"{r['nombre']} ({r['servidor']})"
-            chart_data.append([label, float(r['total_horas'])])
-            
-        return dict(
-            chart_data=chart_data,
-            mes=f"{mes_seleccionado}/{año_seleccionado}",
-            mes_param=f"{año_seleccionado}-{mes_seleccionado:02d}",
-            meses_disponibles=meses_disponibles
-        )
-        
-    except Exception as e:
-        return dict(error=str(e))
+	import datetime
+	
+	# Obtener parámetros de mes y año (o usar el actual)
+	mes_param = request.vars.mes  # Formato esperado: "YYYY-MM"
+	
+	if mes_param:
+		try:
+			año_seleccionado, mes_seleccionado = map(int, mes_param.split('-'))
+		except:
+			# Si el formato es incorrecto, usar el mes actual
+			hoy = datetime.date.today()
+			mes_seleccionado = hoy.month
+			año_seleccionado = hoy.year
+	else:
+		hoy = datetime.date.today()
+		mes_seleccionado = hoy.month
+		año_seleccionado = hoy.year
+	
+	# Consulta SQL para obtener los meses disponibles con datos
+	sql_meses = """
+	SELECT DISTINCT 
+		   EXTRACT(YEAR FROM fecha_inicio) as año,
+		   EXTRACT(MONTH FROM fecha_inicio) as mes
+	FROM actividades_sd
+	ORDER BY año DESC, mes DESC
+	"""
+	
+	# Consulta SQL principal modificada para incluir el nombre del servidor
+	sql = """
+	SELECT b.nombre, ser.nombre as servidor, 
+		   SUM(a.horas_laboradas + a.horas_extras) as total_horas
+	FROM actividades_sd a
+	JOIN servidores ser ON ser.id = a.cod_servidor
+	JOIN basedatos b ON b.servidor = ser.id
+	WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
+	AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
+	GROUP BY b.nombre, ser.nombre
+	ORDER BY total_horas DESC
+	"""
+	
+	try:
+		# Obtener meses disponibles
+		meses_db = db.executesql(sql_meses, as_dict=True)
+		meses_disponibles = [
+			f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db
+		]
+		
+		# Obtener datos para el mes seleccionado
+		registros = db.executesql(sql, (mes_seleccionado, año_seleccionado), as_dict=True)
+		
+		# Preparar datos para el gráfico incluyendo servidor
+		chart_data = [['Base de Datos', 'Horas']]
+		for r in registros:
+			# Mostrar "BD (Servidor)" como etiqueta
+			label = f"{r['nombre']} ({r['servidor']})"
+			chart_data.append([label, float(r['total_horas'])])
+			
+		return dict(
+			chart_data=chart_data,
+			mes=f"{mes_seleccionado}/{año_seleccionado}",
+			mes_param=f"{año_seleccionado}-{mes_seleccionado:02d}",
+			meses_disponibles=meses_disponibles
+		)
+		
+	except Exception as e:
+		return dict(error=str(e))
 
 
 # ambiente
 
 
 def horas_por_ambiente():
-    from datetime import datetime
-    
-    # Obtener parámetros de mes y año (o usar el actual)
-    mes_param = request.vars.mes  # Formato esperado: "YYYY-MM"
-    
-    if mes_param:
-        try:
-            año_seleccionado, mes_seleccionado = map(int, mes_param.split('-'))
-            mes_str = datetime(año_seleccionado, mes_seleccionado, 1).strftime("%B %Y")
-        except:
-            # Si el formato es incorrecto, usar el mes actual
-            ahora = datetime.now()
-            mes_seleccionado = ahora.month
-            año_seleccionado = ahora.year
-            mes_str = ahora.strftime("%B %Y")
-    else:
-        ahora = datetime.now()
-        mes_seleccionado = ahora.month
-        año_seleccionado = ahora.year
-        mes_str = ahora.strftime("%B %Y")
-    
-    # Consulta para obtener meses disponibles con datos
-    sql_meses = """
-    SELECT DISTINCT 
-           EXTRACT(YEAR FROM fecha_inicio) as año,
-           EXTRACT(MONTH FROM fecha_inicio) as mes
-    FROM actividades_sd
-    ORDER BY año DESC, mes DESC
-    """
-    
-    # Consulta principal que suma horas laboradas + horas extras
-    query = """
-    SELECT 
-        am.descri as ambiente,
-        COALESCE(SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)), 0) as total_horas,
-        COALESCE(SUM(a.horas_laboradas), 0) as horas_normales,
-        COALESCE(SUM(a.horas_extras), 0) as horas_extra
-    FROM 
-        ambiente am
-    LEFT JOIN 
-        actividades_sd a ON a.ambiente_id = am.id
-        AND EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
-    GROUP BY 
-        am.descri, am.id
-    ORDER BY 
-        am.id
-    """.format(mes=mes_seleccionado, año=año_seleccionado)
-    
-    try:
-        # Obtener meses disponibles
-        meses_db = db.executesql(sql_meses, as_dict=True)
-        meses_disponibles = [
-            f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db
-        ]
-        
-        # Obtener datos para el mes seleccionado
-        registros = db.executesql(query, as_dict=True)
-        
-        # Preparar datos para el gráfico
-        ambientes = []
-        horas_totales = []
-        horas_normales = []
-        horas_extras = []
-        
-        for r in registros:
-            ambientes.append(r['ambiente'])
-            horas_normales.append(float(r['horas_normales']))
-            horas_extras.append(float(r['horas_extra']))
-            horas_totales.append(float(r['total_horas']))
-        
-        return dict(
-            ambientes=ambientes,
-            horas_totales=horas_totales,
-            horas_normales=horas_normales,
-            horas_extras=horas_extras,
-            mes_actual=mes_str,
-            mes_param=mes_param if mes_param else f"{año_seleccionado}-{mes_seleccionado:02d}",
-            meses_disponibles=meses_disponibles
-        )
-        
-    except Exception as e:
-        return dict(error=str(e))
+	from datetime import datetime
+	
+	# Obtener parámetros de mes y año (o usar el actual)
+	mes_param = request.vars.mes  # Formato esperado: "YYYY-MM"
+	
+	if mes_param:
+		try:
+			año_seleccionado, mes_seleccionado = map(int, mes_param.split('-'))
+			mes_str = datetime(año_seleccionado, mes_seleccionado, 1).strftime("%B %Y")
+		except:
+			# Si el formato es incorrecto, usar el mes actual
+			ahora = datetime.now()
+			mes_seleccionado = ahora.month
+			año_seleccionado = ahora.year
+			mes_str = ahora.strftime("%B %Y")
+	else:
+		ahora = datetime.now()
+		mes_seleccionado = ahora.month
+		año_seleccionado = ahora.year
+		mes_str = ahora.strftime("%B %Y")
+	
+	# Consulta para obtener meses disponibles con datos
+	sql_meses = """
+	SELECT DISTINCT 
+		   EXTRACT(YEAR FROM fecha_inicio) as año,
+		   EXTRACT(MONTH FROM fecha_inicio) as mes
+	FROM actividades_sd
+	ORDER BY año DESC, mes DESC
+	"""
+	
+	# Consulta principal que suma horas laboradas + horas extras
+	query = """
+	SELECT 
+		am.descri as ambiente,
+		COALESCE(SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)), 0) as total_horas,
+		COALESCE(SUM(a.horas_laboradas), 0) as horas_normales,
+		COALESCE(SUM(a.horas_extras), 0) as horas_extra
+	FROM 
+		ambiente am
+	LEFT JOIN 
+		actividades_sd a ON a.ambiente_id = am.id
+		AND EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
+		AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
+	GROUP BY 
+		am.descri, am.id
+	ORDER BY 
+		am.id
+	""".format(mes=mes_seleccionado, año=año_seleccionado)
+	
+	try:
+		# Obtener meses disponibles
+		meses_db = db.executesql(sql_meses, as_dict=True)
+		meses_disponibles = [
+			f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db
+		]
+		
+		# Obtener datos para el mes seleccionado
+		registros = db.executesql(query, as_dict=True)
+		
+		# Preparar datos para el gráfico
+		ambientes = []
+		horas_totales = []
+		horas_normales = []
+		horas_extras = []
+		
+		for r in registros:
+			ambientes.append(r['ambiente'])
+			horas_normales.append(float(r['horas_normales']))
+			horas_extras.append(float(r['horas_extra']))
+			horas_totales.append(float(r['total_horas']))
+		
+		return dict(
+			ambientes=ambientes,
+			horas_totales=horas_totales,
+			horas_normales=horas_normales,
+			horas_extras=horas_extras,
+			mes_actual=mes_str,
+			mes_param=mes_param if mes_param else f"{año_seleccionado}-{mes_seleccionado:02d}",
+			meses_disponibles=meses_disponibles
+		)
+		
+	except Exception as e:
+		return dict(error=str(e))
 
 
 #----- por analista
@@ -9575,275 +9581,275 @@ def horas_por_ambiente():
 
 
 def horas_por_analista():
-    from datetime import datetime
-    
-    # Inicializar variables
-    error = None
-    meses_disponibles = []
-    analistas = []
-    chart_bd = {'labels': [], 'data': []}
-    chart_ambiente = {'labels': [], 'normales': [], 'extras': [], 'totales': []}
-    total_horas = 0.0
-    
-    # Obtener parámetros
-    mes_param = request.vars.mes  # Formato YYYY-MM
-    analista_id = request.vars.analista  # ID del analista
-    
-    # Validar mes o usar actual
-    ahora = datetime.now()
-    if mes_param:
-        try:
-            año, mes = map(int, mes_param.split('-'))
-            mes_str = datetime(año, mes, 1).strftime("%B %Y")
-            mes_formatted = f"{año}-{mes:02d}"
-        except:
-            año, mes = ahora.year, ahora.month
-            mes_str = ahora.strftime("%B %Y")
-            mes_formatted = f"{año}-{mes:02d}"
-    else:
-        año, mes = ahora.year, ahora.month
-        mes_str = ahora.strftime("%B %Y")
-        mes_formatted = f"{año}-{mes:02d}"
-    
-    try:
-        # 1. Obtener meses disponibles
-        sql_meses = """
-        SELECT DISTINCT 
-               EXTRACT(YEAR FROM fecha_inicio) as año,
-               EXTRACT(MONTH FROM fecha_inicio) as mes
-        FROM actividades_sd
-        ORDER BY año DESC, mes DESC
-        """
-        meses_db = db.executesql(sql_meses, as_dict=True)
-        meses_disponibles = [f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db] or [mes_formatted]
-        
-        # 2. Obtener lista de analistas (desde auth_user)
-        sql_analistas = """
-        SELECT id, first_name || ' ' || last_name as nombre 
-        FROM auth_user
-        WHERE id IN (SELECT DISTINCT analista FROM actividades_sd)
-        ORDER BY last_name, first_name
-        """
-        analistas = db.executesql(sql_analistas, as_dict=True)
-        
-        # 3. Datos por Base de Datos
-        sql_bd = """
-        SELECT b.nombre, ser.nombre as servidor, 
-               SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
-        FROM actividades_sd a
-        JOIN servidores ser ON ser.id = a.cod_servidor
-        JOIN basedatos b ON b.servidor = ser.id
-        WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
-        {filtro_analista}
-        GROUP BY b.nombre, ser.nombre
-        ORDER BY total_horas DESC
-        """.format(
-            filtro_analista="AND a.analista = %s" if analista_id else ""
-        )
-        
-        params_bd = [mes, año]
-        if analista_id:
-            params_bd.append(analista_id)
-        
-        bd_data = db.executesql(sql_bd, params_bd, as_dict=True)
-        chart_bd = {
-            'labels': [f"{r['nombre']} ({r['servidor']})" for r in bd_data],
-            'data': [float(r['total_horas']) for r in bd_data]
-        }
-        
-        # 4. Datos por Ambiente
-        sql_ambiente = """
-        SELECT am.descri as ambiente,
-               SUM(a.horas_laboradas) as horas_normales,
-               SUM(COALESCE(a.horas_extras, 0)) as horas_extras,
-               SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
-        FROM ambiente am
-        JOIN actividades_sd a ON a.ambiente_id = am.id
-        WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
-        {filtro_analista}
-        GROUP BY am.descri, am.id
-        ORDER BY total_horas DESC
-        """.format(
-            filtro_analista="AND a.analista = %s" if analista_id else ""
-        )
-        
-        params_ambiente = [mes, año]
-        if analista_id:
-            params_ambiente.append(analista_id)
-        
-        ambiente_data = db.executesql(sql_ambiente, params_ambiente, as_dict=True)
-        chart_ambiente = {
-            'labels': [r['ambiente'] for r in ambiente_data],
-            'normales': [float(r['horas_normales']) for r in ambiente_data],
-            'extras': [float(r['horas_extras']) for r in ambiente_data],
-            'totales': [float(r['total_horas']) for r in ambiente_data]
-        }
-        total_horas = sum(chart_ambiente['totales']) if chart_ambiente['totales'] else 0
-        
-        # Obtener nombre del analista seleccionado
-        analista_seleccionado = next(
-            (a['nombre'] for a in analistas if str(a['id']) == str(analista_id)),
-            "Todos los analistas"
-        )
-        
-    except Exception as e:
-        error = str(e)
-    
-    return dict(
-        chart_bd=chart_bd,
-        chart_ambiente=chart_ambiente,
-        meses_disponibles=meses_disponibles,
-        mes_param=mes_formatted,
-        mes_actual=mes_str,
-        analistas=analistas,
-        analista_id=analista_id,
-        analista_seleccionado=analista_seleccionado,
-        total_horas=total_horas,
-        error=error
-    )
+	from datetime import datetime
+	
+	# Inicializar variables
+	error = None
+	meses_disponibles = []
+	analistas = []
+	chart_bd = {'labels': [], 'data': []}
+	chart_ambiente = {'labels': [], 'normales': [], 'extras': [], 'totales': []}
+	total_horas = 0.0
+	
+	# Obtener parámetros
+	mes_param = request.vars.mes  # Formato YYYY-MM
+	analista_id = request.vars.analista  # ID del analista
+	
+	# Validar mes o usar actual
+	ahora = datetime.now()
+	if mes_param:
+		try:
+			año, mes = map(int, mes_param.split('-'))
+			mes_str = datetime(año, mes, 1).strftime("%B %Y")
+			mes_formatted = f"{año}-{mes:02d}"
+		except:
+			año, mes = ahora.year, ahora.month
+			mes_str = ahora.strftime("%B %Y")
+			mes_formatted = f"{año}-{mes:02d}"
+	else:
+		año, mes = ahora.year, ahora.month
+		mes_str = ahora.strftime("%B %Y")
+		mes_formatted = f"{año}-{mes:02d}"
+	
+	try:
+		# 1. Obtener meses disponibles
+		sql_meses = """
+		SELECT DISTINCT 
+			   EXTRACT(YEAR FROM fecha_inicio) as año,
+			   EXTRACT(MONTH FROM fecha_inicio) as mes
+		FROM actividades_sd
+		ORDER BY año DESC, mes DESC
+		"""
+		meses_db = db.executesql(sql_meses, as_dict=True)
+		meses_disponibles = [f"{int(m['año'])}-{int(m['mes']):02d}" for m in meses_db] or [mes_formatted]
+		
+		# 2. Obtener lista de analistas (desde auth_user)
+		sql_analistas = """
+		SELECT id, first_name || ' ' || last_name as nombre 
+		FROM auth_user
+		WHERE id IN (SELECT DISTINCT analista FROM actividades_sd)
+		ORDER BY last_name, first_name
+		"""
+		analistas = db.executesql(sql_analistas, as_dict=True)
+		
+		# 3. Datos por Base de Datos
+		sql_bd = """
+		SELECT b.nombre, ser.nombre as servidor, 
+			   SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
+		FROM actividades_sd a
+		JOIN servidores ser ON ser.id = a.cod_servidor
+		JOIN basedatos b ON b.servidor = ser.id
+		WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
+		AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
+		{filtro_analista}
+		GROUP BY b.nombre, ser.nombre
+		ORDER BY total_horas DESC
+		""".format(
+			filtro_analista="AND a.analista = %s" if analista_id else ""
+		)
+		
+		params_bd = [mes, año]
+		if analista_id:
+			params_bd.append(analista_id)
+		
+		bd_data = db.executesql(sql_bd, params_bd, as_dict=True)
+		chart_bd = {
+			'labels': [f"{r['nombre']} ({r['servidor']})" for r in bd_data],
+			'data': [float(r['total_horas']) for r in bd_data]
+		}
+		
+		# 4. Datos por Ambiente
+		sql_ambiente = """
+		SELECT am.descri as ambiente,
+			   SUM(a.horas_laboradas) as horas_normales,
+			   SUM(COALESCE(a.horas_extras, 0)) as horas_extras,
+			   SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
+		FROM ambiente am
+		JOIN actividades_sd a ON a.ambiente_id = am.id
+		WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s
+		AND EXTRACT(YEAR FROM a.fecha_inicio) = %s
+		{filtro_analista}
+		GROUP BY am.descri, am.id
+		ORDER BY total_horas DESC
+		""".format(
+			filtro_analista="AND a.analista = %s" if analista_id else ""
+		)
+		
+		params_ambiente = [mes, año]
+		if analista_id:
+			params_ambiente.append(analista_id)
+		
+		ambiente_data = db.executesql(sql_ambiente, params_ambiente, as_dict=True)
+		chart_ambiente = {
+			'labels': [r['ambiente'] for r in ambiente_data],
+			'normales': [float(r['horas_normales']) for r in ambiente_data],
+			'extras': [float(r['horas_extras']) for r in ambiente_data],
+			'totales': [float(r['total_horas']) for r in ambiente_data]
+		}
+		total_horas = sum(chart_ambiente['totales']) if chart_ambiente['totales'] else 0
+		
+		# Obtener nombre del analista seleccionado
+		analista_seleccionado = next(
+			(a['nombre'] for a in analistas if str(a['id']) == str(analista_id)),
+			"Todos los analistas"
+		)
+		
+	except Exception as e:
+		error = str(e)
+	
+	return dict(
+		chart_bd=chart_bd,
+		chart_ambiente=chart_ambiente,
+		meses_disponibles=meses_disponibles,
+		mes_param=mes_formatted,
+		mes_actual=mes_str,
+		analistas=analistas,
+		analista_id=analista_id,
+		analista_seleccionado=analista_seleccionado,
+		total_horas=total_horas,
+		error=error
+	)
 
 
 def horas_por_ambiente_mes_actual():
-    from datetime import datetime
-    
-    # Obtener el mes y año actual
-    ahora = datetime.now()
-    mes_actual = ahora.month
-    año_actual = ahora.year
-    
-    # Consulta corregida para PostgreSQL
-    query = """
-    SELECT am.descri as ambiente, 
-           COALESCE(SUM(a.horas_laboradas), 0) as total_horas,
-           am.id as ambiente_id
-    FROM ambiente am
-    LEFT JOIN actividades_sd a ON a.ambiente_id = am.id
-      AND EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
-      AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
-    GROUP BY am.id, am.descri
-    ORDER BY am.id
-    """.format(mes=mes_actual, año=año_actual)
-    
-    registros = db.executesql(query, as_dict=True)
-    
-    # Preparar datos para el gráfico
-    ambientes = []
-    horas = []
-    
-    for r in registros:
-        ambientes.append(r['ambiente'])
-        horas.append(float(r['total_horas']))
-    
-    return dict(
-        ambientes=ambientes, 
-        horas=horas,
-        mes_actual=ahora.strftime("%B %Y")
-    )
+	from datetime import datetime
+	
+	# Obtener el mes y año actual
+	ahora = datetime.now()
+	mes_actual = ahora.month
+	año_actual = ahora.year
+	
+	# Consulta corregida para PostgreSQL
+	query = """
+	SELECT am.descri as ambiente, 
+		   COALESCE(SUM(a.horas_laboradas), 0) as total_horas,
+		   am.id as ambiente_id
+	FROM ambiente am
+	LEFT JOIN actividades_sd a ON a.ambiente_id = am.id
+	  AND EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
+	  AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
+	GROUP BY am.id, am.descri
+	ORDER BY am.id
+	""".format(mes=mes_actual, año=año_actual)
+	
+	registros = db.executesql(query, as_dict=True)
+	
+	# Preparar datos para el gráfico
+	ambientes = []
+	horas = []
+	
+	for r in registros:
+		ambientes.append(r['ambiente'])
+		horas.append(float(r['total_horas']))
+	
+	return dict(
+		ambientes=ambientes, 
+		horas=horas,
+		mes_actual=ahora.strftime("%B %Y")
+	)
 
 def horas_por_actividades():
-    from datetime import datetime
-    
-    # Obtener parámetros del formulario o usar valores por defecto
-    mes = request.vars.mes or datetime.now().month
-    año = request.vars.año or datetime.now().year
-    
-    try:
-        mes = int(mes)
-        año = int(año)
-    except:
-        mes = datetime.now().month
-        año = datetime.now().year
-    
-    # Validar rangos
-    mes = max(1, min(12, mes))
-    año = max(2000, min(2100, año))
-    
-    # Consulta SQL
-    query = """
-    SELECT 
-        p.descri as proyecto,
-        SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas,
-        COUNT(a.id) as cantidad_actividades
-    FROM 
-        actividades_sd a
-    JOIN 
-        proyectos p ON a.cod_proy = p.id
-    WHERE
-        EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
-        AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
-    GROUP BY 
-        p.descri
-    ORDER BY 
-        total_horas DESC
-    """.format(mes=mes, año=año)
-    
-    registros = db.executesql(query, as_dict=True)
-    
-    # Preparar datos
-    proyectos = [r['proyecto'] for r in registros]
-    horas = [float(r['total_horas']) for r in registros]
-    background_colors = [get_color_for_proyecto(p) for p in proyectos]
-    border_colors = [color.replace('0.7', '1') for color in background_colors]
-    
-    # Generar lista de meses y años para el dropdown
-    meses = [
-        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), 
-        (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
-        (7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'),
-        (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
-    ]
-    
-    años = list(range(2020, datetime.now().year + 1))
-    cant_actividades = [float(r['cantidad_actividades']) for r in registros]
-    return dict(
-        registros=registros,
-        proyectos=proyectos,
-        horas=horas,
-        background_colors=background_colors,
-        border_colors=border_colors,
-        mes_actual=mes,
-        año_actual=año,
-        meses=meses,
-        años=años,
+	from datetime import datetime
+	
+	# Obtener parámetros del formulario o usar valores por defecto
+	mes = request.vars.mes or datetime.now().month
+	año = request.vars.año or datetime.now().year
+	
+	try:
+		mes = int(mes)
+		año = int(año)
+	except:
+		mes = datetime.now().month
+		año = datetime.now().year
+	
+	# Validar rangos
+	mes = max(1, min(12, mes))
+	año = max(2000, min(2100, año))
+	
+	# Consulta SQL
+	query = """
+	SELECT 
+		p.descri as proyecto,
+		SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas,
+		COUNT(a.id) as cantidad_actividades
+	FROM 
+		actividades_sd a
+	JOIN 
+		proyectos p ON a.cod_proy = p.id
+	WHERE
+		EXTRACT(MONTH FROM a.fecha_inicio) = {mes}
+		AND EXTRACT(YEAR FROM a.fecha_inicio) = {año}
+	GROUP BY 
+		p.descri
+	ORDER BY 
+		total_horas DESC
+	""".format(mes=mes, año=año)
+	
+	registros = db.executesql(query, as_dict=True)
+	
+	# Preparar datos
+	proyectos = [r['proyecto'] for r in registros]
+	horas = [float(r['total_horas']) for r in registros]
+	background_colors = [get_color_for_proyecto(p) for p in proyectos]
+	border_colors = [color.replace('0.7', '1') for color in background_colors]
+	
+	# Generar lista de meses y años para el dropdown
+	meses = [
+		(1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), 
+		(4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
+		(7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'),
+		(10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+	]
+	
+	años = list(range(2020, datetime.now().year + 1))
+	cant_actividades = [float(r['cantidad_actividades']) for r in registros]
+	return dict(
+		registros=registros,
+		proyectos=proyectos,
+		horas=horas,
+		background_colors=background_colors,
+		border_colors=border_colors,
+		mes_actual=mes,
+		año_actual=año,
+		meses=meses,
+		años=años,
 		cant_actividades=cant_actividades,
-        nombre_mes=next((m[1] for m in meses if m[0] == mes), ''),
-        total_general=sum(horas)
-    )
+		nombre_mes=next((m[1] for m in meses if m[0] == mes), ''),
+		total_general=sum(horas)
+	)
 
 def get_color_for_proyecto(proyecto):
-    # Asignar colores consistentes a cada proyecto basado en hash
-    colores_disponibles = [
-        'rgba(54, 162, 235, 0.7)',  # Azul
-        'rgba(255, 99, 132, 0.7)',  # Rojo
-        'rgba(75, 192, 192, 0.7)',  # Verde
-        'rgba(255, 206, 86, 0.7)',  # Amarillo
-        'rgba(153, 102, 255, 0.7)', # Morado
-        'rgba(255, 159, 64, 0.7)',  # Naranja
-        'rgba(199, 199, 199, 0.7)', # Gris
-        'rgba(83, 102, 255, 0.7)',  # Azul oscuro
-        'rgba(40, 167, 69, 0.7)',   # Verde oscuro
-        'rgba(108, 117, 125, 0.7)'  # Gris oscuro
-    ]
-    
-    # Generar un índice consistente basado en el nombre del proyecto
-    hash_valor = sum(ord(c) for c in proyecto)
-    indice_color = hash_valor % len(colores_disponibles)
-    
-    return colores_disponibles[indice_color]
+	# Asignar colores consistentes a cada proyecto basado en hash
+	colores_disponibles = [
+		'rgba(54, 162, 235, 0.7)',  # Azul
+		'rgba(255, 99, 132, 0.7)',  # Rojo
+		'rgba(75, 192, 192, 0.7)',  # Verde
+		'rgba(255, 206, 86, 0.7)',  # Amarillo
+		'rgba(153, 102, 255, 0.7)', # Morado
+		'rgba(255, 159, 64, 0.7)',  # Naranja
+		'rgba(199, 199, 199, 0.7)', # Gris
+		'rgba(83, 102, 255, 0.7)',  # Azul oscuro
+		'rgba(40, 167, 69, 0.7)',   # Verde oscuro
+		'rgba(108, 117, 125, 0.7)'  # Gris oscuro
+	]
+	
+	# Generar un índice consistente basado en el nombre del proyecto
+	hash_valor = sum(ord(c) for c in proyecto)
+	indice_color = hash_valor % len(colores_disponibles)
+	
+	return colores_disponibles[indice_color]
 
 
 import gluon.contrib.simplejson
 
 @auth.requires_login()
 def progreso_monitoreo():
-    """
-    Devuelve el estado actual del monitoreo: base de datos y consulta actual.
-    Puedes guardar el progreso en session, en una tabla temporal, o en un archivo.
-    Aquí se muestra un ejemplo usando session.
-    """
-    progreso = session.progreso_monitoreo or {}
-    return gluon.contrib.simplejson.dumps(progreso)
+	"""
+	Devuelve el estado actual del monitoreo: base de datos y consulta actual.
+	Puedes guardar el progreso en session, en una tabla temporal, o en un archivo.
+	Aquí se muestra un ejemplo usando session.
+	"""
+	progreso = session.progreso_monitoreo or {}
+	return gluon.contrib.simplejson.dumps(progreso)
 
 
