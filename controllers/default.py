@@ -242,12 +242,13 @@ def monitor_bd():
 	mensajes = None
 	
 	# 1. Obtener datos de monitoreo con caché inteligente
-	def obtener_datos_actualizados_ORACLE():
+	def obtener_datos_actualizados():
 		# Solo datos de los últimos 5 minutos
 		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == tipo_bd_descri) \
-			  .select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+			(db.bdmon.tx_resultado != 'OK')\
+				.select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
 	
-	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados_ORACLE, time_expire=1)
+	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
 	
 	# 2. Verificar si necesitamos actualización (versión corregida)
 	necesita_actualizar = True
@@ -293,7 +294,7 @@ def monitor_bd():
 				resultado = actualizar_y_mostrar_monitor_parallel()
 				if resultado and 'resumen' in resultado:
 					mensajes = resultado['resumen']
-				mon = obtener_datos_actualizados_ORACLE()
+				mon = obtener_datos_actualizados()
 			except Exception as e2:
 				mensajes = "Error en actualización directa"
 				#db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
