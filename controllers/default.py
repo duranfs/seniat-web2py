@@ -43,11 +43,6 @@ def error():
 
 
 
-# ---- example index page ----
-#def index():
-	#response.flash = T("Hello World")
-#    return dict(message=T('Welcome to web2py!'))
-
 # ---- API (example) -----
 @auth.requires_login()
 def api_get_user_email():
@@ -157,13 +152,7 @@ def user():
 
 
 
-def herpos():
-	"""
-	example action using the internationalization operator T and flash
-	rendered by views/default/index.html or views/generic.html
-	"""
-	return dict(host=request.env.http_host)
-	
+
 def list_data():
 	from datetime import date
 	response.generic_patterns = ['*']
@@ -214,22 +203,6 @@ def select_bd_servidor():
 	bases=db(db.basedatos.servidor==servidor_id).select(db.basedatos.id, db.basedatos.nombre, db.basedatos.tipobd_id, orderby=db.basedatos.nombre)
 	return dict(bases=bases)
    
-def server_health():
-	servers=None
-	servidor_id=request.post_vars.server
-	print (servidor_id)
-	servidor=db.servidores[servidor_id]
-	if servidor:
-		basedatos=db(db.basedatos.servidor==servidor_id).select(db.basedatos.nombre, orderby=db.basedatos.nombre)
-
-	servidores=db(db.servidores.id>0).select(orderby=db.servidores.nombre)
-	basedatos=db(db.basedatos.id>0).select(db.basedatos.nombre, orderby=db.basedatos.nombre)
-	graphs=None
-	groups=None
-	
-	return dict(servidores=servidores, basedatos=basedatos, graphs=graphs, groups=groups)
-
-
 
 @auth.requires_membership('ADMIN')
 def user_conn():
@@ -2732,147 +2705,6 @@ def list_actividades():
 	mis_actividades = db(db.actividades.id>0)(db.actividades.cod_asig==db.asignacion.id)(db.asignacion.analista==me).select()
 	return locals()
 	
-@auth.requires_login()
-def crear_actividades():
-	fecha = request.vars.fecha_inicio;
-	response.files.append(URL(request.application,'static','data_table.css'))
-	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
-	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#basedatos').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
-	});''')
-	
-	me = auth.user_id
-	
-	proyectos_asignados = [OPTION(str(datos.proyectos.descri),_value=datos.asignacion.id) 
-	for datos in db(db.asignacion.analista==me)(db.proyectos.id == db.asignacion.cod_proyecto)(db.proyectos.status=='EN CURSO').select(db.proyectos.ALL, db.asignacion.ALL)]
-
-	
-	formaPA = FORM(TABLE(TR('Proyectos ', SELECT(*proyectos_asignados,**dict(_name="cod_asig")))))
-	
-	camposActividades = [
-		###########################################
-		# MovCtas
-		###########################################
-		SELECT(*proyectos_asignados,**dict(_name="cod_asig")),
-		INPUT(_name='descripcion', _type='textarea'),
-		INPUT(_name='fecha_inicio', _type='datetime'),
-		INPUT(_name='hora_inicio', _type='sting', _requires=IS_TIME(error_message='Hora no valida')	, default='08:00'),
-		INPUT(_name='hora_fin', _type='sting', _requires=IS_TIME(error_message='Hora no valida')	, default='12:30'),
-		INPUT(_name='horas_diurnas', _type='double', _requires=IS_NOT_EMPTY(error_message='No puede ser nulo'), _notnull=True, _default=0.00),
-		INPUT(_name='horas_nocturnas', _type='double',  _default=0.00),
-		INPUT(_name='horas_diurnas_r', _type='double'),
-		INPUT(_name='horas_nocturnas_r', _type='double',  _default=0.00),
-		
-		INPUT(_name='tipo', _type='string', _default='P', _requires=IS_IN_SET(TIPO_ACT)),
-		INPUT(_name='producto', _type='list', _default='INFORME' ),
-		INPUT(_name='completado', _type='string:list', _default='NO COMPLETADA' ),
-		]
-
-	formaAct = FORM(*camposActividades)
-	
-	if formaAct.accepts(request.vars,formname='formaActHTML', keepvalues=False):
-		datosActividades = db.actividades._filter_fields(formaAct.vars)
-		datosActividades['cod_asig'] = formaAct.vars.cod_asig
-		if formaAct.vars.tipo=="R":
-			datosActividades['horas_diurnas_r']=formaAct.vars.horas_diurnas;
-			datosActividades['horas_nocturnas_r']=formaAct.vars.horas_nocturnas;
-			datosActividades['horas_diurnas'] = 0.00;
-			datosActividades['horas_nocturnas'] = 0.00;
-		else:
-			datosActividades['horas_diurnas_r']=0.00;
-			datosActividades['horas_nocturnas_r']=0.00;
-			
-		ActividadesInsertado = db.actividades.insert(**datosActividades)
-		session.flash='Registro insertado'
-		
-		proy_id=db(db.proyectos.id==db.asignacion.cod_proyecto)(db.actividades.cod_asig==db.asignacion.id)(db.actividades.id==ActividadesInsertado)\
-		.select(db.proyectos.id).first()
-		
-
-			
-		db(db.asignacion.id==formaAct.vars.cod_asig).update(status='INICIADO')
-		db(db.proyectos.id == proy_id).update(status = 'EN CURSO')
-		asignacion_id=formaAct.vars.cod_asig
-		asignacion=db.asignacion[asignacion_id]
-		calcula_porcentaje(asignacion)
-		#reinicia_asignacion(asignacion)
-		#----
-		db.commit()
-		redirect(URL('crear_actividades')) #evita que se dupliquen los registros al refrescar la pagina
-		
-		
-		
-		
-	LISTA=['POR REALIZAR','COMPLETADO']
-	proyectos_asignados = db(db.asignacion.analista==me)\
-	(db.proyectos.id == db.asignacion.cod_proyecto)\
-	(~db.proyectos.status.belongs(LISTA)).select(db.proyectos.ALL, db.asignacion.ALL)
-	now = datetime.datetime.now()
-	hoy = now.strftime("%Y-%m-%d")
-	#mis_actividades = db(db.actividades.id>0)(db.actividades.fecha_inicio==hoy)\
-	mis_actividades = db(db.actividades.id>0)(db.actividades.fecha_inicio==formaAct.vars.fecha_inicio)\
-	(db.actividades.cod_asig==db.asignacion.id)(db.asignacion.analista==me).select(orderby="hora_inicio")
-	appl = db(db.basedatos.id>0)(db.basedatos.appl != 'None').select(db.basedatos.nombre, db.basedatos.appl, db.basedatos.servidor, distinct=True, orderby="nombre")
-	return locals()
-
-# ------------------------ solutor delta -----------------------------------
-
-@auth.requires_login()
-def dias_actividades_faltantes():
-	from calendar import monthrange, datetime
-	import calendar
-	now = datetime.datetime.now()
-	year = now.year
-	month = now.month
-	last_day = monthrange (year, month) [1] ## último día
-	start = datetime.date(year,month,1)
-	end = datetime.date(year,month,last_day)
-	num_days = monthrange(2023, 4)[1] #ultimo dia del mes
-
-	base = datetime.datetime.today()
-	date_list = [base - datetime.timedelta(days=x) for x in range(last_day)]
-	
-
-	allissues=''
-	dias_faltantes=[]
-	for f in date_list:
-		
-		fecha_buscar = f.strftime("%Y-%m-%d")
-		existe = db(db.actividades_sd.fecha_inicio==fecha_buscar).count()
-		sql = "select fecha_inicio::date, count(*) from actividades_sd where fecha_inicio::date = %s group by fecha_inicio::date order by fecha_inicio ASC" 
-		cantidad=db.executesql(sql, placeholders=(fecha_buscar,), as_dict=False)
-
-		
-		if cantidad==0:
-			dias_faltantes.append('No hay --- ' +  str(cantidad))
-		else:
-			dias_faltantes.append('Si hay --- ' + str(cantidad))
-
-
-	import datetime;
-	fechas =  [(datetime.date.today() - datetime.timedelta(days=x)).strftime('%Y-%m-%d') for x in range(-5, 0)]
-
-	calendario = calendar.month(year, month)
-	
-	tablaHTML = "<table cellpadding='3' id='' style=' max-width:100%; font-size: 12px; ' class='table-bordered '>"
-	tablaHTML +="<col style='width:20%;'>"
-	tablaHTML +="<col style='width:50%'>"
-		
-	tablaHTML +="<thead> <tr style='background-color: #c1edf1; ' rowspan='1'><th colspan='1' style='color: black; font-weight: bold; font-size: 14px;'>Numero dias</th><th colspan='1' style='text-align: center;'>Fechas</th> </tr>"
-	tablaHTML +="</thead>"
-	tablaHTML +="<tbody>"
-	for dias, fechas in enumerate(dias_faltantes):
-		 
-		tablaHTML +="<tr>"
-		tablaHTML +="<td>" + str(dias) + "</td>"
-		tablaHTML +="<td>" + str(fechas) + "</td>"
-	
-	tablaHTML +="</tbody>"
-	tablaHTML +="</table>"
-
-	#num_days = monthrange(2023, 04)[1] #ultimo dia del mes
-	
-	return XML(tablaHTML)
 
 
 @auth.requires_login()

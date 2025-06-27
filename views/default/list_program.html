@@ -1,6 +1,10 @@
+{{response.files.append(URL(r=request,c='static',f='jquery.dataTables.min.js'))}}
+{{response.files.append(URL(r=request,c='static',f='demo_table.css'))}}
 {{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
 {{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
 {{extend 'layout.html'}}
+<!DOCTYPE html>
+<html>
 
 <style>
 .titulo {
@@ -33,10 +37,10 @@ jQuery(document).ready(function(){
 
 {{=A(IMG( _src=URL(request.application,'static/images','add.png'),
           _alt="Crear",
-	  _title="Nuevo Titulo",	_onclick="jQuery('#form').slideToggle();",				
+	  _title="Nuevo titulo para la wiki",	_onclick="jQuery('#form').slideToggle();",				
           _class="click",  _style="border:0;width:30px;height:30px"))}}
 <div id="form">
-<h2>Nuevo Titulo</h2>
+<h2>Nuevo titulo para la wiki</h2>
 {{=form}}
 </div>
 

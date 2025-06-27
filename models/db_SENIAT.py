@@ -948,9 +948,12 @@ if db(db.auth_group.role=="admin").count() == 0:
 # -------   wiki --------------------------------------------------------------------------
 
 db.define_table('program',
-                Field('name',length=1000, represent=lambda x: MARKMIN(x), unique=True),
-                format='%(name)s',
-                migrate=migrate)
+    Field('name', length=1000, 
+          represent=lambda x: MARKMIN(x), 
+          unique=True,
+          widget=lambda field, value: SQLFORM.widgets.text.widget(field, value, _rows=1, _cols=100)),
+    format='%(name)s',
+    migrate=migrate)
                 
 db.define_table('learning_goal',
                 Field('program',db.program,writable=False,label='Titulo'),                

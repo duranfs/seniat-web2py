@@ -1,29 +1,106 @@
 {{extend 'layout.html'}}
+<!DOCTYPE html>
+<html>
+<head>
 
-<!-- 
-========================================
-DASHBOARD - VERSIÓN OPTIMIZADA
-========================================
-Este archivo usa el CSS común de SENIAT y
-el CSS modular de dashboard con recursos locales
-Se eliminó CSS duplicado (185 líneas → 25 líneas)
--->
+    <meta http-equiv="refresh" content="25">
 
-<!-- Cargar CSS modular para dashboard -->
-<link rel="stylesheet" href="{{=URL('static','css/modules/dashboard.css')}}">
-
-<!-- Solo estilos específicos para esta instancia -->
 <style>
-/* Override específico para el refresh automático */
-.refresh-countdown {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
 }
 
-/* Ajustes específicos para el grid de bases de datos */
+.card {
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem 0 rgba(58, 59, 69, 0.2);
+}
+
+.db-card {
+    min-height: 180px;
+    position: relative;
+}
+
+.db-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.db-content {
+    padding: 15px;
+}
+
+.db-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.db-detail {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.db-detail-label {
+    font-weight: 600;
+    color: #7f8c8d;
+}
+
+.db-response-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.success-card {
+    border-left: 4px solid #2ecc71;
+}
+
+.error-card {
+    border-left: 4px solid #e74c3c;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.exit-button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.exit-button:hover {
+    background: #c0392b;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
 .db-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -31,253 +108,229 @@ Se eliminó CSS duplicado (185 líneas → 25 líneas)
     margin-top: 20px;
 }
 
-/* Estado específico para bases de datos offline */
-.db-card.offline {
-    border-left-color: var(--danger-color) !important;
-    animation: border-pulse 2s infinite;
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.details-toggle {
+    color: #3498db;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+.db-details {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    display: none;
+}
+
+/* Colores por ambiente */
+.env-produccion {
+    border-left: 5px solid #e74c3c !important;
+    background-color: #fdecea;
+}
+
+.env-desarrollo {
+    border-left: 5px solid #3498db !important;
+    background-color: #ebf5fb;
+}
+
+.env-qa {
+    border-left: 5px solid #f39c12 !important;
+    background-color: #fef5e7;
+}
+
+.env-dataguard {
+    border-left: 5px solid #8e44ad !important;
+    background-color: #f5eef8;
+}
+
+.env-desconocido {
+    border-left: 5px solid #7f8c8d !important;
+    background-color: #ecf0f1;
 }
 </style>
+</head>
 
-<body class="dashboard-body">
+<body onload="startAutoRefresh()">
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Cargando información de monitoreo...</div>
-    <div class="loading-details">Conectando con bases de datos...</div>
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div>Cargando información de monitoreo...</div>
 </div>
 
-<div class="dashboard-container" id="content-container" style="display: none;">
-    <!-- Header del Dashboard -->
+<div class="container-fluid">
+    <!-- Header -->
     <div class="dashboard-header">
-        <div>
-            <h1 class="dashboard-title">Monitor de Infraestructura Base de Datos</h1>
-            <div class="dashboard-subtitle">Última actualización: {{=time}}</div>
-        </div>
-        
-        <div class="header-controls">
-            <div class="refresh-info">
-                <i class="fas fa-clock"></i>
-                <span>Próxima actualización en:</span>
-                <span id="countdown" class="refresh-countdown">2:00</span>
-            </div>
-            <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
-                <i class="fas fa-home"></i> Volver a Inicio
-            </button>
-        </div>
+        <h1 class="h3 mb-0 text-gray-800">Monitor de Infraestructura Base de Datos</h1>
+        <small class="text-muted">Actualizado: {{=time}}</small>
     </div>
 
-    <!-- Resumen de Estadísticas -->
-    <div class="stats-summary">
-        <div class="stat-card info">
-            <div class="stat-header">
-                <div class="stat-title">Bases de Datos Monitoreadas</div>
-                <i class="fas fa-database stat-icon"></i>
-            </div>
-            <div class="stat-value">{{=len(bases_datos)}}</div>
-        </div>
-        
-        <div class="stat-card success">
-            <div class="stat-header">
-                <div class="stat-title">Bases Activas</div>
-                <i class="fas fa-check-circle stat-icon"></i>
-            </div>
-            <div class="stat-value">{{=sum(db['status'] for db in bases_datos)}}</div>
-        </div>
-        
-        <div class="stat-card danger">
-            <div class="stat-header">
-                <div class="stat-title">Bases Inactivas</div>
-                <i class="fas fa-times-circle stat-icon"></i>
-            </div>
-            <div class="stat-value">{{=len(bases_datos) - sum(db['status'] for db in bases_datos)}}</div>
-        </div>
-        
-        <div class="stat-card warning">
-            <div class="stat-header">
-                <div class="stat-title">Tiempo Resp. Promedio</div>
-                <i class="fas fa-stopwatch stat-icon"></i>
-            </div>
-            <div class="stat-value">{{=round(sum(db['response_time'] for db in bases_datos if db['status']) / max(sum(db['status'] for db in bases_datos), 1), 1)}} ms</div>
-        </div>
+    <div class="header-container">
+        <h1 style="color: white;">Monitor de Bases de Datos</h1>
+        <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
+            Volver a la aplicación principal
+        </button>
     </div>
 
-    <!-- Agrupación por Ambiente -->
-    {{ambientes = {}}}
-    {{for db in bases_datos:}}
-        {{ambiente = db['ambiente'].lower()}}
-        {{if ambiente not in ambientes:}}
-            {{ambientes[ambiente] = []}}
-        {{pass}}
-        {{ambientes[ambiente].append(db)}}
-    {{pass}}
-
-    {{for ambiente, dbs in ambientes.items():}}
-    <div class="ambiente-container">
-        <div class="ambiente-title {{=ambiente}}">
-            <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
-            <span class="ambiente-count">{{=len(dbs)}} instancias</span>
-        </div>
-        
-        <div class="instancias-grid">
-            {{for db in sorted(dbs, key=lambda x: x['nombre']):}}
-            <div class="instancia-card {{=ambiente}} {{='alerta' if not db['status'] else ''}}">
-                <div class="instancia-header">
-                    <div class="instancia-name">{{=db['nombre']}}</div>
-                    <div class="instancia-status {{='online' if db['status'] else 'offline'}}"></div>
-                </div>
-                
-                <div class="instancia-details">
-                    <div class="instancia-detail">
-                        <strong>Aplicación:</strong> {{=db['aplicacion'].capitalize() if db['aplicacion'] else 'N/A'}}
-                    </div>
-                    <div class="instancia-detail">
-                        <strong>Servidor:</strong> {{=db['servidor_id']['nombre'] if db['servidor_id'] else 'N/A'}}
-                    </div>
-                    <div class="instancia-detail">
-                        <strong>Tiempo Respuesta:</strong> 
-                        <span class="rutina-result {{='ok' if db['status'] else 'alerta'}}">
-                            {{=db['response_time']}} ms
-                        </span>
-                    </div>
-                </div>
-
-                <div class="rutinas-section">
-                    <div class="rutinas-title">Estado de Conexión</div>
-                    <div class="instancia-detail">
-                        <strong>TNS Entry:</strong> {{=db['tns_entry']}}
-                    </div>
-                    {{if db['output']:}}
-                    <div class="tooltip-dashboard">
-                        <small style="color: #666; cursor: help;">Ver detalles técnicos</small>
-                        <div class="tooltiptext">
-                            <pre style="font-size: 10px; text-align: left;">{{=db['output'][:200]}}{{='...' if len(db['output']) > 200 else ''}}</pre>
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Bases de Datos Monitoreadas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{=len(bases_datos)}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
                         </div>
                     </div>
-                    {{pass}}
-                </div>
-
-                <div class="acciones-rapidas">
-                    <a href="{{=URL(r=request, c='default', f='view_basedatos', args=[db['id']])}}" class="accion-link">
-                        <i class="fas fa-eye"></i> Ver Detalle
-                    </a>
-                    <a href="{{=URL(r=request, c='default', f='monitor_basedatos', args=[db['id']])}}" class="accion-link">
-                        <i class="fas fa-chart-line"></i> Monitorear
-                    </a>
-                    {{if not db['status']:}}
-                    <a href="{{=URL(r=request, c='default', f='test_connection', args=[db['id']])}}" class="accion-link" style="background-color: #e74c3c; color: white;">
-                        <i class="fas fa-sync"></i> Reconectar
-                    </a>
-                    {{pass}}
                 </div>
             </div>
-            {{pass}}
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Bases Activas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{=sum(db['status'] for db in bases_datos)}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Bases Inactivas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{=len(bases_datos) - sum(db['status'] for db in bases_datos)}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    {{pass}}
+
+    <!-- Cuadros de bases de datos -->
+    <div class="db-grid">
+        {{for ping in sorted(bases_datos, key=lambda x: x['ambiente'].lower()):}}
+        <div class="card db-card {{='success-card' if ping['status'] else 'error-card'}} env-{{=ping['ambiente'].lower()}}">
+            <div class="db-status">
+                <div class="status-indicator bg-{{='success' if ping['status'] else 'danger'}}"></div>
+            </div>
+            <div class="db-content">
+                <div class="db-name">{{=ping['nombre']}}</div>
+                
+                <div class="db-detail">
+                  <span class="db-detail-label">Aplicación:</span> 
+                        {{=ping['aplicacion'].capitalize() if ping['aplicacion'] else ''}}
+                </div>
+                
+                <div class="db-detail">
+                    <span class="db-detail-label">Servidor:</span> {{=ping['servidor_id']['nombre'] if ping['servidor_id'] else 'N/A'}}
+                </div>
+
+                <div class="db-detail">
+                    <span class="db-detail-label">Ambiente:</span> {{=ping['ambiente'].capitalize()}}
+                </div>
+                
+                <div class="db-response-time text-{{='success' if ping['status'] else 'danger'}}">
+                    {{=ping['response_time']}} ms
+                </div>
+                
+                <div class="details-toggle" onclick="toggleDetails('{{=ping['id']}}')">
+                    <i class="fas fa-info-circle"></i> Detalle conexion
+                </div>
+                <!-- <div >
+                    {{=A('Monitorbd', _href=URL(r=request, c='default', f='monitorb', args=[ping['id'], ping['servidor_id']]), _target='new')}}
+                </div> -->
+
+                <div class="db-details" id="details-{{=ping['id']}}">
+                    <div><strong>TNS Entry:</strong> {{=ping['tns_entry']}}</div>
+                    <pre>{{=ping['output']}}</pre>
+                </div>
+            </div>
+        </div>
+        {{pass}}
+    </div>
 </div>
 
-<!-- JavaScript usando recursos locales -->
 <script>
-// Variables globales para el manejo de refresh
-const REFRESH_INTERVAL = 25; // 25 segundos según el meta refresh original
-let countdownTimer;
-let refreshTimer;
-
-// Función para actualizar la página
 function refreshPage() {
-    // Mostrar overlay de carga antes de recargar
-    document.getElementById('loading-overlay').style.display = 'flex';
-    setTimeout(() => {
-        location.reload(true);
+    location.reload(true);
+}
+
+function startAutoRefresh() {
+    refreshPage();
+    setInterval(refreshPage, 15000);
+}
+
+$(window).on('load', function() {
+    setTimeout(function() {
+        $('#loading-overlay').fadeOut(300);
     }, 500);
-}
-
-// Función para actualizar el contador
-function updateCountdown() {
-    let countdown = REFRESH_INTERVAL;
-    const countdownElement = document.getElementById('countdown');
-    
-    // Limpiar timer existente si lo hay
-    if (countdownTimer) {
-        clearInterval(countdownTimer);
-    }
-    
-    countdownTimer = setInterval(() => {
-        countdown--;
-        const minutes = Math.floor(countdown / 60);
-        const seconds = countdown % 60;
-        countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        if (countdown <= 0) {
-            clearInterval(countdownTimer);
-            refreshPage();
-        }
-    }, 1000);
-}
-
-// Función para simular carga progresiva
-function simulateLoading() {
-    const loadingDetails = document.querySelector('.loading-details');
-    const steps = [
-        'Conectando con bases de datos...',
-        'Verificando estado de servidores...',
-        'Obteniendo métricas de rendimiento...',
-        'Procesando información de ambientes...',
-        'Finalizando carga...'
-    ];
-    
-    let currentStep = 0;
-    const stepInterval = setInterval(() => {
-        if (currentStep < steps.length) {
-            loadingDetails.textContent = steps[currentStep];
-            currentStep++;
-        } else {
-            clearInterval(stepInterval);
-            // Ocultar overlay y mostrar contenido
-            document.getElementById('loading-overlay').style.display = 'none';
-            document.getElementById('content-container').style.display = 'block';
-            
-            // Iniciar contador de refresh
-            updateCountdown();
-        }
-    }, 600);
-}
-
-// Inicialización cuando la página carga
-document.addEventListener('DOMContentLoaded', function() {
-    // Iniciar simulación de carga
-    simulateLoading();
-    
-    // Configurar timer para refresh automático
-    refreshTimer = setTimeout(refreshPage, REFRESH_INTERVAL * 1000);
 });
 
-// Limpiar timers cuando la página se descarga
-window.addEventListener('beforeunload', function() {
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (refreshTimer) clearTimeout(refreshTimer);
-});
-
-// Función para pausar/reanudar refresh automático
-function toggleAutoRefresh() {
-    if (refreshTimer) {
-        clearTimeout(refreshTimer);
-        clearInterval(countdownTimer);
-        refreshTimer = null;
-        document.getElementById('countdown').textContent = 'PAUSADO';
+function toggleDetails(id) {
+    var details = $('#details-' + id);
+    var toggle = details.prev('.details-toggle');
+    
+    if (details.is(':visible')) {
+        details.hide();
+        toggle.html('<i class="fas fa-info-circle"></i> Detalle conexion');
     } else {
-        updateCountdown();
-        refreshTimer = setTimeout(refreshPage, REFRESH_INTERVAL * 1000);
+        details.show();
+        toggle.html('<i class="fas fa-info-circle"></i> Ocultar detalles');
     }
 }
-
-// Agregar listener para pausar con tecla espaciadora
-document.addEventListener('keydown', function(e) {
-    if (e.code === 'Space' && !e.target.matches('input, textarea')) {
-        e.preventDefault();
-        toggleAutoRefresh();
-    }
-});
 </script>
 
 </body>
+</html>
