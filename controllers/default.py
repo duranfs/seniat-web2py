@@ -1030,6 +1030,7 @@ def createReportXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	
 
 
+
 def reportxxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
 	response.title = "web2py sample report"
 
@@ -1258,7 +1259,7 @@ def lista_bd_onlineXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	salida = proceso.communicate()
 	return salida
 
-def func_lista_bd_online_bdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def func_lista_bd_online_bd():
 	import subprocess
 	home=None
 	comando=None
@@ -1346,7 +1347,7 @@ def func_limpia_cuentasSO():
 	redirect(URL('list_cuentas_so'))
 	return
 
-def desbloq_usuariosXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def desbloq_usuarios():
 	import subprocess
 	comando=''
 	salida=''
@@ -1367,7 +1368,7 @@ def desbloq_usuariosXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	INPUT( _name='indicador' , _type='string'),
 	INPUT( _name='cambio' , _type='boolean'),
 	INPUT( _name='clave_user' , _type='string') ]
-	response.flash = 'Ã‰xito'
+	response.flash = 'Éxito'
 	forma = FORM(*campos)
 	if forma.accepts(request.vars,formname='formaHTML'):
 		#if form.process().accepted:
@@ -1405,7 +1406,7 @@ def desbloq_usuariosXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	return dict(forma=forma, salida=salida,nombre_bd=nombre_bd)
 
 
-def ejecuta_dfXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def ejecuta_df():
 	import subprocess
 	home=None
 	comando=None
@@ -1469,7 +1470,7 @@ def ejecuta_dfXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	#session.flash=comando
 	return salida
 
-def sysinfoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def sysinfo():
 	import subprocess
 	home=None
 	comando=None
@@ -1488,7 +1489,7 @@ def sysinfoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 	#session.flash=comando
 	return salida	
 
-def ejecuta_procesos_bdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def ejecuta_procesos_bd():
 	import subprocess
 	home=None
 	comando=None
@@ -1554,20 +1555,20 @@ def ejecuta_procesos_bdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
 
-def abre_terminalXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def abre_terminal():
 	sh("ls -a")
 	return dict(result=result, salida=salida)
 
-def shXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(cmd, input=""):
+def sh(cmd, input=""):
 	import subprocess
 	rst = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, input=input.encode("utf-8")) 
 	assert rst.returncode == 0, rst.stderr.decode("utf-8")
 	return rst.stdout.decode("utf-8")
 	
-def ejecuta_shellXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def ejecuta_shell():
 	import subprocess
 	archivo_salida = open("/tmp/output.txt", "w")
-	comando = request.folder + "/private/lista.sh" #son muchos asÃ­ que por eso los asigno a una variable
+	comando = request.folder + "/private/lista.sh" #son muchos así que por eso los asigno a una variable
 	#comando = "ssh postgres@metltq111.pd.com '/var/lib/postgresql/monitorbd/cron_monitorbd.sh'"
 	#servidor_id=request.args(0)
 	#servidor=db.servidores[servidor_id] or redirect(error_page)
@@ -1582,7 +1583,7 @@ def ejecuta_shellXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 		#sal = run_comando('ls -l /home')
 	return locals()
 
-def run_comandoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX(self, *args):
+def run_comando(self, *args):
 	import subprocess
 	p = subprocess.Popen(str(args),	
 		shell=False, 
@@ -1592,7 +1593,7 @@ def run_comandoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 		universal_newlines=True)
 	return p.communicate()
 
-def lee_archivoXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
+def lee_archivo():
 	import os
 	os.system('ls -l > tmp')
 	print (open('tmp', 'r').read())
@@ -1725,7 +1726,7 @@ def servidores_monitoreados():
 
 @auth.requires_login()
 def basedatos_monitoreadas():
-	#Â·basedatos  -----------------------------------------------------------------------------------------
+	#·basedatos  -----------------------------------------------------------------------------------------
 	outdb = []
 	for bd1 in db(db.basedatos.status_mon.upper()=='SI').select(db.basedatos.nombre,db.basedatos.servidor, db.basedatos.tipobd_id, distinct=True):
 		bd_mon=db(db.bdmon.tx_instancia.lower()==bd1.nombre.lower())\
@@ -3603,7 +3604,7 @@ def list_detalle_act3():
 	todas=db(db.asignacion.id==db.actividades.cod_asig).select()
 	return dict(asignaciones=asignaciones, actividades=actividades, todas=todas, script=script)
 
-@auth.requires_membership('ADMIN') 
+@auth.requires_membership('ADMIN')
 def list_detalle_act4():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
@@ -3795,7 +3796,7 @@ def list_detalle_act4():
 				#grupo_analista += ' ]'	
 				En.write (row - 1, 1, grupo_analista , textoC)
 				grupo_analista=''
-			else:	
+			else:
 				En.write (row, 0, r.proyectos.descri, texto)
 				En.write (row, 1, r.analista, textoC)
 				En.write (row, 2, r.proyectos.status, textoC)
@@ -4776,7 +4777,7 @@ def edit_task():
 	if not task.created_by==me: 
 		crud.settings.update_deletable = False
 	#form=crud.update(db.task,task,next='read_task/[id]')
-	form=crud.update(db.task,task,next='list_dba')
+	form=crud.update(db.task,task,next='list_dba/[id]')
 	return dict(form=form, person=person)
 
 @auth.requires_login()
@@ -5858,7 +5859,7 @@ def chart_bars():
 		lang:{
 		downloadJPEG: "Download en imagen JPG",
 		downloadPDF: "Download en documento PDF",
-		downloadPNG: "Download en imagen PNG",
+		downloadPNG: "Download en imagem PNG",
 		downloadSVG: "Download en vetor SVG",
 		loading: "Leyendo...",
 		noData: "Enviar datos para mostrar",
@@ -6121,7 +6122,7 @@ def plot_pygal(): #crecimiento mensual con parametro
 	dias=365
 	datos_por_instancia = {}
 	
-		
+	
 	for dato in datos:
 		instancia = dato.tx_instancia.upper()
 		mes_aux = dato.f_corrida.month
@@ -6239,7 +6240,7 @@ def data_bdmon():
 		
 	
 	#bar_chart.add(series, dot=False)
-	
+		
 	session.flash=datos_por_instancia
 	session.flash=semana
 	return bar_chart.render()
@@ -7469,7 +7470,7 @@ def list_actividades_graca():
 		#from xlwt import *
 	
 		tmpfilename=os.path.join(request.folder,'private','example.xls')
-	
+
 		font0 = xlwt.Font()
 		font0.name = 'Times New Roman'
 		font0.colour_index = 2
@@ -7696,10 +7697,10 @@ def list_actividades_solutor():
 		style.font.height = 180
 		style.num_format_str = '#,##0'
 		style.borders = border
-	
+
 		style2 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
 		num_format_str='#,##0.00')
-	
+
 		texto = XFStyle()
 		texto = xlwt.easyxf('align: wrap on, vert center, horiz left')
 		texto.alignment.wrap = 1
@@ -8039,7 +8040,7 @@ def list_actividades_solutor2():
 			# 	row +=1
 			# 	ws.write (row, 0, r.analista.first_name +' '+r.analista.last_name,encab)
 			# 	row +=2
-			
+			# 	
 			format_date = '%d-%m-%Y %H:%M%p'
 
 			ws.write (row, 0, r.actividades_sd.analista.first_name +' '+r.actividades_sd.analista.last_name , texto)
@@ -8121,19 +8122,14 @@ def list_actividades_solutor2():
 		tot = wsa.col(13)
 		status = wsa.col(14)
 		
-	
-	
-		# sec_col = worksheet.col(0)
-		
 		analista.width = 200*20
 		ambiente.width = 700*20
 		tipo.width = 200*20
 		fec1.width = 200*20
 		fec2.width = 200*20
-
-		proy.width = 600*20
 		servidor.width = 250*20
 		bd.width = 250*20
+		proy.width = 600*20
 		subp.width = 400*20
 		desc.width = 700*20
 		incid_bd.width = 130*20
@@ -8146,7 +8142,6 @@ def list_actividades_solutor2():
 		bottom_row = 0
 		left_column = 0
 		right_column = 1
-		#ws.write_merge(top_row, bottom_row, left_column, right_column, 'Long Cell')
 
 		des_tipo=''
 
@@ -8155,13 +8150,10 @@ def list_actividades_solutor2():
 		for index, value in enumerate(head1):
 			wsa.write(0, index, value, encab)
 
-
-
 		a=db.actividades_sd
 		b=db.subactividades_sd
 
 		query=(b.fecha_inicio >= desde)&(b.fecha_inicio <= hasta)|(a.completado=='ABIERTA')
-		#query=(a.completado=='ABIERTA')
 		left=b.on(a.id==b.actividad_id)
 		orden=a.analista|a.id|b.id|a.fecha_inicio
 
@@ -8169,7 +8161,6 @@ def list_actividades_solutor2():
 			a.cod_servidor,a.cod_bd,a.incid_bd,a.incid_otros, a.completado, a.obs_otros,\
 			b.actividad_id, b.tipo,	b.analista,	b.fecha_inicio, b.fecha_fin, \
 			b.cod_proy,b.cod_subp,b.descripcion,b.horas_laboradas,b.completado,b.cod_servidor,b.cod_bd,	orderby=orden, left=left)
-
 
 		w_act=''
 		for index, r in enumerate(rowsb):
@@ -8224,7 +8215,6 @@ def list_actividades_solutor2():
 
 				row +=1
 
-		
 		nombre=db.auth_user[me]
 		from datetime import datetime
 		fecha=convert_date(hasta)
@@ -8235,345 +8225,6 @@ def list_actividades_solutor2():
 		data = open(tmpfilename,"rb").read()
 		os.unlink(tmpfilename)
 		return data
-		
-		
-	elif formaOP.errors:
-		response.flash = 'Fechas erradas'
-	else:
-		response.flash = 'Exito!'
-		
-	mis_actividades = db(db.actividades.id>0)(db.actividades.cod_asig==db.asignacion.id)(db.asignacion.analista==me).select()
-	return locals()
-
-
-
-#--------- fin list actividades formato solutor
-
-
-
-	
-
-#--------- exportar inventario a excel ---------------------------------------------------------
-
-def exportar_inv_excel2():
-	import pandas as pd
-	
-	return locals()
-
-
-#@auth.requires_membership('dba')
-@auth.requires_membership('DBA')
-def exportar_inv_excel():
-	# -*- coding: windows-1251 -*-
-	# -*- coding: utf-8 -*-
-	from datetime import datetime
-	import os
-	import xlwt
-	import uuid
-	from xlwt import Workbook #xlwt.Utils 
-	#import rowcol_to_cell
-	#from xlwt.Utils import rowcol_to_cell
-	#from xlwt import *
-	
-	
-	tmpfilename='InventarioBD'
-
-	
-	pattern = xlwt.Pattern()
-	pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-	pattern.pattern_fore_colour = xlwt.Style.colour_map['pale_blue']
-
-	
-	font0 = xlwt.Font()
-	font0.name = 'Times New Roman'
-	font0.colour_index = 2
-	font0.bold = True
-
-	style0 = xlwt.XFStyle()
-	style0.font = font0
-
-	style1 = xlwt.XFStyle()
-	style1.num_format_str = 'DD-MM-YYYY'
-	
-	fnt = font0
-	fnt.name = 'Arial'
-	fnt.colour_index = 4
-	fnt.bold = True
-		
-	border = xlwt.Borders()  # Frame cells
-	border.left = xlwt.Borders.THIN  # Left
-	border.top = xlwt.Borders.THIN  # upper
-	border.right = xlwt.Borders.THIN  # right
-	border.bottom = xlwt.Borders.THIN  # lower
-	border.left_colour = 0x40  # Border line color
-	border.right_colour = 0x40
-	border.top_colour = 0x40
-	border.bottom_colour = 0x40
-		
-	
-	pattern = xlwt.Pattern()
-	pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-	pattern.pattern_fore_colour = xlwt.Style.colour_map['pale_blue']
-	
-	encab = xlwt.easyxf('font: name Arial, bold on; align: wrap on, vert center, horiz center')
-	encab.borders = border
-	encab.pattern = pattern
-	
-	style = xlwt.XFStyle()
-	style.font = fnt
-	style.font.height = 180
-	style.num_format_str = '#,##0'
-	style.borders = border
-	
-	style2 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
-	num_format_str='#,##0.00')
-	
-	xalig = xlwt.Alignment()
-	xalig.horz = 0x02   #  the font level is centered 
-	xalig.vert = 0x01   #  the font level is centered 
-	xalig.wrap = True
-
-	xfont = xlwt.Font()
-	xfont.colour_index =  xlwt.Style.colour_map['black']
-	xfont.bold = False          #  bold 
-	xfont.height = 20 * 10     #  set font height （20 it's the same base, 10 the font size is used for resizing ）
-	xfont.name = ' arial '     #  set the font 
-
-	texto = style
-	#texto = xlwt.easyxf('align: wrap on, vert center, horiz left')
-	#texto.alignment.wrap = 1
-	texto.borders = border
-	texto.font = xfont
-	texto.alignment = xalig
-			
-	fecha = xlwt.easyxf('align: wrap on, vert center, horiz center')
-	fecha.num_format_str = 'DD-MM-YYYY'
-	fecha.borders = border
-		
-	hora = xlwt.easyxf('align: wrap on, vert center, horiz center',num_format_str='#,##0.00')
-	hora.borders = border
-
-	wb = xlwt.Workbook(encoding="utf-8",style_compression=0)
-	
-	ws = wb.add_sheet('PRODUCCION')
-	ca = wb.add_sheet('CALIDAD')
-	de = wb.add_sheet('DESARROLLO')
-	drs = wb.add_sheet('DATAGUARD')
-
-
-	# ------ produccion -------------------------------------
-	ws.normal_magn=90
-
-	data = []
-	tequi = ws.col(0)
-	serv = ws.col(1)
-	ip = ws.col(2)
-	tipobase = ws.col(3)
-	base = ws.col(4)
-	edo= ws.col(5)
-	ver = ws.col(6)
-	asm = ws.col(7)
-	appl = ws.col(8)
-	rac = ws.col(9)
-	# sec_col = worksheet.col(0)
-	tequi.width = 150*20
-	serv.width = 200*20
-	ip.width = 200*20
-	tipobase.width = 150*20
-	base.width = 300*20
-	edo.width = 300*20
-	ver.width = 150*20
-	asm.width = 120*20
-	appl.width = 500*20
-	rac.width = 150*20
-	
-	head = ['TIPO EQUIPO','SERVIDOR', 'IP', 'TIPO BD', 'BASE DE DATOS','ESTADO', 'VERSION', 'ASM', 'APLICACION','RAC']
-	for index, value in enumerate(head):
-		ws.write(0, index, value, encab)
-	
-	
-	#query=db(db.basedatos.servidor == db.servidores.id)(db.basedatos.ambiente_id == db.ambiente.id)\
-	#(db.basedatos.version_id == db.ver.id)(db.servidores.tipo_equipo == db.tipo_equipos.id)(db.ambiente.descri.like('PRODUCC%'))
-	
-	query=db(db.ambiente.descri.like('PRODUCC%'))
-	#query=db(db.ambiente.descri.like('PRODUCC%'))(db.estadobd.descri.like('DISPO%'))
-	
-	left=[db.basedatos.on(db.servidores.id == db.basedatos.servidor),
-			db.ambiente.on(db.basedatos.ambiente_id == db.ambiente.id),
-			db.ver.on(db.basedatos.version_id == db.ver.id),
-			db.tipo_equipos.on(db.servidores.tipo_equipo == db.tipo_equipos.id),
-			db.estadobd.on(db.basedatos.estado_id == db.estadobd.id),
-			db.tipobd.on(db.basedatos.tipobd_id == db.tipobd.id)
-		]
-	orden="tipo_equipos.descri, servidores.nombre, basedatos.nombre, estadobd.descri"
-	
-	rows = (query).select(db.tipo_equipos.descri, db.servidores.nombre, db.servidores.ip, db.tipobd.descri, db.basedatos.nombre, \
-	db.ver.descri, db.basedatos.asm, db.basedatos.appl, db.estadobd.descri, db.servidores.rac, left=left, orderby=orden )
-
-	row = 1
-	col = 0
-		
-	for index, r in enumerate(rows):
-		ws.row(index).height_mismatch = True
-
-		ws.row(index).height = 40*20
-		ws.write (row, 0, r.tipo_equipos.descri, texto)
-		ws.write (row, 1, r.servidores.nombre, texto)
-		ws.write (row, 2, r.servidores.ip, texto)
-		ws.write (row, 3, r.tipobd.descri, texto)
-		ws.write (row, 4, r.basedatos.nombre, texto)
-		ws.write (row, 5, r.estadobd.descri, texto)
-		ws.write (row, 6, r.ver.descri, texto)
-		ws.write (row, 7, r.basedatos.asm, texto)
-		#data = str(r.basedatos.appl)
-		#ws.col(8).width = 256 * len(data) * 2 
-		ws.write (row, 8, r.basedatos.appl, texto)
-		ws.write (row, 9, r.servidores.rac, texto)
-		row +=1
-	
-	#ws.write(row+2, 2, xlwt.Formula("A3+B3"))
-	# ------ calidad -------------------------------------
-	ca.normal_magn=90
-
-	
-	data = []
-	tequi = ca.col(0)
-	serv = ca.col(1)
-	ip = ca.col(2)
-	tipobase = ca.col(3)
-	base = ca.col(4)
-	edo= ca.col(5)
-	ver = ca.col(6)
-	asm = ca.col(7)
-	appl = ca.col(8)
-	rac = ca.col(9)
-	# sec_col = worksheet.col(0)
-	tequi.width = 150*20
-	serv.width = 200*20
-	ip.width = 200*20
-	tipobase.width = 150*20
-	base.width = 300*20
-	edo.width = 300*20
-	ver.width = 150*20
-	asm.width = 120*20
-	appl.width = 500*20
-	rac.width = 150*20
-
-	
-	
-	head = ['TIPO EQUIPO','SERVIDOR', 'IP', 'TIPO BD', 'BASE DE DATOS','ESTADO', 'VERSION', 'ASM', 'APLICACION','RAC']
-	for index, value in enumerate(head):
-		ca.write(0, index, value, encab)
-	
-	
-	rows = db(db.basedatos.servidor==db.servidores.id)(db.basedatos.ambiente_id==db.ambiente.id)\
-	(db.basedatos.version_id==db.ver.id)(db.servidores.tipo_equipo==db.tipo_equipos.id)(db.ambiente.descri=='CALIDAD').\
-	select(db.tipo_equipos.descri, db.servidores.nombre, db.servidores.ip, db.basedatos.nombre, db.ver.descri, db.basedatos.asm, db.basedatos.appl, db.servidores.rac, \
-	orderby="tipo_equipos.descri, servidores.nombre, basedatos.nombre" )
-
-	
-	row = 1
-	col = 0
-
-	query=db(db.ambiente.descri.like('CALIDAD%'))
-	#query=db(db.ambiente.descri.like('PRODUCC%'))(db.estadobd.descri.like('DISPO%'))
-	
-	left=[db.basedatos.on(db.servidores.id == db.basedatos.servidor),
-			db.ambiente.on(db.basedatos.ambiente_id == db.ambiente.id),
-			db.ver.on(db.basedatos.version_id == db.ver.id),
-			db.tipo_equipos.on(db.servidores.tipo_equipo == db.tipo_equipos.id),
-			db.estadobd.on(db.basedatos.estado_id == db.estadobd.id),
-			db.tipobd.on(db.basedatos.tipobd_id == db.tipobd.id)
-		]
-	orden="tipo_equipos.descri, servidores.nombre, basedatos.nombre, estadobd.descri"
-	
-	rows = (query).select(db.tipo_equipos.descri, db.servidores.nombre, db.servidores.ip, db.tipobd.descri, db.basedatos.nombre, \
-	db.ver.descri, db.basedatos.asm, db.basedatos.appl, db.estadobd.descri, db.servidores.rac, left=left, orderby=orden )
-
-	row = 1
-	col = 0
-		
-	for index, r in enumerate(rows):
-		ca.row(index).height_mismatch = True
-		ca.row(index).height = 40*20
-		ca.write (row, 0, r.tipo_equipos.descri, texto)
-		ca.write (row, 1, r.servidores.nombre, texto)
-		ca.write (row, 2, r.servidores.ip, texto)
-		ca.write (row, 3, r.tipobd.descri, texto)
-		ca.write (row, 4, r.basedatos.nombre, texto)
-		ca.write (row, 5, r.estadobd.descri, texto)
-		ca.write (row, 6, r.ver.descri, texto)
-		ca.write (row, 7, r.basedatos.asm, texto)
-		ca.write (row, 8, r.basedatos.appl, texto)
-		ca.write (row, 9, r.servidores.rac, texto)
-		row +=1		
-	# ------ desarrollo -------------------------------------
-	de.normal_magn=90
-
-	data = []
-
-	tequi = de.col(0)
-	serv = de.col(1)
-	ip = de.col(2)
-	tipobase = de.col(3)
-	base = de.col(4)
-	edo= de.col(5)
-	ver = de.col(6)
-	asm = de.col(7)
-	appl = de.col(8)
-	rac = de.col(9)
-
-	# sec_col = worksheet.col(0)
-	# sec_col = worksheet.col(0)
-	tequi.width = 150*20
-	serv.width = 200*20
-	ip.width = 200*20
-	tipobase.width = 150*20
-	base.width = 300*20
-	edo.width = 300*20
-	ver.width = 150*20
-	asm.width = 120*20
-	appl.width = 500*20
-	rac.width = 150*20
-	
-	head = ['TIPO EQUIPO','SERVIDOR', 'IP', 'TIPO BD', 'BASE DE DATOS','ESTADO', 'VERSION', 'ASM', 'APLICACION','RAC']
-	for index, value in enumerate(head):
-		de.write(0, index, value, encab)
-	
-	
-	query=db(db.ambiente.descri.like('DESA%'))
-	#query=db(db.ambiente.descri.like('PRODUCC%'))(db.estadobd.descri.like('DISPO%'))
-	
-	left=[db.basedatos.on(db.servidores.id == db.basedatos.servidor),
-			db.ambiente.on(db.basedatos.ambiente_id == db.ambiente.id),
-			db.ver.on(db.basedatos.version_id == db.ver.id),
-			db.tipo_equipos.on(db.servidores.tipo_equipo == db.tipo_equipos.id),
-			db.estadobd.on(db.basedatos.estado_id == db.estadobd.id),
-			db.tipobd.on(db.basedatos.tipobd_id == db.tipobd.id)
-		]
-	orden="tipo_equipos.descri, servidores.nombre, basedatos.nombre, estadobd.descri"
-	
-	rows = (query).select(db.tipo_equipos.descri, db.servidores.nombre, db.servidores.ip, db.tipobd.descri, db.basedatos.nombre, \
-	db.ver.descri, db.basedatos.asm, db.basedatos.appl, db.estadobd.descri, db.servidores.rac, left=left, orderby=orden )
-
-	
-	row = 1
-	col = 0
-		
-	for index, r in enumerate(rows):
-		de.row(index).height_mismatch = True
-		de.row(index).height = 40*20
-		de.write (row, 0, r.tipo_equipos.descri, texto)
-		de.write (row, 1, r.servidores.nombre, texto)
-		de.write (row, 2, r.servidores.ip, texto)
-		de.write (row, 3, r.tipobd.descri, texto)
-		de.write (row, 4, r.basedatos.nombre, texto)
-		de.write (row, 5, r.estadobd.descri, texto)
-		de.write (row, 6, r.ver.descri, texto)
-		de.write (row, 7, r.basedatos.asm, texto)
-		de.write (row, 8, r.basedatos.appl, texto)
-		de.write (row, 9, r.servidores.rac, texto)
-		row +=1	
 
 # ------ produccion -------------------------------------
 	drs.normal_magn=90
@@ -9069,6 +8720,8 @@ def check_sqlserver(db_record):
 		}
 
 #----- area de graficas -----------
+
+@auth.requires_login()
 def horas_por_bd():
 	import datetime
 	
@@ -9141,6 +8794,7 @@ def horas_por_bd():
 # ambiente
 
 
+@auth.requires_login()
 def horas_por_ambiente():
 	from datetime import datetime
 	
@@ -9231,6 +8885,7 @@ def horas_por_ambiente():
 
 
 
+@auth.requires_login()
 def horas_por_analista():
 	from datetime import datetime
 	
@@ -9362,6 +9017,7 @@ def horas_por_analista():
 	)
 
 
+@auth.requires_login()
 def horas_por_ambiente_mes_actual():
 	from datetime import datetime
 	
@@ -9399,6 +9055,7 @@ def horas_por_ambiente_mes_actual():
 		mes_actual=ahora.strftime("%B %Y")
 	)
 
+@auth.requires_login()
 def horas_por_actividades():
 	from datetime import datetime
 	
@@ -9504,3 +9161,165 @@ def progreso_monitoreo():
 	return gluon.contrib.simplejson.dumps(progreso)
 
 
+# Funciones de gestión de sesiones para agregar al final de controllers/default.py
+
+
+@auth.requires_membership('ADMIN')
+def manage_sessions():
+    """
+    Vista para manejar las sesiones activas de la aplicación.
+    Permite ver quiénes están conectados y cerrar sus sesiones.
+    """
+    import os
+    import glob
+    from datetime import datetime
+    
+    # Obtener la ruta de las sesiones
+    sessions_path = os.path.join(request.folder, 'sessions')
+    
+    # Lista para almacenar información de las sesiones
+    active_sessions = []
+    
+    # Verificar si existe el directorio de sesiones
+    if os.path.exists(sessions_path):
+        # Buscar archivos de sesión
+        session_files = glob.glob(os.path.join(sessions_path, '*.session'))
+        
+        for session_file in session_files:
+            try:
+                # Obtener el nombre del archivo (ID de sesión)
+                session_id = os.path.basename(session_file).replace('.session', '')
+                
+                # Obtener información del archivo
+                file_stat = os.stat(session_file)
+                last_modified = datetime.fromtimestamp(file_stat.st_mtime)
+                
+                # Leer el contenido del archivo de sesión
+                with open(session_file, 'rb') as f:
+                    import pickle
+                    try:
+                        session_data = pickle.load(f)
+                        
+                        # Extraer información de la sesión
+                        user_id = session_data.get('auth', {}).get('user_id')
+                        user_email = session_data.get('auth', {}).get('user_email', 'N/A')
+                        user_name = session_data.get('auth', {}).get('user_name', 'N/A')
+                        last_activity = session_data.get('_last_activity', last_modified)
+                        
+                        # Calcular tiempo de inactividad
+                        now = datetime.now()
+                        idle_time = now - last_activity
+                        
+                        active_sessions.append({
+                            'session_id': session_id,
+                            'user_id': user_id,
+                            'user_email': user_email,
+                            'user_name': user_name,
+                            'last_activity': last_activity,
+                            'idle_time': idle_time,
+                            'file_path': session_file
+                        })
+                        
+                    except (pickle.PickleError, EOFError):
+                        # Sesión corrupta o vacía
+                        active_sessions.append({
+                            'session_id': session_id,
+                            'user_id': None,
+                            'user_email': 'Sesión corrupta',
+                            'user_name': 'N/A',
+                            'last_activity': last_modified,
+                            'idle_time': datetime.now() - last_modified,
+                            'file_path': session_file
+                        })
+                        
+            except Exception as e:
+                # Error al procesar el archivo
+                continue
+    
+    # Si no hay sesiones en archivos, intentar obtener información de la sesión actual
+    if not active_sessions and auth.user:
+        # Agregar la sesión actual del usuario
+        current_session_id = session.session_id or 'current'
+        active_sessions.append({
+            'session_id': current_session_id,
+            'user_id': auth.user.id,
+            'user_email': auth.user.email,
+            'user_name': f"{auth.user.first_name} {auth.user.last_name}",
+            'last_activity': datetime.now(),
+            'idle_time': datetime.now() - datetime.now(),  # 0 segundos
+            'file_path': 'Sesión en memoria'
+        })
+    
+    # Ordenar por tiempo de inactividad (más inactivas primero)
+    active_sessions.sort(key=lambda x: x['idle_time'], reverse=True)
+    
+    return dict(
+        active_sessions=active_sessions,
+        total_sessions=len(active_sessions),
+        sessions_path=sessions_path,
+        session_exists=os.path.exists(sessions_path)
+    )
+
+
+
+@auth.requires_membership('ADMIN')
+def terminate_session():
+    """
+    Terminar una sesión específica
+    """
+    import os
+    
+    session_id = request.vars.session_id
+    
+    if not session_id:
+        response.flash = 'ID de sesión no proporcionado'
+        redirect(URL('manage_sessions'))
+    
+    try:
+        # Construir la ruta del archivo de sesión
+        session_file = os.path.join(request.folder, 'sessions', f'{session_id}.session')
+        
+        if os.path.exists(session_file):
+            # Eliminar el archivo de sesión
+            os.remove(session_file)
+            response.flash = f'Sesión {session_id} terminada exitosamente'
+        else:
+            response.flash = f'Sesión {session_id} no encontrada'
+            
+    except Exception as e:
+        response.flash = f'Error al terminar la sesión: {str(e)}'
+    
+    redirect(URL('manage_sessions'))
+
+@auth.requires_membership('ADMIN')
+def terminate_all_sessions():
+    """
+    Terminar todas las sesiones excepto la del administrador actual
+    """
+    import os
+    import glob
+    
+    sessions_path = os.path.join(request.folder, 'sessions')
+    current_session_id = session.session_id
+    
+    if os.path.exists(sessions_path):
+        session_files = glob.glob(os.path.join(sessions_path, '*.session'))
+        terminated_count = 0
+        
+        for session_file in session_files:
+            try:
+                session_id = os.path.basename(session_file).replace('.session', '')
+                
+                # No terminar la sesión actual del administrador
+                if session_id != current_session_id:
+                    os.remove(session_file)
+                    terminated_count += 1
+                    
+            except Exception as e:
+                continue
+        
+        response.flash = f'{terminated_count} sesiones terminadas exitosamente'
+    else:
+        response.flash = 'No se encontraron sesiones activas'
+    
+    redirect(URL('manage_sessions')) 
