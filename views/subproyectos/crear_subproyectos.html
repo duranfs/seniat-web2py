@@ -9,7 +9,7 @@
         <input type="hidden" name="_formname" value="formaSPHTML"/>
         <div class="col-md-4 mb-3">
             <label for="cod_proy" class="form-label">Proyecto</label>
-            <select name='cod_proy' id="cod_proy" class="form-select" style="height:30px;" onchange="jQuery('#cod_subp').empty(); ajax('subp_tabla', ['cod_proy'], 'cod_subp');">
+            <select name='cod_proy' id="cod_proy" class="form-select" style="height:38px;" onchange="jQuery('#cod_subp').empty(); ajax('subp_tabla', ['cod_proy'], 'cod_subp');">
                 {{for pa in proyectos:}}
                     <option value="{{=pa.id}}" {{=" selected='selected'" if str(pa.id)==request.vars.cod_proy else ""}}>{{=pa.descri}}</option>
                 {{pass}}

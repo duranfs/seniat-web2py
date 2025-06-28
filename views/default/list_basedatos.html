@@ -214,18 +214,9 @@ function toggleForm() {
             <a href="{{=URL(r=request,c='default',f='edit_basedatos',args=[basedato.id])}}" title="Editar">
               <img src="{{=URL(request.application,'static/images','edit-1.ico')}}" class="action-icon" alt="Editar">
             </a>
-            <a href="{{=URL(r=request,c='default',f='list_matriz_respaldo',args=[basedato.id, basedato.servidor])}}" title="Matriz de Respaldo">
-              <img src="{{=URL(request.application,'static/images','matriz.png')}}" class="action-icon" alt="Matriz">
-            </a>
-            <a href="{{=URL(r=request,c='oracle',f='index')}}" title="Log_error">
-              <img src="{{=URL(request.application,'static/images','logs.png')}}" class="action-icon" alt="Log_error">
-            </a>
-            <a href="{{=URL(r=request,c='oracle',f='ver_tps')}}" title="TPS">
-              <img src="{{=URL(request.application,'static/images','esquemas3.jpg')}}" class="action-icon" alt="Esquemas">
-            </a>
-            <a href="{{=URL(r=request,c='default',f='list_custodios_bd_appl',args=[basedato.id])}}" title="Custodios">
-              <img src="{{=URL(request.application,'static/images','trabajo-en-equipo.png')}}" class="action-icon" alt="Custodios">
-            </a>
+          
+          
+         
             <a href="{{=URL(r=request,c='default',f='info_basedatos',args=[basedato.id])}}" title="Información">
               <img src="{{=URL(request.application,'static/images','informacion.png')}}" class="action-icon" alt="Información">
             </a>

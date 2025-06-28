@@ -98,6 +98,31 @@ select, option {
     width: 200px;
 }
 
+#xmenu{
+        height:10%;
+        background-color:#C8CACC;
+}
+#izquierda{
+        height:10%;
+        background-color: #95abb4z;
+        width:20%;
+        #border:  #95abb4;  3px solid;
+        #overflow-y: scroll;
+}
+#derxecha{
+        background-color: #40b5e1 ;
+        width:100%;
+        border: black; 10px solid;
+        #border-collapse: collapse;
+        ##text-align: center;
+        #padding: 10px 10px;
+        overflow: auto;
+        border:1px solid #000000;
+        #overflow-y: scroll;
+        #overflow-x: scroll;
+        #letter-spacing: 0.1px;
+}
+
 #botones{
         background-color: #40b5e1 ;
         width:100%;
@@ -235,6 +260,11 @@ select {
   text-align: right;
 }
 
+#separar {
+  padding: 3%;
+  display: inline-block;
+}
+
 .titulo {
   #font-family: -apple-system, Arial Narrow, Arial, Helvetica, sans-serif;
   font-size: 12px;
@@ -306,6 +336,33 @@ width: 100%;
     #box-shadow: 8px 8px 5px #444;
 }
 
+.paging-nav {
+  text-align: right;
+  padding-top: 2px;
+}
+
+.paging-nav a {
+  margin: auto 1px;
+  text-decoration: none;
+  display: inline-block;
+  padding: 1px 7px;
+  background: #91b9e6;
+  color: white;
+  border-radius: 3px;
+}
+
+.paging-nav .selected-page {
+  background: #187ed5;
+  font-weight: bold;
+}
+
+.paging-nav,
+#tableDatax {
+  width: 100px;
+  margin: 0 auto;
+  font-family: -apple-system, Arial, sans-serif;
+}
+
 .textarea {
   display: flex;
   align-items: center;
@@ -341,6 +398,11 @@ width: 100%;
 
 .pushable:active .front{
   transform: translateY(-2px);
+}
+
+.front{
+  will-change: transform;
+  transition: transform 250ms;
 }
 
 .div-1 {
