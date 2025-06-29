@@ -2892,6 +2892,7 @@ def func_mac_sd():
 			"""
 		
 		return XML(tablaHTML if tablaHTML else "<div class='alert alert-info'>No se encontraron actividades para esta fecha</div>")
+	
 		
 	except Exception as e:
 		import traceback
