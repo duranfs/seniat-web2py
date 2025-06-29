@@ -17,18 +17,18 @@ response.menu = [
 # ----------------------------------------------------------------------------------------------------------------------
 
 gestion_operativa_admin = [
-    (T('Proyectos'), False, '#', [
-            (T('Ver Proyectos'), URL('default','list_proyectos')==URL(),URL('default','list_proyectos'),[]),
-			(T('Crear Proyectos'), URL('default','crear_proyectos')==URL(),URL('default','crear_proyectos'),[]),
-			(T('Editar Proyectos'), URL('default','editar_proyectos')==URL(),URL('default','editar_proyectos'),[]),
-			(T('Gestion SubProyectos'), URL('subproyectos','crear_subproyectos')==URL(),URL('subproyectos','crear_subproyectos'),[]),
+    (T('Configurar Actividades'), False, '#', [
+            (T('Ver tipo actividad'), URL('default','list_proyectos')==URL(),URL('default','list_proyectos'),[]),
+			(T('Crear tipo actividad'), URL('default','crear_proyectos')==URL(),URL('default','crear_proyectos'),[]),
+			(T('Editar tipo actividad'), URL('default','editar_proyectos')==URL(),URL('default','editar_proyectos'),[]),
+			(T('Subactividades'), URL('subproyectos','crear_subproyectos')==URL(),URL('subproyectos','crear_subproyectos'),[]),
 			#(T('reporte nuevo  '), URL('reportes','reporte_sd')==URL(),URL('reportes','reporte_sd'),[]),
         ]),
 ]
 
 
 gestion_operativa_analista_solutor = [
-    (T('Gestión Operativa SENIAT'), False, '#', [
+    (T('Actividades'), False, '#', [
 	      (T('Registrar Actividades '), URL('default','crear_actividades_sd')==URL(),URL('default','crear_actividades_sd'),[]),
           (T('Editar Actividades'), URL('default','list_actividades_sd')==URL(),URL('default','list_actividades_sd'),[]),
           (T('Editar SubActividades'), URL('bitacora','list_subactividades_sd')==URL(),URL('bitacora','list_subactividades_sd'),[]),
@@ -54,7 +54,7 @@ dba_admin =  [
 				(T('Administradores'), URL('default','list_dba')==URL(),URL('default','list_dba'),[]),
 				(T('Ejecutar SQL CYGNUS'), URL('oracle','ejecutar_sql')==URL(),URL('oracle','ejecutar_sql'),[]),
 				]),
-	(T('Tablas Básicas'), False, '#', [
+	(T('Tablas'), False, '#', [
 				(T('Tipo de Equipos'), URL('default','list_tipoequipo')==URL(),URL('default','list_tipoequipo'),[]),
 				(T('Tipos de Bases de Datos'), URL('default','list_dba')==URL(),URL('default','list_tipobd'),[]),
 				(T('Ubicacion/Area'), URL('default','list_dba')==URL(),URL('default','list_ubicacion'),[]),
@@ -76,7 +76,7 @@ dba_solutor =  [
 	(T('DBA'), False, '#', [
 				(T('Administradores'), URL('default','list_dba')==URL(),URL('default','list_dba'),[]),
 				(T('Rol de Guardia'), URL('default','list_guardias')==URL(),URL('default','list_guardias'),[]),]),
-	(T('Tablas Básicas'), False, '#', [
+	(T('Tablas'), False, '#', [
 				(T('Tipo de Equipos'), URL('default','list_tipoequipo')==URL(),URL('default','list_tipoequipo'),[]),
 				(T('Tipos de Bases de Datos'), URL('default','list_dba')==URL(),URL('default','list_tipobd'),[]),
 				(T('Ubicacion/Area'), URL('default','list_dba')==URL(),URL('default','list_ubicacion'),[]),

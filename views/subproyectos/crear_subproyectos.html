@@ -3,12 +3,12 @@
 
 {{extend 'layout.html'}}
 <div class="container py-4">
-    <h2 class="mb-4 text-info"><i class="fas fa-project-diagram me-2"></i>Crear Subproyectos</h2>
+    <h2 class="mb-4 text-info"><i class="fas fa-project-diagram me-2"></i>Crear subactividad</h2>
     {{=script}}
     <form class="row g-3" action="" enctype="multipart/form-data" method="post">
         <input type="hidden" name="_formname" value="formaSPHTML"/>
         <div class="col-md-4 mb-3">
-            <label for="cod_proy" class="form-label">Proyecto</label>
+            <label for="cod_proy" class="form-label">Tipo de actividad</label>
             <select name='cod_proy' id="cod_proy" class="form-select" style="height:38px;" onchange="jQuery('#cod_subp').empty(); ajax('subp_tabla', ['cod_proy'], 'cod_subp');">
                 {{for pa in proyectos:}}
                     <option value="{{=pa.id}}" {{=" selected='selected'" if str(pa.id)==request.vars.cod_proy else ""}}>{{=pa.descri}}</option>
@@ -21,7 +21,7 @@
         </div>
         <div class="col-md-4 mb-3 d-flex align-items-end">
             <button id="boton-principal" name="boton-principal" class="btn btn-info me-2" type="submit">
-                <i class="fas fa-plus"></i> Crear Subproyecto
+                <i class="fas fa-plus"></i> Crear subactividad
             </button>
             <a class="btn btn-outline-secondary" href="{{=URL(r=request, c='default', f='crear_actividades_sd')}}">
                 <i class="fas fa-tasks"></i> Crear actividad
@@ -30,17 +30,17 @@
     </form>
     <div class="row mt-4">
         <div class="col-md-6">
-            <h5 class="mb-3">Subproyectos</h5>
+            <h5 class="mb-3">Subactividades</h5>
             <div name="cod_subp" id="cod_subp"></div>
         </div>
         <div class="col-md-6">
-            <h5 class="mb-3">Buscar Subproyectos</h5>
+            <h5 class="mb-3">Buscar subactividades</h5>
             <div class="table-responsive">
                 <table id="subproyectos" class="table table-bordered table-striped smarttable table-condensed">
                     <thead>
                         <tr>
-                            <th style="font-size:12px; width: 40%;">Proyectos</th>
-                            <th style="font-size:12px; width: 40%;">Subproyectos</th>
+                            <th style="font-size:12px; width: 40%;">Tipo de actividad</th>
+                            <th style="font-size:12px; width: 40%;">Subactividades</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,10 +70,10 @@ $('form').submit(function(){
             flag = false;
         }});
     if(!flag){
-        alert('Error: La descripción del subproyecto es obligatoria');
+        alert('Error: La descripción de la subactividad es obligatoria');
         return false;
     }else{
-        alert('Subproyecto creado...');
+        alert('Subactividad creada...');
     }
 });
 </script>

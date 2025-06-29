@@ -30,7 +30,7 @@
     }
 </style>
 
-<legend>GESTIÓN DE ACTIVIDADES</legend>
+<legend>EDITAR ACTIVIDADES</legend>
 
 <div class="row">
     <div class="col-md-12">
@@ -47,8 +47,8 @@
                         <th>Principal</th>
                         <th>Consultor</th>
                         <th>Ambiente</th>
-                        <th>Proyecto</th>
-                        <th>Subproyecto</th>
+                        <th>Tipo actividad</th>
+                        <th>Subactividad</th>
                         <th>Servidor</th>
                         <th>BD</th>
                         <th>Actividad</th>
@@ -85,9 +85,9 @@
                             TD(f.id, _class="texto"),
                             TD(var, _class=color),
                             TD(f.analista.first_name+' '+f.analista.last_name, _class="texto"),
-                            TD(f.ambiente_id, _class="texto"),
-                            TD(f.cod_proy, _class="texto"),
-                            TD(f.cod_subp, _class="texto"),
+                            TD(f.ambiente_id.descri, _class="texto"),
+                            TD(f.cod_proy.descri, _class="texto"),
+                            TD(f.cod_subp.descri, _class="texto"),
                             TD(f.cod_servidor.nombre, _class="texto"),
                             TD(ds_bd(f.cod_bd), _class="texto"),
                             TD(f.descripcion, _class="texto"),

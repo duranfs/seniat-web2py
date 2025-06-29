@@ -395,6 +395,10 @@ textarea{
   border-color: lightblue;
 }
 
+.form-label {
+  font-size: 1.2rem; /* Ejemplo: 20px */
+  font-weight: 600;  /* Negrita */
+}
 </style>
 
 
@@ -423,7 +427,7 @@ jQuery(document).ready(function(){
                 
                 <div class="row mb-3">
                     <div class="col-md-4">
-                        <label for="cod_proy" class="form-label">Proyecto</label>
+                        <label for="cod_proy" class="form-label">Tipo de actividad</label>
                         <select name="cod_proy" class="form-select obligatorio" required
                                 onchange="jQuery('#cod_subp').empty(); ajax('subproyecto', ['cod_proy'], 'cod_subp');">
                             {{for pa in proyectos:}}
@@ -432,17 +436,17 @@ jQuery(document).ready(function(){
                             </option>
                             {{pass}}
                         </select>
-                        <div class="invalid-feedback">Seleccione un proyecto</div>
+                        <div class="invalid-feedback">Seleccione tipo de actividad</div>
                     </div>
                     
                     <div class="col-md-4">
-                        <label for="cod_subp" class="form-label">Sub-Proyecto</label>
+                        <label for="cod_subp" class="form-label">Subactividad</label>
                         <select name="cod_subp" id="cod_subp" class="form-select obligatorio" required>
                             {{for datos in subproyectos:}}
                             <option value="{{=datos.id}}">{{=str(datos.descri) }}</option>
                             {{pass}}
                         </select>
-                        <div class="invalid-feedback">Seleccione un subproyecto</div>
+                        <div class="invalid-feedback">Seleccione subactividad</div>
                     </div>
                     
                     <div class="col-md-4">
@@ -461,7 +465,7 @@ jQuery(document).ready(function(){
                 
                 <div class="row mb-3">
                     <div class="col-md-8">
-                        <label for="descripcion" class="form-label">Actividad</label>
+                        <label for="descripcion" class="form-label">Descripcion de la actividad</label>
                         <textarea class="form-control obligatorio" name="descripcion" id="descripcion" 
                                   rows="3" maxlength="800" required></textarea>
                         <div class="invalid-feedback">Ingrese una descripción</div>
