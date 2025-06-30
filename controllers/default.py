@@ -245,8 +245,9 @@ def monitor_bd():
 	def obtener_datos_actualizados():
 		# Solo datos de los últimos 5 minutos
 		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == tipo_bd_descri) \
-			(db.bdmon.tx_resultado != 'OK')\
-				.select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+			.select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+			#(db.bdmon.tx_resultado != 'OK')\
+			
 	
 	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
 	

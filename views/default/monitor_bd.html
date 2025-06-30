@@ -373,7 +373,17 @@
         <div class="ambiente-title {{='ambiente-'+ambiente}}">
             <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
             {{if ambiente.upper()=='PRODUCCION':}} 
+                <!-- combo Ok o tistintos_ok -->
                 <div class="header-controls">
+                    <form method="get" id="filtroForm" class="mb-3">
+                     <label for="filtro_resultado" class="form-label">Parámetros a mostrar:</label>
+                        <select name="filtro_resultado" id="filtro_resultado" class="form-select form-select-sm w-auto d-inline-block" onchange="document.getElementById('filtroForm').submit();">
+                            <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
+                           <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Distinto de OK</option>
+                        </select>
+                    </form>
+                
+              
                     <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
                         Volver a la aplicación principal 
                     </button>
