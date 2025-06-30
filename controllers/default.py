@@ -9256,6 +9256,7 @@ def debug_raw_session():
     
     return dict(
         record_id=record.id,
+		sessions = sessions, 
         unique_key=record.unique_key,
         created=record.created_datetime,
         modified=record.modified_datetime,
