@@ -229,102 +229,95 @@ def user_conn():
 
 @auth.requires_login()
 def monitor_bd():
-	from gluon.cache import Cache
-	from gluon.scheduler import Scheduler
-	import datetime
-	tipo_bd = request.args(0) or 9  # Default to 9 if no argument is provided
-	#tipo_bd_descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
-	descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
-	tipo_bd_descri = descri._extra['UPPER("tipobd"."descri")']
-	# Resultado: 'ORACLE'
-	cache = Cache(request)
-	now = datetime.datetime.now()
-	mensajes = None
-	
-	# 1. Obtener datos de monitoreo con caché inteligente
-	def obtener_datos_actualizados():
-		# Solo datos de los últimos 5 minutos
-		return db(db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5)))(db.bdmon.tx_tipobd == tipo_bd_descri) \
-			.select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
-			#(db.bdmon.tx_resultado != 'OK')\
-			
-	
-	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
-	
-	# 2. Verificar si necesitamos actualización (versión corregida)
-	necesita_actualizar = True
-	ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
-	
-	if ultima_actualizacion and ultima_actualizacion.f_corrida:
-		# Convertir datetime.date a datetime.datetime si es necesario
-		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-			ultima_actualizacion_dt = datetime.datetime.combine(
-				ultima_actualizacion.f_corrida, 
-				datetime.time.min
-			)
-		else:
-			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-		
-		diferencia = now - ultima_actualizacion_dt
-		if diferencia.total_seconds() < 3:  # 5 minutos
-			necesita_actualizar = False
-	
-	# 3. Procesamiento asíncrono si es necesario
-	if necesita_actualizar:
-		try:
-			scheduler = Scheduler(db)
-			# Verificar si ya hay una tarea en progreso
-			if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-				scheduler.queue_task(
-					'actualizar_monitoreo_async', 
-					timeout=1,  # 20 minutos de timeout
-					sync_output=5,
-					immediate=True
-				)
-				mensajes = "Los datos se están actualizando en segundo plano..."
-			else:
-				mensajes = "Actualización en progreso... (por favor espere)"
-		except Exception as e:
-			# Fallback seguro con logging
-			import traceback
-			tb = traceback.format_exc()
-			#db.log.insert(tipo='ERROR', descripcion=f"Error en scheduler: {str(e)}\n{tb}")
-			
-			mensajes = "Iniciando actualización directa (modo seguro)..."
-			try:
-				resultado = actualizar_y_mostrar_monitor_parallel()
-				if resultado and 'resumen' in resultado:
-					mensajes = resultado['resumen']
-				mon = obtener_datos_actualizados()
-			except Exception as e2:
-				mensajes = "Error en actualización directa"
-				#db.log.insert(tipo='ERROR', descripcion=f"Error en actualización directa: {str(e2)}")
-	
-	# 4. Obtener lista de bases de datos (con caché extendido)
-	def obtener_basedatos():
-		return db(db.basedatos.status_mon.upper() == 'SI').select(
-			db.basedatos.id,
-			db.basedatos.nombre,
-			db.basedatos.servidor,
-			db.basedatos.tipobd_id,
-			db.basedatos.version_id,
-			db.basedatos.puerto,
-			db.basedatos.ambiente_id,
-			cache=(cache.ram, 10),  # Cache por 1 hora
-			cacheable=True
-		)
-	
-	basedatos_mon = obtener_basedatos()
-	
-	return dict(
-		mon=mon, 
-		mensajes=mensajes, 
-		ultima_actualizacion=now, 
-		basedatos_mon=basedatos_mon,
-		necesita_actualizar=necesita_actualizar,
-		tipo_bd_descri=tipo_bd_descri
+    from gluon.cache import Cache
+    from gluon.scheduler import Scheduler
+    import datetime
+    # Filtro de resultado desde la vista
+    filtro_resultado = request.vars.get('filtro_resultado', 'todos')
+    tipo_bd = request.args(0) or 9  # Default to 9 if no argument is provided
+    descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+    tipo_bd_descri = descri._extra['UPPER("tipobd"."descri")']
+    cache = Cache(request)
+    now = datetime.datetime.now()
+    mensajes = None
 
-	)
+    # 1. Obtener datos de monitoreo con filtro
+    def obtener_datos_actualizados():
+        query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
+        if filtro_resultado == 'distinto_ok':
+            query &= (db.bdmon.tx_resultado != 'OK')
+        # Si es 'todos', no se filtra por resultado
+        return db(query).select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+
+    mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
+
+    # 2. Verificar si necesitamos actualización (versión corregida)
+    necesita_actualizar = True
+    ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
+
+    if ultima_actualizacion and ultima_actualizacion.f_corrida:
+        if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+            ultima_actualizacion_dt = datetime.datetime.combine(
+                ultima_actualizacion.f_corrida, 
+                datetime.time.min
+            )
+        else:
+            ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+        diferencia = now - ultima_actualizacion_dt
+        if diferencia.total_seconds() < 3:
+            necesita_actualizar = False
+
+    # 3. Procesamiento asíncrono si es necesario
+    if necesita_actualizar:
+        try:
+            scheduler = Scheduler(db)
+            if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+                scheduler.queue_task(
+                    'actualizar_monitoreo_async', 
+                    timeout=1,  # 20 minutos de timeout
+                    sync_output=5,
+                    immediate=True
+                )
+                mensajes = "Los datos se están actualizando en segundo plano..."
+            else:
+                mensajes = "Actualización en progreso... (por favor espere)"
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            mensajes = "Iniciando actualización directa (modo seguro)..."
+            try:
+                resultado = actualizar_y_mostrar_monitor_parallel()
+                if resultado and 'resumen' in resultado:
+                    mensajes = resultado['resumen']
+                mon = obtener_datos_actualizados()
+            except Exception as e2:
+                mensajes = "Error en actualización directa"
+
+    # 4. Obtener lista de bases de datos (con caché extendido)
+    def obtener_basedatos():
+        return db(db.basedatos.status_mon.upper() == 'SI').select(
+            db.basedatos.id,
+            db.basedatos.nombre,
+            db.basedatos.servidor,
+            db.basedatos.tipobd_id,
+            db.basedatos.version_id,
+            db.basedatos.puerto,
+            db.basedatos.ambiente_id,
+            cache=(cache.ram, 10),  # Cache por 1 hora
+            cacheable=True
+        )
+
+    basedatos_mon = obtener_basedatos()
+
+    return dict(
+        mon=mon, 
+        mensajes=mensajes, 
+        ultima_actualizacion=now, 
+        basedatos_mon=basedatos_mon,
+        necesita_actualizar=necesita_actualizar,
+        tipo_bd_descri=tipo_bd_descri,
+        filtro_resultado=filtro_resultado
+    )
 
 
 #------- en paralelo ------------------------------------------------------------------------
