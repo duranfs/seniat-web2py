@@ -9169,100 +9169,113 @@ def progreso_monitoreo():
 @auth.requires_membership('ADMIN')
 def manage_sessions():
     """
-    Vista para manejar las sesiones activas de la aplicación.
-    Permite ver quiénes están conectados y cerrar sus sesiones.
+    Versión final que maneja correctamente las sesiones en formato pickle
     """
-    import os
-    import glob
+    import pickle
     from datetime import datetime
-    
-    # Obtener la ruta de las sesiones
-    sessions_path = os.path.join(request.folder, 'sessions')
-    
-    # Lista para almacenar información de las sesiones
-    active_sessions = []
-    
-    # Verificar si existe el directorio de sesiones
-    if os.path.exists(sessions_path):
-        # Buscar archivos de sesión
-        session_files = glob.glob(os.path.join(sessions_path, '*.session'))
+    from gluon import current
+    import sys
+
+    # Verificación de tabla
+    if 'web2py_session_seniat_python3' not in db.tables:
+        return dict(error="Tabla de sesiones no encontrada en la base de datos")
+
+    try:
+        # Consulta optimizada
+        sessions = db().select(
+            db.web2py_session_seniat_python3.ALL,
+            orderby=~db.web2py_session_seniat_python3.modified_datetime
+        )
         
-        for session_file in session_files:
+        active_sessions = []
+        current_session_id = session._uniquer
+        debug_info = []  # Para diagnóstico
+
+        for record in sessions:
             try:
-                # Obtener el nombre del archivo (ID de sesión)
-                session_id = os.path.basename(session_file).replace('.session', '')
+                # Método robusto para deserializar pickle
+                session_data = None
+                raw_data = record.session_data
                 
-                # Obtener información del archivo
-                file_stat = os.stat(session_file)
-                last_modified = datetime.fromtimestamp(file_stat.st_mtime)
+                # Versión para Python 3
+                if isinstance(raw_data, str) and raw_data.startswith("b'"):
+                    session_data = pickle.loads(eval(raw_data))
+                elif isinstance(raw_data, bytes):
+                    session_data = pickle.loads(raw_data)
+                else:
+                    session_data = pickle.loads(bytes.fromhex(raw_data[2:]))
                 
-                # Leer el contenido del archivo de sesión
-                with open(session_file, 'rb') as f:
-                    import pickle
-                    try:
-                        session_data = pickle.load(f)
-                        
-                        # Extraer información de la sesión
-                        user_id = session_data.get('auth', {}).get('user_id')
-                        user_email = session_data.get('auth', {}).get('user_email', 'N/A')
-                        user_name = session_data.get('auth', {}).get('user_name', 'N/A')
-                        last_activity = session_data.get('_last_activity', last_modified)
-                        
-                        # Calcular tiempo de inactividad
-                        now = datetime.now()
-                        idle_time = now - last_activity
-                        
-                        active_sessions.append({
-                            'session_id': session_id,
-                            'user_id': user_id,
-                            'user_email': user_email,
-                            'user_name': user_name,
-                            'last_activity': last_activity,
-                            'idle_time': idle_time,
-                            'file_path': session_file
-                        })
-                        
-                    except (pickle.PickleError, EOFError):
-                        # Sesión corrupta o vacía
-                        active_sessions.append({
-                            'session_id': session_id,
-                            'user_id': None,
-                            'user_email': 'Sesión corrupta',
-                            'user_name': 'N/A',
-                            'last_activity': last_modified,
-                            'idle_time': datetime.now() - last_modified,
-                            'file_path': session_file
-                        })
-                        
+                # Extraer información de autenticación
+                auth = session_data.get('auth', {})
+                user_id = auth.get('user_id')
+                
+                if user_id:
+                    active_sessions.append({
+                        'session_id': record.unique_key,
+                        'user_id': user_id,
+                        'user_email': auth.get('user_email', 'SIN CORREO'),
+                        'user_name': auth.get('user_name', 'SIN NOMBRE'),
+                        'last_activity': record.modified_datetime or record.created_datetime,
+                        'client_ip': record.client_ip,
+                        'is_current': (record.unique_key == current_session_id),
+                        'db_id': record.id
+                    })
+                
+                # Guardar datos para diagnóstico
+                debug_info.append({
+                    'id': record.id,
+                    'raw_length': len(raw_data),
+                    'deserialized': session_data is not None
+                })
+                    
             except Exception as e:
-                # Error al procesar el archivo
                 continue
+
+        return dict(
+            active_sessions=active_sessions,
+            total_sessions=len(active_sessions),
+            current_session_id=current_session_id,
+            debug_info=debug_info[:5],  # Muestra solo 5 registros de diagnóstico
+            table_name='web2py_session_seniat_python3'
+        )
+
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return dict(error=f"Error en línea {exc_tb.tb_lineno}: {str(e)}")
+
+def debug_raw_session():
+    """Muestra los datos crudos para diagnóstico avanzado"""
+    if not auth.has_membership('admin'):
+        redirect(URL('error'))
     
-    # Si no hay sesiones en archivos, intentar obtener información de la sesión actual
-    if not active_sessions and auth.user:
-        # Agregar la sesión actual del usuario
-        current_session_id = session.session_id or 'current'
-        active_sessions.append({
-            'session_id': current_session_id,
-            'user_id': auth.user.id,
-            'user_email': auth.user.email,
-            'user_name': f"{auth.user.first_name} {auth.user.last_name}",
-            'last_activity': datetime.now(),
-            'idle_time': datetime.now() - datetime.now(),  # 0 segundos
-            'file_path': 'Sesión en memoria'
-        })
+    record_id = request.vars.id or 1
+    record = db(db.web2py_session_seniat_python3.id==record_id).select().first()
     
-    # Ordenar por tiempo de inactividad (más inactivas primero)
-    active_sessions.sort(key=lambda x: x['idle_time'], reverse=True)
+    if not record:
+        return dict(error="Registro no encontrado")
     
     return dict(
-        active_sessions=active_sessions,
-        total_sessions=len(active_sessions),
-        sessions_path=sessions_path,
-        session_exists=os.path.exists(sessions_path)
+        record_id=record.id,
+        unique_key=record.unique_key,
+        created=record.created_datetime,
+        modified=record.modified_datetime,
+        client_ip=record.client_ip,
+        raw_data=str(record.session_data)[:500] + '...' if record.session_data else None,
+        data_length=len(record.session_data) if record.session_data else 0
     )
 
-
+def close_session():
+    """Cierra una sesión específica"""
+    if not auth.has_membership('admin'):
+        redirect(URL('error'))
+    
+    session_id = request.vars.session_id
+    if session_id:
+        db(db.web2py_session_seniat_python3.unique_key == session_id).delete()
+        db.commit()
+        session.flash = 'Sesión cerrada exitosamente'
+    
+    redirect(URL('manage_sessions'))
 
 @auth.requires_membership('ADMIN')
 def terminate_session():

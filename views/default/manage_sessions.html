@@ -1,204 +1,59 @@
 {{extend 'layout.html'}}
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-users"></i> Gestión de Sesiones Activas
-                    </h3>
-                    <div class="card-tools">
-                        <span class="badge badge-info">{{=total_sessions}} sesiones activas</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Información de depuración -->
-                    <div class="alert alert-info">
-                        <h5><i class="fas fa-info-circle"></i> Información del Sistema</h5>
-                        <ul class="mb-0">
-                            <li><strong>Ruta de sesiones:</strong> {{=sessions_path}}</li>
-                            <li><strong>Directorio existe:</strong> {{="Sí" if session_exists else "No"}}</li>
-                            <li><strong>Usuario actual:</strong> {{=auth.user.first_name + " " + auth.user.last_name if auth.user else "No autenticado"}}</li>
-                            <li><strong>ID de sesión actual:</strong> {{=session.session_id or "No disponible"}}</li>
-                        </ul>
-                    </div>
+<h2>Gestión de Sesiones Activas</h2>
 
-                    {{if active_sessions:}}
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th>ID Sesión</th>
-                                        <th>Usuario</th>
-                                        <th>Email</th>
-                                        <th>Última Actividad</th>
-                                        <th>Tiempo Inactivo</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{for session in active_sessions:}}
-                                        <tr>
-                                            <td>
-                                                <code>{{=session['session_id'][:8]}}...</code>
-                                            </td>
-                                            <td>
-                                                {{if session['user_name'] != 'N/A':}}
-                                                    <strong>{{=session['user_name']}}</strong>
-                                                {{else:}}
-                                                    <span class="text-muted">{{=session['user_name']}}</span>
-                                                {{pass}}
-                                            </td>
-                                            <td>
-                                                {{if session['user_email'] != 'N/A' and session['user_email'] != 'Sesión corrupta':}}
-                                                    <a href="mailto:{{=session['user_email']}}">{{=session['user_email']}}</a>
-                                                {{else:}}
-                                                    <span class="text-muted">{{=session['user_email']}}</span>
-                                                {{pass}}
-                                            </td>
-                                            <td>
-                                                {{=session['last_activity'].strftime('%d/%m/%Y %H:%M:%S')}}
-                                            </td>
-                                            <td>
-                                                {{# Calcular tiempo de inactividad en formato legible}}
-                                                {{idle_seconds = session['idle_time'].total_seconds()}}
-                                                {{if idle_seconds < 60:}}
-                                                    <span class="badge badge-success">{{=int(idle_seconds)}}s</span>
-                                                {{elif idle_seconds < 3600:}}
-                                                    <span class="badge badge-warning">{{=int(idle_seconds/60)}}m</span>
-                                                {{else:}}
-                                                    <span class="badge badge-danger">{{=int(idle_seconds/3600)}}h</span>
-                                                {{pass}}
-                                            </td>
-                                            <td>
-                                                {{if session['user_email'] == 'Sesión corrupta':}}
-                                                    <span class="badge badge-secondary">Corrupta</span>
-                                                {{elif session['file_path'] == 'Sesión en memoria':}}
-                                                    <span class="badge badge-primary">En Memoria</span>
-                                                {{elif session['user_id']:}}
-                                                    <span class="badge badge-success">Activa</span>
-                                                {{else:}}
-                                                    <span class="badge badge-warning">Incompleta</span>
-                                                {{pass}}
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    {{if session['file_path'] != 'Sesión en memoria':}}
-                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                                onclick="confirmTerminateSession('{{=session['session_id']}}', '{{=session['user_name']}}')">
-                                                            <i class="fas fa-times"></i> Terminar
-                                                        </button>
-                                                    {{else:}}
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
-                                                            <i class="fas fa-info-circle"></i> No disponible
-                                                        </button>
-                                                    {{pass}}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {{pass}}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-danger" onclick="confirmTerminateAllSessions()">
-                                <i class="fas fa-trash"></i> Terminar Todas las Sesiones
-                            </button>
-                            <small class="text-muted ml-2">(Excepto la sesión actual del administrador)</small>
-                        </div>
-                    {{else:}}
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            <strong>No se encontraron sesiones activas.</strong>
-                            <br>
-                            Esto puede deberse a:
-                            <ul class="mb-0 mt-2">
-                                <li>Las sesiones están almacenadas en memoria (no en archivos)</li>
-                                <li>El directorio de sesiones no existe o no tiene permisos</li>
-                                <li>No hay usuarios conectados actualmente</li>
-                            </ul>
-                        </div>
-                    {{pass}}
-                </div>
-            </div>
+{{if 'error' in response._vars:}}
+<div class="alert alert-danger">
+    <h4>Error</h4>
+    <pre>{{=response._vars['error']}}</pre>
+</div>
+{{else:}}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="alert alert-info">
+            <strong>Tabla:</strong> {{=table_name}} | 
+            <strong>Total sesiones:</strong> {{=total_sessions}} | 
+            <strong>Tu sesión ID:</strong> <code>{{=current_session_id}}</code>
+        </div>
+
+        {{if not active_sessions:}}
+        <div class="alert alert-warning">
+            <h4>No se encontraron sesiones activas</h4>
+            <p>Aunque hay registros en la tabla, no se pudieron decodificar como sesiones válidas.</p>
+            <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#debugCollapse">
+                Mostrar información técnica
+            </button>
+        </div>
+        {{else:}}
+        <table class="table table-bordered table-hover">
+            <!-- Tabla de sesiones (como en versiones anteriores) -->
+        </table>
+        {{pass}}
+    </div>
+
+    <div class="col-md-4 collapse" id="debugCollapse">
+        <div class="card card-body bg-light">
+            <h5>Información de Diagnóstico</h5>
+            <p>Primeros 5 registros analizados:</p>
+            <table class="table table-sm">
+                <tr>
+                    <th>ID</th>
+                    <th>Tamaño</th>
+                    <th>Deserializado</th>
+                </tr>
+                {{for item in debug_info:}}
+                <tr>
+                    <td>{{=item['id']}}</td>
+                    <td>{{=item['raw_length']}} bytes</td>
+                    <td>{{='Sí' if item['deserialized'] else 'No'}}</td>
+                </tr>
+                {{pass}}
+            </table>
+            <a href="{{=URL('debug_raw_session')}}" class="btn btn-sm btn-secondary">
+                Ver datos crudos
+            </a>
         </div>
     </div>
 </div>
-
-<!-- Modal de confirmación para terminar sesión individual -->
-<div class="modal fade" id="terminateSessionModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Terminación de Sesión</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>¿Está seguro de que desea terminar la sesión del usuario <strong id="userName"></strong>?</p>
-                <p class="text-warning">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    El usuario será desconectado inmediatamente de la aplicación.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <a href="#" id="confirmTerminateBtn" class="btn btn-danger">
-                    <i class="fas fa-times"></i> Terminar Sesión
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmación para terminar todas las sesiones -->
-<div class="modal fade" id="terminateAllSessionsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Terminación de Todas las Sesiones</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>¿Está seguro de que desea terminar <strong>todas las sesiones activas</strong>?</p>
-                <p class="text-danger">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    <strong>ADVERTENCIA:</strong> Todos los usuarios serán desconectados inmediatamente de la aplicación.
-                </p>
-                <p class="text-info">
-                    <i class="fas fa-info-circle"></i> 
-                    Su sesión actual como administrador no será afectada.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <a href="{{=URL('terminate_all_sessions')}}" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Terminar Todas las Sesiones
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function confirmTerminateSession(sessionId, userName) {
-    document.getElementById('userName').textContent = userName;
-    document.getElementById('confirmTerminateBtn').href = "{{=URL('terminate_session')}}?session_id=" + sessionId;
-    $('#terminateSessionModal').modal('show');
-}
-
-function confirmTerminateAllSessions() {
-    $('#terminateAllSessionsModal').modal('show');
-}
-
-// Auto-refresh cada 30 segundos
-setInterval(function() {
-    location.reload();
-}, 30000);
-</script> 
+{{pass}}

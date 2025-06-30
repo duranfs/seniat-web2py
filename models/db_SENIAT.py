@@ -155,6 +155,8 @@ def recently_visited(a, c, f):
 	return False
 #--------------------------------------------------------------------
 
+
+
 db.define_table('company',
     Field('name'),
     Field('url'),
@@ -1036,3 +1038,4 @@ db.define_table('external_db_connections',
     Field('port', 'integer'),
     Field('is_active', 'boolean', default=True),
 )
+
