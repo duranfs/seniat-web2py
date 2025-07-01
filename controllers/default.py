@@ -229,95 +229,95 @@ def user_conn():
 
 @auth.requires_login()
 def monitor_bd():
-    from gluon.cache import Cache
-    from gluon.scheduler import Scheduler
-    import datetime
-    # Filtro de resultado desde la vista
-    filtro_resultado = request.vars.get('filtro_resultado', 'todos')
-    tipo_bd = request.args(0) or 9  # Default to 9 if no argument is provided
-    descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
-    tipo_bd_descri = descri._extra['UPPER("tipobd"."descri")']
-    cache = Cache(request)
-    now = datetime.datetime.now()
-    mensajes = None
+	from gluon.cache import Cache
+	from gluon.scheduler import Scheduler
+	import datetime
+	# Filtro de resultado desde la vista
+	filtro_resultado = request.vars.get('filtro_resultado', 'todos')
+	tipo_bd = request.args(0) or 9  # Default to 9 if no argument is provided
+	descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+	tipo_bd_descri = descri._extra['UPPER("tipobd"."descri")']
+	cache = Cache(request)
+	now = datetime.datetime.now()
+	mensajes = None
 
-    # 1. Obtener datos de monitoreo con filtro
-    def obtener_datos_actualizados():
-        query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
-        if filtro_resultado == 'distinto_ok':
-            query &= (db.bdmon.tx_resultado != 'OK')
-        # Si es 'todos', no se filtra por resultado
-        return db(query).select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
+	# 1. Obtener datos de monitoreo con filtro
+	def obtener_datos_actualizados():
+		query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
+		if filtro_resultado == 'distinto_ok':
+			query &= (db.bdmon.tx_resultado != 'OK')
+		# Si es 'todos', no se filtra por resultado
+		return db(query).select(orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina)
 
-    mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
+	mon = cache.ram('datos_monitoreo', obtener_datos_actualizados, time_expire=1)
 
-    # 2. Verificar si necesitamos actualización (versión corregida)
-    necesita_actualizar = True
-    ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
+	# 2. Verificar si necesitamos actualización (versión corregida)
+	necesita_actualizar = True
+	ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(db.bdmon.f_corrida, orderby=~db.bdmon.f_corrida).first()
 
-    if ultima_actualizacion and ultima_actualizacion.f_corrida:
-        if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-            ultima_actualizacion_dt = datetime.datetime.combine(
-                ultima_actualizacion.f_corrida, 
-                datetime.time.min
-            )
-        else:
-            ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-        diferencia = now - ultima_actualizacion_dt
-        if diferencia.total_seconds() < 3:
-            necesita_actualizar = False
+	if ultima_actualizacion and ultima_actualizacion.f_corrida:
+		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+			ultima_actualizacion_dt = datetime.datetime.combine(
+				ultima_actualizacion.f_corrida, 
+				datetime.time.min
+			)
+		else:
+			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+		diferencia = now - ultima_actualizacion_dt
+		if diferencia.total_seconds() < 3:
+			necesita_actualizar = False
 
-    # 3. Procesamiento asíncrono si es necesario
-    if necesita_actualizar:
-        try:
-            scheduler = Scheduler(db)
-            if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-                scheduler.queue_task(
-                    'actualizar_monitoreo_async', 
-                    timeout=1,  # 20 minutos de timeout
-                    sync_output=5,
-                    immediate=True
-                )
-                mensajes = "Los datos se están actualizando en segundo plano..."
-            else:
-                mensajes = "Actualización en progreso... (por favor espere)"
-        except Exception as e:
-            import traceback
-            tb = traceback.format_exc()
-            mensajes = "Iniciando actualización directa (modo seguro)..."
-            try:
-                resultado = actualizar_y_mostrar_monitor_parallel()
-                if resultado and 'resumen' in resultado:
-                    mensajes = resultado['resumen']
-                mon = obtener_datos_actualizados()
-            except Exception as e2:
-                mensajes = "Error en actualización directa"
+	# 3. Procesamiento asíncrono si es necesario
+	if necesita_actualizar:
+		try:
+			scheduler = Scheduler(db)
+			if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+				scheduler.queue_task(
+					'actualizar_monitoreo_async', 
+					timeout=1,  # 20 minutos de timeout
+					sync_output=5,
+					immediate=True
+				)
+				mensajes = "Los datos se están actualizando en segundo plano..."
+			else:
+				mensajes = "Actualización en progreso... (por favor espere)"
+		except Exception as e:
+			import traceback
+			tb = traceback.format_exc()
+			mensajes = "Iniciando actualización directa (modo seguro)..."
+			try:
+				resultado = actualizar_y_mostrar_monitor_parallel()
+				if resultado and 'resumen' in resultado:
+					mensajes = resultado['resumen']
+				mon = obtener_datos_actualizados()
+			except Exception as e2:
+				mensajes = "Error en actualización directa"
 
-    # 4. Obtener lista de bases de datos (con caché extendido)
-    def obtener_basedatos():
-        return db(db.basedatos.status_mon.upper() == 'SI').select(
-            db.basedatos.id,
-            db.basedatos.nombre,
-            db.basedatos.servidor,
-            db.basedatos.tipobd_id,
-            db.basedatos.version_id,
-            db.basedatos.puerto,
-            db.basedatos.ambiente_id,
-            cache=(cache.ram, 10),  # Cache por 1 hora
-            cacheable=True
-        )
+	# 4. Obtener lista de bases de datos (con caché extendido)
+	def obtener_basedatos():
+		return db(db.basedatos.status_mon.upper() == 'SI').select(
+			db.basedatos.id,
+			db.basedatos.nombre,
+			db.basedatos.servidor,
+			db.basedatos.tipobd_id,
+			db.basedatos.version_id,
+			db.basedatos.puerto,
+			db.basedatos.ambiente_id,
+			cache=(cache.ram, 10),  # Cache por 1 hora
+			cacheable=True
+		)
 
-    basedatos_mon = obtener_basedatos()
+	basedatos_mon = obtener_basedatos()
 
-    return dict(
-        mon=mon, 
-        mensajes=mensajes, 
-        ultima_actualizacion=now, 
-        basedatos_mon=basedatos_mon,
-        necesita_actualizar=necesita_actualizar,
-        tipo_bd_descri=tipo_bd_descri,
-        filtro_resultado=filtro_resultado
-    )
+	return dict(
+		mon=mon, 
+		mensajes=mensajes, 
+		ultima_actualizacion=now, 
+		basedatos_mon=basedatos_mon,
+		necesita_actualizar=necesita_actualizar,
+		tipo_bd_descri=tipo_bd_descri,
+		filtro_resultado=filtro_resultado
+	)
 
 
 #------- en paralelo ------------------------------------------------------------------------
@@ -1786,8 +1786,8 @@ def list_servidores_MD():
 	#		tsv=False, xml=False, csv_with_hidden_cols=False,
 		#                tsv_with_hidden_cols=False)	
 	export_classes = dict(csv=(CSVExporter, 'CSV'), json=False, html=False,
-					  tsv=False, xml=False, csv_with_hidden_cols=False,
-					  tsv_with_hidden_cols=False)
+					tsv=False, xml=False, csv_with_hidden_cols=False,
+					tsv_with_hidden_cols=False)
 
 	query=(db.servidores.id > 0)
 	#form = SQLFORM.grid(db.servidores,left=db.basedatos.on(db.basedatos.servidor=db.servidores.id),
@@ -2299,7 +2299,7 @@ def list_actividades():
 		al = xlwt.Alignment()
 		al.wrap = xlwt.Alignment.WRAP_AT_RIGHT
 		sty.alignment = al
-	
+
 		style0 = xlwt.XFStyle()
 		style0.font = font0
 
@@ -6662,7 +6662,7 @@ def rep_serv_conf():
 	fr=" from"
 	wh=" where"
 	bset=set(buff)
-	sql=sql+" serv.nombre, "
+	sql=sql+ " serv.nombre, "
 	fr=fr+" servidores serv,"
 	if "ambiente" in bset:
 		sql=sql+ " amb.descri,"
@@ -8658,8 +8658,8 @@ def dashboard():
 				'tns_entry': tnsping_result.get('connect_string', ''),
 				'last_check': tnsping_result.get('last_check', 'N/A')
 			})
-	
-	return dict(
+
+		return dict(
 		servidores=servidores,
 		bases_datos=bases_datos,
 		time=request.now
@@ -8704,7 +8704,7 @@ def check_sqlserver(db_record):
 			'connection_string': connection_string,
 			'last_check': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		}
-		
+
 	except Exception as e:
 		return {
 			'status': 0,
@@ -9161,174 +9161,186 @@ def progreso_monitoreo():
 
 @auth.requires_membership('ADMIN')
 def manage_sessions():
-    """
-    Versión final que maneja correctamente las sesiones en formato pickle
-    """
-    import pickle
-    from datetime import datetime
-    from gluon import current
-    import sys
+	"""
+	Versión final que maneja correctamente las sesiones en formato pickle
+	"""
+	import pickle
+	from datetime import datetime
+	from gluon import current
+	import sys
 
-    # Verificación de tabla
-    if 'web2py_session_seniat_python3' not in db.tables:
-        return dict(error="Tabla de sesiones no encontrada en la base de datos")
+	# Verificación de tabla
+	if 'web2py_session_seniat_python3' not in db.tables:
+		return dict(error="Tabla de sesiones no encontrada en la base de datos")
 
-    try:
-        # Consulta optimizada
-        sessions = db().select(
-            db.web2py_session_seniat_python3.ALL,
-            orderby=~db.web2py_session_seniat_python3.modified_datetime
-        )
-        
-        active_sessions = []
-        current_session_id = session._uniquer
-        debug_info = []  # Para diagnóstico
+	try:
+		# Consulta optimizada
+		sessions = db().select(
+			db.web2py_session_seniat_python3.ALL,
+			orderby=~db.web2py_session_seniat_python3.modified_datetime
+		)
+		
+		all_sessions = []
+		current_session_id = session._uniquer
+		debug_info = []  # Para diagnóstico
 
-        for record in sessions:
-            try:
-                # Método robusto para deserializar pickle
-                session_data = None
-                raw_data = record.session_data
-                
-                # Versión para Python 3
-                if isinstance(raw_data, str) and raw_data.startswith("b'"):
-                    session_data = pickle.loads(eval(raw_data))
-                elif isinstance(raw_data, bytes):
-                    session_data = pickle.loads(raw_data)
-                else:
-                    session_data = pickle.loads(bytes.fromhex(raw_data[2:]))
-                
-                # Extraer información de autenticación
-                auth = session_data.get('auth', {})
-                user_id = auth.get('user_id')
-                
-                if user_id:
-                    active_sessions.append({
-                        'session_id': record.unique_key,
-                        'user_id': user_id,
-                        'user_email': auth.get('user_email', 'SIN CORREO'),
-                        'user_name': auth.get('user_name', 'SIN NOMBRE'),
-                        'last_activity': record.modified_datetime or record.created_datetime,
-                        'client_ip': record.client_ip,
-                        'is_current': (record.unique_key == current_session_id),
-                        'db_id': record.id
-                    })
-                
-                # Guardar datos para diagnóstico
-                debug_info.append({
-                    'id': record.id,
-                    'raw_length': len(raw_data),
-                    'deserialized': session_data is not None
-                })
-                    
-            except Exception as e:
-                continue
+		for record in sessions:
+			try:
+				# Método robusto para deserializar pickle
+				session_data = None
+				raw_data = record.session_data
+				
+				# Versión para Python 3
+				if isinstance(raw_data, str) and raw_data.startswith("b'"):
+					session_data = pickle.loads(eval(raw_data))
+				elif isinstance(raw_data, bytes):
+					session_data = pickle.loads(raw_data)
+				else:
+					session_data = pickle.loads(bytes.fromhex(raw_data[2:]))
+				
+				# Extraer información de autenticación
+				auth = session_data.get('auth', {})
+				user_id = auth.get('user_id')
+				
+				all_sessions.append({
+					'session_id': record.unique_key,
+					'user_id': user_id,
+					'user_email': auth.get('user_email', 'SIN CORREO'),
+					'user_name': auth.get('user_name', 'SIN NOMBRE'),
+					'last_activity': record.modified_datetime or record.created_datetime,
+					'client_ip': record.client_ip,
+					'is_current': (record.unique_key == current_session_id),
+					'db_id': record.id,
+					'deserialized': session_data is not None,
+					'error': None
+				})
+				
+				# Guardar datos para diagnóstico
+				debug_info.append({
+					'id': record.id,
+					'raw_length': len(raw_data),
+					'deserialized': session_data is not None
+				})
+					
+			except Exception as e:
+				all_sessions.append({
+				'session_id': record.unique_key,
+				'user_id': None,
+				'user_email': 'Anónima',
+				'user_name': 'Anónima',
+				'last_activity': record.modified_datetime or record.created_datetime,
+				'client_ip': record.client_ip,
+				'is_current': (record.unique_key == current_session_id),
+				'db_id': record.id,
+				'deserialized': False,
+				'error': str(e)
+			})
 
-        return dict(
-            active_sessions=active_sessions,
-            total_sessions=len(active_sessions),
-            current_session_id=current_session_id,
-            debug_info=debug_info[:5],  # Muestra solo 5 registros de diagnóstico
-            table_name='web2py_session_seniat_python3'
-        )
+		return dict(
+			all_sessions=all_sessions,
+			total_sessions=len(all_sessions),
+			current_session_id=current_session_id,
+			debug_info=debug_info[:5],  # Muestra solo 5 registros de diagnóstico
+			table_name='web2py_session_seniat_python3'
+		)
 
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        return dict(error=f"Error en línea {exc_tb.tb_lineno}: {str(e)}")
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		return dict(error=f"Error en línea {exc_tb.tb_lineno}: {str(e)}")
 
 def debug_raw_session():
-    """Muestra los datos crudos para diagnóstico avanzado"""
-    if not auth.has_membership('admin'):
-        redirect(URL('error'))
-    
-    record_id = request.vars.id or 1
-    record = db(db.web2py_session_seniat_python3.id==record_id).select().first()
-    
-    if not record:
-        return dict(error="Registro no encontrado")
-    
-    return dict(
-        record_id=record.id,
+	"""Muestra los datos crudos para diagnóstico avanzado"""
+	if not auth.has_membership('admin'):
+		redirect(URL('error'))
+	
+	record_id = request.vars.id or 1
+	record = db(db.web2py_session_seniat_python3.id==record_id).select().first()
+	
+	if not record:
+		return dict(error="Registro no encontrado")
+	
+	return dict(
+		record_id=record.id,
 		sessions = sessions, 
-        unique_key=record.unique_key,
-        created=record.created_datetime,
-        modified=record.modified_datetime,
-        client_ip=record.client_ip,
-        raw_data=str(record.session_data)[:500] + '...' if record.session_data else None,
-        data_length=len(record.session_data) if record.session_data else 0
-    )
+		unique_key=record.unique_key,
+		created=record.created_datetime,
+		modified=record.modified_datetime,
+		client_ip=record.client_ip,
+		raw_data=str(record.session_data)[:500] + '...' if record.session_data else None,
+		data_length=len(record.session_data) if record.session_data else 0
+	)
 
 def close_session():
-    """Cierra una sesión específica"""
-    if not auth.has_membership('admin'):
-        redirect(URL('error'))
-    
-    session_id = request.vars.session_id
-    if session_id:
-        db(db.web2py_session_seniat_python3.unique_key == session_id).delete()
-        db.commit()
-        session.flash = 'Sesión cerrada exitosamente'
-    
-    redirect(URL('manage_sessions'))
+	"""Cierra una sesión específica"""
+	if not auth.has_membership('admin'):
+		redirect(URL('error'))
+	
+	session_id = request.vars.session_id
+	if session_id:
+		db(db.web2py_session_seniat_python3.unique_key == session_id).delete()
+		db.commit()
+		session.flash = 'Sesión cerrada exitosamente'
+	
+	redirect(URL('manage_sessions'))
 
 @auth.requires_membership('ADMIN')
 def terminate_session():
-    """
-    Terminar una sesión específica
-    """
-    import os
-    
-    session_id = request.vars.session_id
-    
-    if not session_id:
-        response.flash = 'ID de sesión no proporcionado'
-        redirect(URL('manage_sessions'))
-    
-    try:
-        # Construir la ruta del archivo de sesión
-        session_file = os.path.join(request.folder, 'sessions', f'{session_id}.session')
-        
-        if os.path.exists(session_file):
-            # Eliminar el archivo de sesión
-            os.remove(session_file)
-            response.flash = f'Sesión {session_id} terminada exitosamente'
-        else:
-            response.flash = f'Sesión {session_id} no encontrada'
-            
-    except Exception as e:
-        response.flash = f'Error al terminar la sesión: {str(e)}'
-    
-    redirect(URL('manage_sessions'))
+	"""
+	Terminar una sesión específica
+	"""
+	import os
+	
+	session_id = request.vars.session_id
+	
+	if not session_id:
+		response.flash = 'ID de sesión no proporcionado'
+		redirect(URL('manage_sessions'))
+	
+	try:
+		# Construir la ruta del archivo de sesión
+		session_file = os.path.join(request.folder, 'sessions', f'{session_id}.session')
+		
+		if os.path.exists(session_file):
+			# Eliminar el archivo de sesión
+			os.remove(session_file)
+			response.flash = f'Sesión {session_id} terminada exitosamente'
+		else:
+			response.flash = f'Sesión {session_id} no encontrada'
+			
+	except Exception as e:
+		response.flash = f'Error al terminar la sesión: {str(e)}'
+	
+	redirect(URL('manage_sessions'))
 
 @auth.requires_membership('ADMIN')
 def terminate_all_sessions():
-    """
-    Terminar todas las sesiones excepto la del administrador actual
-    """
-    import os
-    import glob
-    
-    sessions_path = os.path.join(request.folder, 'sessions')
-    current_session_id = session.session_id
-    
-    if os.path.exists(sessions_path):
-        session_files = glob.glob(os.path.join(sessions_path, '*.session'))
-        terminated_count = 0
-        
-        for session_file in session_files:
-            try:
-                session_id = os.path.basename(session_file).replace('.session', '')
-                
-                # No terminar la sesión actual del administrador
-                if session_id != current_session_id:
-                    os.remove(session_file)
-                    terminated_count += 1
-                    
-            except Exception as e:
-                continue
-        
-        response.flash = f'{terminated_count} sesiones terminadas exitosamente'
-    else:
-        response.flash = 'No se encontraron sesiones activas'
-    
-    redirect(URL('manage_sessions')) 
+	"""
+	Terminar todas las sesiones excepto la del administrador actual
+	"""
+	import os
+	import glob
+	
+	sessions_path = os.path.join(request.folder, 'sessions')
+	current_session_id = session.session_id
+	
+	if os.path.exists(sessions_path):
+		session_files = glob.glob(os.path.join(sessions_path, '*.session'))
+		terminated_count = 0
+		
+		for session_file in session_files:
+			try:
+				session_id = os.path.basename(session_file).replace('.session', '')
+				
+				# No terminar la sesión actual del administrador
+				if session_id != current_session_id:
+					os.remove(session_file)
+					terminated_count += 1
+					
+			except Exception as e:
+				continue
+		
+		response.flash = f'{terminated_count} sesiones terminadas exitosamente'
+	else:
+		response.flash = 'No se encontraron sesiones activas'
+	
+	redirect(URL('manage_sessions')) 

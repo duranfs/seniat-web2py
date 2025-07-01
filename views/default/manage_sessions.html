@@ -10,37 +10,50 @@
 {{else:}}
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="alert alert-info">
-            <strong>Tabla:</strong> {{=table_name}} | 
-            <strong>Total sesiones:</strong> {{=total_sessions}} | 
+            <strong>Tabla:</strong> {{=table_name}} |
+            <strong>Total sesiones:</strong> {{=total_sessions}} |
             <strong>Tu sesión ID:</strong> <code>{{=current_session_id}}</code>
         </div>
 
-        {{if not active_sessions:}}
-        <div class="alert alert-warning">
-            <h4>No se encontraron sesiones activas</h4>
-            <p>Aunque hay registros en la tabla, no se pudieron decodificar como sesiones válidas.</p>
-            <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#debugCollapse">
-                Mostrar información técnica
-            </button>
-        </div>
-        {{else:}}
-        <table class="table table-bordered table-hover">
-            <!-- Tabla de sesiones (como en versiones anteriores) -->
+        <table class="table table-bordered table-hover table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>IP</th>
+                    <th>Última actividad</th>
+                    <th>Actual</th>
+                    <th>Deserializada</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{for s in all_sessions:}}
+                <tr class="{{'table-success' if s['is_current'] else ''}}">
+                    <td><code>{{=s['session_id']}}</code></td>
+                    <td>{{=s['user_name'] or 'Anónima'}}</td>
+                    <td>{{=s['user_email'] or '-'}}</td>
+                    <td>{{=s['client_ip']}}</td>
+                    <td>{{=s['last_activity']}}</td>
+                    <td>{{='Sí' if s['is_current'] else ''}}</td>
+                    <td>{{='Sí' if s['deserialized'] else 'No'}}</td>
+                    <td>{{=s['error'] or ''}}</td>
+                </tr>
+                {{pass}}
+            </tbody>
         </table>
-        {{pass}}
     </div>
-
-    <div class="col-md-4 collapse" id="debugCollapse">
+    <div class="col-md-2">
         <div class="card card-body bg-light">
-            <h5>Información de Diagnóstico</h5>
-            <p>Primeros 5 registros analizados:</p>
+            <h5>Diagnóstico</h5>
             <table class="table table-sm">
                 <tr>
                     <th>ID</th>
                     <th>Tamaño</th>
-                    <th>Deserializado</th>
+                    <th>Deserializada</th>
                 </tr>
                 {{for item in debug_info:}}
                 <tr>
@@ -50,9 +63,6 @@
                 </tr>
                 {{pass}}
             </table>
-            <a href="{{=URL('debug_raw_session')}}" class="btn btn-sm btn-secondary">
-                Ver datos crudos
-            </a>
         </div>
     </div>
 </div>

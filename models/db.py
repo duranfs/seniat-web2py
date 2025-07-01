@@ -80,7 +80,8 @@ current.session.connect(
     current.response,
     db=db,
     tablename='web2py_session',
-    #masterapp='seniat_python3'
+    #masterapp=None,  # Fundamental para evitar prefijos
+    #migrate=False    # No intentar crear tablas)
 )
 # -------------------------------------------------------------------------
 # by default give a view/generic.extension to all actions from localhost
