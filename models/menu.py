@@ -130,6 +130,7 @@ monitor =[
 			(T('Administrar Rutinas'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
 			(T('Monitor Oracle'), False, URL('default','monitor_bd', args=['9']), []), #oracle
 			(T('Monitor Mssqlserver'), False, URL('default','monitor_bd', args=['11']), []), 
+			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
@@ -144,6 +145,7 @@ monitor_OPERADOR =[
 	(T('Monitor'), False, '#', [
             (T('Monitor Oracle'), False, URL('default','monitor_bd', args=['9']), []),
 			(T('Monitor Mssqlserver'), False, URL('default','monitor_bd', args=['11']), []),
+			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
@@ -165,7 +167,7 @@ if auth.is_logged_in():
 			response.menu += monitor
 			response.menu += graficas
 			response.menu += dba_admin
-			response.menu += administracion	
+			response.menu += administracion
 			#response.menu += system
 			response.menu += wiki
 		elif  auth.has_membership("plugin_useradmin") and \
@@ -177,6 +179,15 @@ if auth.is_logged_in():
 			#response.menu += dba_admin
 			#response.menu += administracion	
 			response.menu += wiki
+		elif  auth.has_membership("DBA") and \
+			  auth.has_membership("ADMIN") and auth.has_membership("SYSTEM"):
+			response.menu += gestion_operativa_admin
+			response.menu += gestion_operativa_analista_solutor
+			response.menu += inventario
+			response.menu += dba_admin
+			response.menu += administracion	
+			response.menu += wiki
+
 		elif auth.has_membership("DBA") :
 			response.menu += gestion_operativa_analista_solutor
 			response.menu += inventario

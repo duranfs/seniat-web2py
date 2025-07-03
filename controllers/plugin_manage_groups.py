@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+@auth.requires(auth.has_membership(auth.id_group('SYSTEM')))
 def index():
     if not plugins.manage_groups.admin_group:
         return T('use syntax: plugin_manage_groups/group/<groupname> --or-- set plugins.manage_groups.admin_group in model db.py (or other one - see model/plugin_manage_groups)')

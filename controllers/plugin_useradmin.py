@@ -5,7 +5,7 @@ Fixed redirect loop issue
 
 from gluon.sqlhtml import form_factory
 
-@auth.requires(auth.has_membership(auth.id_group('ADMIN')))
+@auth.requires(auth.has_membership(auth.id_group('SYSTEM')))
 def index():
     # Verificar si ya estamos procesando una redirección
     if request.env.request_method == 'POST' and not request.post_vars:

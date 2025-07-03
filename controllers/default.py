@@ -264,7 +264,7 @@ def monitor_bd():
 		else:
 			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
 		diferencia = now - ultima_actualizacion_dt
-		if diferencia.total_seconds() < 3:
+		if diferencia.total_seconds() < 1:
 			necesita_actualizar = False
 
 	# 3. Procesamiento asíncrono si es necesario
@@ -286,7 +286,7 @@ def monitor_bd():
 			tb = traceback.format_exc()
 			mensajes = "Iniciando actualización directa (modo seguro)..."
 			try:
-				resultado = actualizar_y_mostrar_monitor_parallel()
+				resultado = actualizar_y_mostrar_monitor_parallel(tipo_bd_descri)
 				if resultado and 'resumen' in resultado:
 					mensajes = resultado['resumen']
 				mon = obtener_datos_actualizados()
@@ -303,8 +303,8 @@ def monitor_bd():
 			db.basedatos.version_id,
 			db.basedatos.puerto,
 			db.basedatos.ambiente_id,
-			cache=(cache.ram, 10),  # Cache por 1 hora
-			cacheable=True
+			cache=(cache.ram, 0),  # Cache por 1 hora
+			cacheable=False
 		)
 
 	basedatos_mon = obtener_basedatos()
@@ -328,7 +328,7 @@ import traceback
 import logging
 import threading
 
-def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connection):
+def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connection, get_postgresql_connection):
 	"""Versión final adaptada para múltiples tipos de bases de datos"""
 	try:
 		thread_id = threading.current_thread().ident
@@ -417,12 +417,15 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 				cursor = connection.cursor()
 				
 			elif tipo_bd in ['POSTGRESQL', 'DOCKER-KUBERNETES-PGSQL']:
-				# Configuración para PostgreSQL (requiere implementación)
-				error_msg = f"Conexión PostgreSQL no implementada aún para: {m.tx_instancia}"
-				logging.error(f"[THREAD-{thread_id}] {error_msg}")
-				update_monitor_record(db, m, None, error_msg, False)
-				return m.id, error_msg, False
-				
+				# Configuración para PostgreSQL
+				logging.info(f"[THREAD-{thread_id}] Conectando a Postgresql: {servidor.ip}:{bdatos.puerto}/{m.tx_instancia}")
+				connection = get_postgresql_connection(
+					host=servidor.ip,
+					database=m.tx_instancia,
+					port=bdatos.puerto
+				)
+				cursor = connection.cursor()
+								
 			elif tipo_bd in ['MYSQL', 'MARIADB', 'DOCKER-KUBERNETES-MYSQL']:
 				# Configuración para MySQL/MariaDB (requiere implementación)
 				error_msg = f"Conexión MySQL/MariaDB no implementada aún para: {m.tx_instancia}"
@@ -495,11 +498,11 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 			pass
 		return m.id, error_msg, False
 
-def actualizar_y_mostrar_monitor_parallel():
+def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 	"""Función principal para monitoreo paralelo multi-BD"""
 	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
 	
-	monitoreos = db(db.bdmon).select()
+	monitoreos = db(db.bdmon.tx_tipobd==tipobd).select()
 	
 	conexiones_exitosas = 0
 	conexiones_fallidas = 0
@@ -507,7 +510,7 @@ def actualizar_y_mostrar_monitor_parallel():
 	
 	with ThreadPoolExecutor(max_workers=10) as executor:
 		futures = {
-			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection): m
+			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection, get_postgresql_connection): m
 			for m in monitoreos
 		}
 		
@@ -1975,7 +1978,7 @@ def list_rutinas():
 	rutinas=db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)
 	return dict(rutinas=rutinas,form=form, script=script)
 
-@auth.requires_membership('ADMIN','SYSTEM')
+@auth.requires_membership('ADMIN')
 def edit_rutinas():
 	rutina_id=request.args(0)
 	rutina=db.rutinas[rutina_id]  or redirect(error_page)
@@ -9159,7 +9162,7 @@ def progreso_monitoreo():
 # Funciones de gestión de sesiones para agregar al final de controllers/default.py
 
 
-@auth.requires_membership('ADMIN')
+@auth.requires_membership('SYSTEM')
 def manage_sessions():
 	"""
 	Versión final que maneja correctamente las sesiones en formato pickle
