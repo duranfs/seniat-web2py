@@ -97,7 +97,7 @@ reportes_solutor =  [
 			]
 
 graficas =  [
-	(T('Graficas'), False, '#', [
+	(T('Gráficas'), False, '#', [
 				(T('Horas por BD'), URL('default','horas_por_bd')==URL(),URL('default','horas_por_bd'),[]),
 				(T('Horas por Ambiente'), URL('default','horas_por_ambiente')==URL(),URL('default','horas_por_ambiente'),[]),
 				(T('Horas por Analista'), URL('default','horas_por_analista')==URL(),URL('default','horas_por_analista'),[]),
@@ -124,7 +124,7 @@ wiki =[
 
 
 monitor =[
-	(T('Monitor'), False, '#', [
+	(T('Mónitor'), False, '#', [
             (T('Rutinas'), URL('default','list_rutinas')==URL(),URL('default','list_rutinas'),[]),
             (T('Asignar Rutinas'), URL('default','asignar_rutinas')==URL(),URL('default','asignar_rutinas'),[]),
 			(T('Administrar Rutinas'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
@@ -159,8 +159,7 @@ if auth.is_logged_in():
 	if not configuration.get('app.production'):
 		_app = request.application
 		
-		if  auth.has_membership("DBA") and \
-			auth.has_membership("ADMIN"):
+		if  auth.has_membership("DBA") and auth.has_membership("ADMIN") and auth.has_membership("SYSTEM"):
 			response.menu += gestion_operativa_admin
 			response.menu += gestion_operativa_analista_solutor
 			response.menu += inventario
@@ -168,26 +167,17 @@ if auth.is_logged_in():
 			response.menu += graficas
 			response.menu += dba_admin
 			response.menu += administracion
+			response.menu += wiki
+		elif auth.has_membership("DBA") and auth.has_membership("ADMIN"):
+			response.menu += gestion_operativa_admin
+			response.menu += gestion_operativa_analista_solutor
+			response.menu += inventario
+			response.menu += monitor
+			response.menu += graficas
+			response.menu += dba_admin
+			#response.menu += administracion
 			#response.menu += system
 			response.menu += wiki
-		elif  auth.has_membership("plugin_useradmin") and \
-			  auth.has_membership("ADMIN"):
-			response.menu += gestion_operativa_admin
-			response.menu += gestion_operativa_analista_solutor
-			
-			response.menu += inventario
-			#response.menu += dba_admin
-			#response.menu += administracion	
-			response.menu += wiki
-		elif  auth.has_membership("DBA") and \
-			  auth.has_membership("ADMIN") and auth.has_membership("SYSTEM"):
-			response.menu += gestion_operativa_admin
-			response.menu += gestion_operativa_analista_solutor
-			response.menu += inventario
-			response.menu += dba_admin
-			response.menu += administracion	
-			response.menu += wiki
-
 		elif auth.has_membership("DBA") :
 			response.menu += gestion_operativa_analista_solutor
 			response.menu += inventario

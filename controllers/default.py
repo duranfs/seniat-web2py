@@ -195,9 +195,6 @@ def get_rows():
 	return  response.json(results)
 
 
-
-
-
 def select_bd_servidor():
 	servidor_id=request.post_vars.server or request.vars.get("server")
 	bases=db(db.basedatos.servidor==servidor_id).select(db.basedatos.id, db.basedatos.nombre, db.basedatos.tipobd_id, orderby=db.basedatos.nombre)
@@ -508,7 +505,7 @@ def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 	conexiones_fallidas = 0
 	resultados = {}
 	
-	with ThreadPoolExecutor(max_workers=100) as executor:
+	with ThreadPoolExecutor(max_workers=5) as executor:
 		futures = {
 			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection, get_postgresql_connection): m
 			for m in monitoreos
