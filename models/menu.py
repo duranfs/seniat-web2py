@@ -174,7 +174,7 @@ if auth.is_logged_in():
 			response.menu += inventario
 			response.menu += monitor
 			response.menu += graficas
-			response.menu += dba_admin
+			#response.menu += dba_admin
 			#response.menu += administracion
 			#response.menu += system
 			response.menu += wiki
