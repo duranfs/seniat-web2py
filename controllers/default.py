@@ -295,7 +295,7 @@ def monitor_bd():
 
 	# 4. Obtener lista de bases de datos (con caché extendido)
 	def obtener_basedatos():
-		return db(db.basedatos.status_mon.upper() == 'SI').select(
+		return db(db.basedatos.status_mon.upper() == 'SI')(db.basedatos.tipobd_id==tipo_bd).select(
 			db.basedatos.id,
 			db.basedatos.nombre,
 			db.basedatos.servidor,
@@ -333,7 +333,7 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 	try:
 		thread_id = threading.current_thread().ident
 		logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo: {m.tx_instancia}@{m.tx_servidor}")
-		
+	
 		try:
 			servidor = db(db.servidores.nombre == m.tx_servidor).select().first()
 			if not servidor:
@@ -500,15 +500,15 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 
 def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 	"""Función principal para monitoreo paralelo multi-BD"""
-	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias...")
-	
+	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias");
+	logging.error(f"Iniciando monitoreo: {tipobd} ")
 	monitoreos = db(db.bdmon.tx_tipobd==tipobd).select()
 	
 	conexiones_exitosas = 0
 	conexiones_fallidas = 0
 	resultados = {}
 	
-	with ThreadPoolExecutor(max_workers=10) as executor:
+	with ThreadPoolExecutor(max_workers=100) as executor:
 		futures = {
 			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection, get_postgresql_connection): m
 			for m in monitoreos

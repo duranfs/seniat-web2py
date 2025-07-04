@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 def get_oracle_connection(ip, service_name, puerto, ver):
     # Configurar conexión Oracle
     
-    CONNECTION_TIMEOUT = 10  # Aumentado para entornos lentos
-    QUERY_TIMEOUT = 10
+    CONNECTION_TIMEOUT = 5  # Aumentado para entornos lentos
+    QUERY_TIMEOUT = 5
 
     load_dotenv()
     oracle_user = os.getenv('ORACLE_USER')  # Valor por defecto solo para desarrollo
