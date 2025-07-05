@@ -8643,7 +8643,7 @@ def dashboard():
 				'tns_entry': sqlserver_result.get('connection_string', ''),
 				'last_check': sqlserver_result.get('last_check', 'N/A')
 			})
-		else:
+		elif db_record.tipobd_id and db_record.tipobd_id.descri.lower() == 'oracle':
 			# Verificación para Oracle (tnsping) como antes
 			tnsping_result = check_tnsping(db_record)
 			bases_datos.append({
@@ -8658,6 +8658,7 @@ def dashboard():
 				'tns_entry': tnsping_result.get('connect_string', ''),
 				'last_check': tnsping_result.get('last_check', 'N/A')
 			})
+		
 
 		return dict(
 		servidores=servidores,
