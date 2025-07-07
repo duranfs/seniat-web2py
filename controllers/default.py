@@ -162,14 +162,6 @@ def list_data():
 	for r in db( db.servidores.id>0 ).select( db.servidores.nombre,distinct=True):
 		vals.append( {"name" :r.nombre} )
 
-	#if  vals:
-	#	if (vals[-1]['name'] != date.today()):
-	#		vals.append({"name" : date.today().isoformat()})
-	#	else:
-	#		json_list['children'][1]["children"] = vals
-	#		return json_list
-	#else:
-	#	vals = [{"name" : date.today().isoformat()}]
 
 	json_list['children'][1]["children"] = vals
 	return  json_list
@@ -199,7 +191,6 @@ def select_bd_servidor():
 	servidor_id=request.post_vars.server or request.vars.get("server")
 	bases=db(db.basedatos.servidor==servidor_id).select(db.basedatos.id, db.basedatos.nombre, db.basedatos.tipobd_id, orderby=db.basedatos.nombre)
 	return dict(bases=bases)
-   
 
 @auth.requires_membership('ADMIN')
 def user_conn():
@@ -347,10 +338,10 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 		# Obtener información completa de la base de datos
 		try:
 			bdatos = db((db.basedatos.servidor == servidor.id) & 
-					   (db.basedatos.nombre == m.tx_instancia)).select(
-					   db.basedatos.puerto, 
-					   db.basedatos.version_id,
-					   db.basedatos.tipobd_id).first()
+					(db.basedatos.nombre == m.tx_instancia)).select(
+					db.basedatos.puerto, 
+					db.basedatos.version_id,
+					db.basedatos.tipobd_id).first()
 			
 			if not bdatos:
 				error_msg = f"Base de datos no encontrada: {m.tx_instancia}"
@@ -688,15 +679,15 @@ def asignar_rutinas():
 	
 	if cached_data is None:
 		# Consulta optimizada para servidores
-		servidores = db((db.servidores.id > 0) & 
-					   (db.servidores.status_mon == 'SI')).select(
-					   orderby=db.servidores.nombre,
-					   cache=(cache.ram, 100))
+		servidores=db((db.servidores.id > 0) & 
+					(db.servidores.status_mon == 'SI')).select(
+					orderby=db.servidores.nombre,
+					cache=(cache.ram, 100))
 		
 		# Consulta optimizada para rutinas
-		rutinas = db(db.rutinas.id > 0).select(
-				  orderby=db.rutinas.nombre,
-				  cache=(cache.ram, 100))
+		rutinas=db(db.rutinas.id > 0).select(
+				orderby=db.rutinas.nombre,
+				cache=(cache.ram, 100))
 		cached_data = (servidores, rutinas)
 	else:
 		servidores, rutinas = cached_data
@@ -713,9 +704,9 @@ def asignar_rutinas():
 	if len(servidores_seleccionados) >= 1:
 		try:
 			servidor_id = int(servidores_seleccionados[0])
-			rutinas_asignadas = [str(r.rutina) for r in 
-							   db(db.rutina_status.servidor_id == servidor_id).select(
-							   cache=(cache.ram, 100))]
+			rutinas_asignadas=[str(r.rutina) for r in 
+							db(db.rutina_status.servidor_id == servidor_id).select(
+							cache=(cache.ram, 100))]
 		except ValueError:
 			pass
 	
@@ -840,90 +831,6 @@ def rutinas_asignadas():
 	# Esta función ahora es muy simple porque la vista hace las consultas directamente
 	return dict()
 
-def manage_assignmentXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	response.view = 'generic.json'
-	
-	try:
-		rutina_id = request.vars.rutina_id
-		servidor_id = request.vars.servidor_id
-		action = request.vars.action
-		
-		if not (rutina_id and servidor_id and action):
-			return dict(success=False, message="Parámetros incompletos")
-		
-		if action == 'add' or action == 'update':
-			status = request.vars.status or 'HABILITADO'
-			
-			# Buscar si ya existe
-			registro = db((db.rutina_status.rutina == rutina_id) & 
-						 (db.rutina_status.servidor_id == servidor_id)).select().first()
-			
-			if registro:
-				registro.update_record(status=status)
-			else:
-				db.rutina_status.insert(
-					rutina=rutina_id,
-					servidor_id=servidor_id,
-					status=status,
-					is_active='T'
-				)
-				
-		elif action == 'remove':
-			db((db.rutina_status.rutina == rutina_id) & 
-			   (db.rutina_status.servidor_id == servidor_id)).delete()
-		
-		return dict(success=True)
-		
-	except Exception as e:
-		return dict(success=False, message=str(e))
-
-
-
-
-@auth.requires_login()
-def detalle_estructuraXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	basedatos_nombre=request.args[0]
-	#basedatos_nombre=request.args(0) es diferente a tener []
-	
-	bs=db.basedatos_estructura
-	#servidor=db.servidores[servidor_id] or redirect(error_page)
-	#session.servidores_recientes = add2(session.servidores_recientes,servidor)
-	
-	#r=db.executesql('select cola,colb from mytable;')
-	#r[0][0] is cols and r[0][1] is col b. It does not matter in which
-	#order they were in the table definition[All that amatters is the order with which you made the query].
-	
-	#r = db.executesql('select soso, lolo from my_table')
-	#print r  # [(u'a', u'c')]
-	#print r[0][0], r[0][1] #a c
-	#return dict()
-	
-	
-	now = datetime.datetime.now()
-	span = datetime.timedelta(days=1)
-	
-	#q = db()._select(bs.fecha_act)
-	
-	query = (bs.nombre == basedatos_nombre) & (bs.fecha_act >= request.now.date())
-	#query = (bs.nombre == basedatos_nombre) & (bs.fecha_act >= now-span)
-	rows  = db(query).select(
-		bs.tablespace.with_alias("Tablespace"),
-		bs.datafiles.with_alias("Datafiles"),
-		bs.espacio.with_alias("Tamaño"),
-		bs.sp_ocupado.with_alias("Ocupado"),
-		bs.sp_libre.with_alias("Libre"),
-		bs.porc_ocupado.replace('X','â–ˆ').replace('-','â”€').with_alias("Porc_ocupado"),
-		bs.porc_libre.with_alias("Porc_libre"),
-		bs.fecha_act
-		#bs.fecha_act.belongs(q)
-		)
-	print (db._lastsql)
-	estructuras = db(query).select(bs.ALL)
-	#form=SQLFORM.factory(*[Field('need_%s'%item.id, default=item.cantidad) for item in items])
-	form=TABLE(TR(*[TD('need_%s'%est.id, default=est.tablespace) for est in estructuras]))
-	table  = SQLTABLE(rows, _id="estructura", linkto=URL(f="cargar"), headers="fieldname:capitalize")
-	
-	return dict(basedatos_nombre=basedatos_nombre, table=table, form=form)
 
 
 @auth.requires_login()
@@ -970,170 +877,6 @@ def error(message="No autorizado"):
 	redirect(URL('index'))
 
 
-
-def indexxxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	now = datetime.datetime.now()
-	span = datetime.timedelta(days=10)
-	product_list = db(db.task.created_on >= (now-span)).select(limitby=(0,3), orderby=~db.task.created_on)
-	return locals()
-
-def reporte_novedadesxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	#generates a html form to filter the data to be displayed in the report
-	form = plugin_appreport.REPORTFORM(table=task_guardias)
-
-	if form.accepts(request.vars, session):
-		#build a report based on table fields (aka auto generates html) and filters informed in form
-		return plugin_appreport.REPORTPISA(table = task_guardias, args = dict(form.vars))
-
-	return dict(form = form)
-
-
-
-def createReportXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	import os
-	import uuid
-	import subprocess   
-	from appy.pod.renderer import Renderer
-	persons = []
-	for person in db(db.auth_user).select():
-		persons.append(dict(name=person.first_name,
-							surname=person.last_name,
-							adress=person.email))            
-	# Report creation               
-	template_file = os.path.join(request.folder, 'private', 'template.odt')
-	tmp_uuid = uuid.uuid4()        
-	#output_file_odt = "/var/tmp/%s.odt"%tmp_uuid
-	#output_file_pdf = "/var/tmp/%s.pdf"%tmp_uuid                                                            
-	output_file_odt = "/tmp/%s.odt"%tmp_uuid
-	output_file_pdf = "/tmp/%s.pdf"%tmp_uuid                                                            
-	beingPaidForIt = True     
-	renderer = Renderer(template_file, locals(), output_file_odt)
-	renderer.run()                          
-	#subprocess.Popen("libreoffice --headless --invisible --convert-to pdf %s --outdir %s "%(output_file_odt, "/tmp") ,shell=True)                                                     
-	subprocess.Popen("libreoffice --headless --convert-to pdf %s --outdir %s "%(output_file_odt, "/tmp") ,shell=True)                                                     
-	#subprocess.Popen("swriter --headless --convert-to pdf %s --outdir %s "%(output_file_odt, "/tmp/") ,shell=True) 
-	while True:
-		if os.path.exists(output_file_pdf):
-			break
-	data = open(output_file_pdf, "rb").read()                 
-	for file in [output_file_odt, output_file_pdf]:
-		os.unlink(file)                                                                                                                                                                                                                      
-	response.headers['Content-Type'] = 'application/pdf'
-	response.headers['Content-Disposition'] = 'attachment; filename=RepNovedades.pdf'
-	return data                                                             
-	
-
-
-
-def reportxxxXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	response.title = "web2py sample report"
-
-	# include a google chart (download it dynamically!)
-	url = "http://chart.apis.google.com/chart?cht=p3&chd=t:60,40&chs=500x200&chl=Hello|World&.png"
-	chart = IMG(_src=url, _width="250", _height="100")
-
-	# create a small table with some data:
-	rows = [THEAD(TR(TH("Key", _width="70%"), TH("Value", _width="30%"))),
-			TBODY(TR(TD("Hello"), TD("60")), 
-				  TR(TD("World"), TD("40")))]
-	rows = db(db.task_guardias).select()
-	table = TABLE(*rows, _border="0", _align="center", _width="50%")
-
-	if request.extension != "pdf":
-		from gluon.contrib.pyfpdf import FPDF, HTMLMixin
-
-		# create a custom class with the required functionality 
-		class MyFPDF(FPDF, HTMLMixin):
-			def header(self): 
-				"hook to draw custom page header (logo and title)"
-				#logo = os.path.join(request.env.web2py_path, "gluon", "contrib", "pyfpdf", "tutorial", "logo_pb.png")
-				#self.image(logo, 10, 8, 33)
-				self.set_font('Arial', 'B', 15)
-				self.cell(65) # padding
-				self.cell(60, 10, response.title, 1, 0, 'C')
-				self.ln(20)
-
-			def footer(self):
-				"hook to draw custom page footer (printing page numbers)"
-				self.set_y(-15)
-				self.set_font('Arial', 'I', 8)
-				txt = 'Page %s of %s' % (self.page_no(), self.alias_nb_pages())
-				self.cell(0, 10, txt, 0, 0, 'C')
-
-		pdf = MyFPDF()
-		# create a page and serialize/render HTML objects
-		pdf.add_page()
-		pdf.write_html(str(XML(table, sanitize=False)))
-		pdf.write_html(str(XML(CENTER(chart), sanitize=False)))
-		# prepare PDF to download:
-		response.headers['Content-Type'] = 'application/pdf'
-		return pdf.output(dest='S')
-	else:
-		# normal html view:
-		return dict(chart=chart, table=table)
-
-#from plugin_sqleditable.editable import SQLEDITABLE
-#SQLEDITABLE.init()
-
-#Funcion para probar si es accesible todos los servidores y si el proceso esta levantado
-def test_port_sshXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	import socket
-	import sys
-	server_id=request.args[0]
-	server=db(db.servidores.id==server_id).select(db.servidores.nombre, db.servidores.ip)
-	#server=systemd(systemd.server.id==server_id).select().ALL
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.settimeout(60)
-	try:
-		#sock.connect((server[0].ip, server[0].port))
-		sock.connect((server[0].ip, 22))
-	except Exception as e:
-		print ("%s closed " % (server[0].port))
-		return '<span style="color:red;">FAIL</span>'
-	else:
-		return '<span style="color:green;">OK</span>'
-	
-	sock.close()
-	return local()        
-
-
-
-def test_connect_sshXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	import sys, paramiko
-	server_id=request.args[0]
-	server=systemd(systemd.server.id==server_id).select(systemd.server.name, systemd.server.ip, systemd.server.port)
-	conexion = paramiko.SSHClient()
-	conexion.load_system_host_keys()
-  
-	try:
-		conexion.connect(server[0].ip, server[0].port, username = ssh_user_admin, key_filename = rsa_private_key_admin)
-		#stdin, stdout, stderr = conexion.exec_command('echo "conectado..."')
-	
-	
-	except Exception as e:
-		return '<span style="color:red;">FAIL</span>'
-		conexion.close()
-	else:
-		#Only tested on Linux, maybe works for Solaris
-		#stdin, stdout, stderr = conexion.exec_command('ps -ef | grep procallator | grep -v grep | awk {'+"'"+'print $2'+"'"+'}')
-		stdin, stdout, stderr = conexion.exec_command('ps -e')
-		result=stdout.read()
-		conexion.close()
-
-	if result:
-		message='ORCA running'
-	else:
-		message='<span style="color:red;">ORCA stoped</span>'
-		return '<span style="color:green;">OK, '+message+'</span>'
-
-def demo10XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	response.title = 'demo10'
-	response.view = 'plugin_sqleditable/sample.html'
-	editable = SQLEDITABLE(db.rutina_status, showid=False, maxrow=20).process()
-	return dict(editable=editable)
-
-
-	
 def valida_rutina():
 	if request.vars and 'hab_des' in request.vars and request.vars.hab_des:
 		if request.vars.get('ret')=='DESHABILITADO':
@@ -1201,57 +944,6 @@ def get_command_result(command):
 	finally:
 		return output_stdout.decode(), output_error.decode()
 
-def lista_rman12_onlineXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	import subprocess
-	return locals()
-
-def reporte_rman12XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	from gluon.tools import Expose
-	output_stdout, output_error = "None1", "None2"
-	usuario="oracle12"
-	servidor="sun2315p"
-	password="Oracle$123"
-	test_ip = "oracle12@sun2315p"
-
-	#comando = "/home/oracle12/exec_remoto.sh 'sun2315p' 'oracle12' Oracle$123 'monitorbd/report_rman.sh'"
-	#comando = "sh - oracle12 -c /home/oracle12/trae_report.sh; su - oracle12 -c /home/oracle12/get.sh"
-	#comando = "sh - oracle12 -c 'rm /home/oracle12/*.txt'; sh - oracle12 - c '/home/oracle12/trae_report.sh;'"
-	comando = request.folder + "/private/trae_report.sh"
-	proceso = subprocess.Popen(str(comando), 
-		shell=True, 
-		stdout = subprocess.PIPE, 
-		stderr = subprocess.PIPE,
-		stdin = subprocess.PIPE, 
-		universal_newlines=True)
-	salida = proceso.communicate()
-	#return dict(files=Expose('/home/oracle12', basename='.', extensions=['.txt']), salida=salida)
-	return dict(files=Expose('/opt/web-apps/web2py/applications/bdvinv/private/', basename='.', extensions=['txt','sh']), salida=salida, folder=request.folder+'/private')
-
-	#return dict(var = get_command_result(ssh_check_command))
-#return locals()
-	#command = request.folder + "/private/trae_report.sh ";
-#popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True, bufsize=4096)
-#output_stdout, output_error = popen.communicate()
-#return output_stdout.decode(), output_error.decode()
-
-
-def lista_bd_onlineXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX():
-	import subprocess
-	print ("Servidor seleccionado: %s"% (request.args(0)))
-	usuario="postgres"
-	servidor_id=request.args(0)
-	servidor=db.servidores[servidor_id] or redirect(error_page)
-	#comando = "ssh -l postgres@"+str(servidor.nombre) + ".pdvsa.com  'psql -l'"
-	#comando = "/home/duranfs/monitorbd/lista_bd.sh " + usuario+"@"+servidor.nombre + ".pdvsa.com"
-	comando = request.folder + "/private/lista_bd.sh " + usuario+"@"+servidor.nombre + ".pdvsa.com"
-	proceso = subprocess.Popen(str(comando), 
-		shell=True, 
-		stdout = subprocess.PIPE, 
-		stderr = subprocess.PIPE,
-		stdin = subprocess.PIPE, 
-		universal_newlines=True)
-	salida = proceso.communicate()
-	return salida
 
 def func_lista_bd_online_bd():
 	import subprocess
@@ -1627,9 +1319,6 @@ def lista_bd():
 #---------------------------------------------------------------------------------
 
 
-	
-
-
 @auth.requires_login()
 @auth.requires_membership('DBA')
 def list_claves():
@@ -1702,15 +1391,6 @@ def servidores_monitoreados():
 	#servidores_mon=db(db.bdmon.id>0).select(db.bdmon.tx_servidor,db.bdmon.tx_tipobd, distinct=True) 
 	servidores_mon=db(db.bdmon.id>0).select(db.bdmon.tx_servidor,db.bdmon.tx_tipobd, distinct=db.bdmon.tx_servidor) 
 	servidores_st_mon=db(db.servidores.status_mon.upper()=='SI').select(db.servidores.nombre, distinct=True) 
-		#servidores=db(db.bdmon.id>0)._select(db.bdmon.tx_servidor.count(distinct=True), db.bdmon.tx_tipobd, groupby=db.bdmon.tx_tipobd)
-		# SELECT count(DISTINCT id_impressora), tests.data FROM tests WHERE (tests.id >0) GROUP BY tests.data
-		#mon=db.executesql("SELECT distinct nombre,tx_servidor,case when tx_servidor is null then 'X' end FROM  public.bdmon full outer join servidores on bdmon.tx_servidor = servidores.nombre  where status_mon='SI' ;")
-	#servidores=db.executesql('select distinct tx_servidor from bdmon;')	
-	#return dict(mon=mon)
-	#x=A(db().select(db.bdmon.tx_servidor,db.servidores.nombre,\
-	#    left=db.servidores.on(db.bdmon.tx_servidor==db.servidores.nombre and db.servidores.status_mon=='SI')) )
-	#return dict(servidores_mon=servidores_mon,servidores_st_mon=servidores_st_mon,mon=mon)
-	#x = A(db((db.servidores.status_mon == 'SI') & (db.servidores.nombre == db.bdmon.tx_servidor)).select(db.servidores.ALL))
 
 	#bases de datos ----------------------------------------------------------------------------------
 		   
@@ -1771,20 +1451,9 @@ def list_servidores_MD():
 	serv_id= request.args(0)
 	ser=request.post_vars.servidor or request.vars.get("servidor")
 	session.flash=request.args[:2]
-	#session.flash=serv_id
-	#serv=db.servidores[serv_id]  or redirect(error_page)
-	
-	#links = [lambda row: A('View Post',_href=URL("default","view",args=[row.id]))]
+
 	links = [lambda row: A('BD',_href=URL(r=request,c='default',f='list_basedatos',args=[row.id]))]
 
-	#links = URL(r=request,c='default',f='list_basedatos',args=[servidor.id])
-
-	#FIELDS=(db.servidores.tipo_equipo,db.servidores.id,db.servidores.nombre,\
-	#db.servidores.dominio,db.servidores.ip,db.servidores.rac, db.servidores.ambiente_id, db.servidores.so_id)
-	
-	#export_classes = dict(csv=True, json=False, html=False,
-	#		tsv=False, xml=False, csv_with_hidden_cols=False,
-		#                tsv_with_hidden_cols=False)	
 	export_classes = dict(csv=(CSVExporter, 'CSV'), json=False, html=False,
 					tsv=False, xml=False, csv_with_hidden_cols=False,
 					tsv_with_hidden_cols=False)
@@ -2247,279 +1916,6 @@ def valida_fechas2(formaOP):
 	if formaOP.vars.desde > formaOP.vars.hasta:
 		formaOP.errors.desde = 'Fechas erradas'
 		formaOP.errors.hasta = 'Fechas erradas'
-		
-@auth.requires_login()
-def list_actividades():
-	me = auth.user_id
-	actividades=''
-	response.files.append(URL(request.application,'static','data_table.css'))
-	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
-	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#list_actividades').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
-	});''')
-	#SafeLocale()
-	
-	ac = db.actividades
-	actividades = [OPTION(actividad.id  ,_value=actividad.id) for actividad in
-	db(ac.id>0).select(ac.ALL)]
-	
-	camposActividades = [
-		###########################################
-		# Asignacion
-		INPUT(_name='desde', _type='date'),
-		INPUT(_name='hasta', _type='date'),
-	]
-
-	formaOP = FORM(*camposActividades)
-	if formaOP.accepts(request.vars,formname='formaOPHTML',  onvalidation=valida_fechas2, keepvalues=True):
-		desde = request.vars.desde
-		hasta = request.vars.hasta
-		
-		
-		desde = request.vars.desde
-		hasta = request.vars.hasta
-		
-		
-		from datetime import datetime
-		import os
-		import xlwt
-		import uuid
-		from xlwt import Workbook #xlwt.Utils 
-		#import rowcol_to_cell
-		#from xlwt import *
-	
-		tmpfilename=os.path.join(request.folder,'private','example.xls')
-	
-		font0 = xlwt.Font()
-		font0.name = 'Times New Roman'
-		font0.colour_index = 2
-		font0.bold = True
-		
-		sty = xlwt.XFStyle()
-		al = xlwt.Alignment()
-		al.wrap = xlwt.Alignment.WRAP_AT_RIGHT
-		sty.alignment = al
-
-		style0 = xlwt.XFStyle()
-		style0.font = font0
-
-		style1 = xlwt.XFStyle()
-		style1.num_format_str = 'DD-MM-YYYY'
-	
-		fnt = Font()
-		fnt.name = 'Arial'
-		fnt.colour_index = 4
-		fnt.bold = True
-		
-		border = xlwt.Borders()  # Frame cells
-		border.left = xlwt.Borders.THIN  # Left
-		border.top = xlwt.Borders.THIN  # upper
-		border.right = xlwt.Borders.THIN  # right
-		border.bottom = xlwt.Borders.THIN  # lower
-		border.left_colour = 0x40  # Border line color
-		border.right_colour = 0x40
-		border.top_colour = 0x40
-		border.bottom_colour = 0x40
-		
-	
-		pattern = xlwt.Pattern()
-		pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-		pattern.pattern_fore_colour = xlwt.Style.colour_map['pale_blue']
-	
-		encab = xlwt.easyxf('font: bold on; align: wrap on, vert center, horiz center')
-		encab.borders = border
-		encab.pattern = pattern
-	
-		style = XFStyle()
-		style.font = fnt
-		style.font.height = 180
-		style.num_format_str = '#,##0'
-		style.borders = border
-	
-		style2 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
-		num_format_str='#,##0.00')
-	
-		texto = XFStyle()
-		texto = xlwt.easyxf('align: wrap on, vert center, horiz left')
-		texto.alignment.wrap = 1
-		texto.borders = border
-		
-		textoC = XFStyle()
-		textoC = xlwt.easyxf('align: wrap on, vert center, horiz center')
-		textoC.alignment.wrap = 1
-		textoC.borders = border
-		
-		fecha = xlwt.easyxf('align: wrap on, vert center, horiz center')
-		fecha.num_format_str = 'DD-MM-YYYY'
-		fecha.borders = border
-		
-		hora = xlwt.easyxf('align: wrap on, vert center, horiz center',num_format_str='#,##0.00')
-		hora.borders = border
-	
-		wb = xlwt.Workbook(encoding="utf-8",style_compression=0)
-		ws = wb.add_sheet('Actividades')
-		En = wb.add_sheet('En Curso')
-		Por = wb.add_sheet('Por Realizar')
-
-		ws.normal_magn=110
-
-		data = []
-		act = ws.col(0)
-		fec = ws.col(1)
-		hor = ws.col(2)
-		hor2 = ws.col(3)
-		tipo = ws.col(4)
-		ana = ws.col(5)
-		# sec_col = worksheet.col(0)
-		act.width = 1200*20
-		fec.width = 150*20
-		hor.width = 125*20
-		hor2.width = 125*20
-		tipo.width = 80*20
-		ana.width = 300*20
-		head = ['Actividades', 'Fecha', 'Hora de ejecución', 'Horas laboradas', 'Tipo', 'Analista']
-		for index, value in enumerate(head):
-			ws.write(0, index, value, encab)
-		
-		
-		
-		
-		
-		
-		rows = db(db.actividades.cod_asig==db.asignacion.id)\
-		(db.actividades.fecha_inicio >= desde)(db.actividades.fecha_inicio <= hasta)\
-		(db.auth_user.id==db.asignacion.analista)(db.auth_user.id==me).\
-		select(db.actividades.descripcion,db.actividades.fecha_inicio,db.actividades.hora_inicio,\
-		db.actividades.horas_laboradas,db.actividades.tipo,(db.auth_user.first_name+' '+db.auth_user.last_name).with_alias("analista"), \
-		orderby="actividades.fecha_inicio, actividades.hora_inicio, analista")
-
-		row = 1
-		col = 0
-		
-		for index, r in enumerate(rows):
-			ws.row(index).height_mismatch = True
-			ws.row(index).height = 50*20 #len(r.actividades.descripcion)*10 #50*20
-			ws.set_panes_frozen(True) # frozen headings instead of split panes
-			ws.set_horz_split_pos(1) # in general, freeze after last heading row
-			ws.set_remove_splits(True)
-			ws.write (row, 0, r.actividades.descripcion.replace('"',''), texto)
-			ws.write (row, 1, r.actividades.fecha_inicio, fecha)
-			ws.write (row, 2, r.actividades.hora_inicio, fecha)
-			ws.write (row, 3, r.actividades.horas_laboradas, hora)
-			ws.write (row, 4, r.actividades.tipo, textoC)
-			ws.write (row, 5, r.analista, textoC)
-			
-			row +=1
-			
-		row +=2
-		#ws.write(row, 2, 'Total Horas')
-		#ws.write(row, 3, Formula("SUM($D$1:$D$100)"))
-		#ws.write(row, 5, xlwt.Formula('= D{} - E[]'.format(row,  row)))
-		
-		
-		
-		#
-		
-		# actividades en curso --------------------------------------
-		act = En.col(0)
-		ana = En.col(1)
-		st = En.col(2)
-		# sec_col = worksheet.col(0)
-		act.width = 1200*20
-		ana.width = 300*20
-		st.width = 300*20
-		
-		head = ['Actividades en curso', 'Analista', 'Estatus']
-		for index, value in enumerate(head):
-			En.write(0, index, value, encab)
-		
-		rows=db(db.proyectos.descri!='ACTIVIDADES SEMANAL')(db.proyectos.id == db.asignacion.cod_proyecto)\
-		(db.auth_user.id==me)(db.auth_user.id==db.asignacion.analista).select(db.proyectos.id, db.proyectos.descri,\
-		db.proyectos.status,(db.auth_user.first_name+' '+db.auth_user.last_name).with_alias("analista"), \
-		orderby="proyectos.descri,analista")
-		row = 1
-		id_proy=0
-		grupo_analista=''
-		analista_anterior=''
-		for index, r in enumerate(rows):
-			En.row(index).height_mismatch = True
-			En.row(index).height = 50*20
-		
-			En.set_panes_frozen(True) # frozen headings instead of split panes
-			En.set_horz_split_pos(1) # in general, freeze after last heading row
-			En.set_remove_splits(True)
-			
-			if id_proy == r.proyectos.id:
-				reg =db(db.proyectos.id == db.asignacion.cod_proyecto)\
-				(db.auth_user.id==db.asignacion.analista)(db.proyectos.id == id_proy)\
-				.select((db.auth_user.first_name+' '+db.auth_user.last_name).with_alias("analista"), orderby="proyectos.descri,analista")
-				#grupo_analista='[ '
-				for grupo in reg:
-					grupo_analista += grupo.analista + ','
-			
-				#grupo_analista += ' ]'	
-				En.write (row - 1, 1, grupo_analista , textoC)
-				grupo_analista=''
-			else:	
-				En.write (row, 0, r.proyectos.descri, texto)
-				En.write (row, 1, r.analista, textoC)
-				En.write (row, 2, r.proyectos.status, textoC)
-				analista_anterior=r.analista
-				row +=1
-	
-			id_proy = r.proyectos.id
-		
-		#En.write(row+1, 2, analistas)
-		#En.write(row+1, 3, xlwt.Formula(sum(A1:A16)))
-			
-		# actividades por realizar
-		act = Por.col(0)
-		st = Por.col(1)
-		# sec_col = worksheet.col(0)
-		act.width = 1200*20
-		st.width = 200*20
-		head = ['Actividades por realizar', 'Estatus']
-		for index, value in enumerate(head):
-			Por.write(0, index, value, encab)
-		
-		#rows=db(db.proyectos.status == 'EN CURSO')(db.proyectos.descri!='ACTIVIDADES SEMANAL')(db.proyectos.id == db.asignacion.cod_proyecto)\
-		rows=db(db.proyectos.status == 'POR REALIZAR').select(orderby="descri")
-		
-		row = 1
-		col = 0
-		
-		for index, r in enumerate(rows):
-			Por.row(index).height_mismatch = True
-			Por.row(index).height = 50*20
-			Por.set_panes_frozen(True) # frozen headings instead of split panes
-			Por.set_horz_split_pos(1) # in general, freeze after last heading row
-			Por.set_remove_splits(True)
-			Por.write (row, 0, r.descri, texto)
-			Por.write (row, 1, r.status, textoC)
-			row +=1
-		#
-			
-		nombre=db.auth_user[me]
-		from datetime import datetime
-		fecha=convert_date(hasta)
-		
-		response.headers['Content-Type']='application/vnd.ms-excel'
-		response.headers['Content-disposition'] = 'attachment; filename=%s %s - %s - GL DyA.xls' % (nombre.first_name.upper(), nombre.last_name.upper().decode('utf-8'), fecha) 
-		wb.save(tmpfilename)
-		data = open(tmpfilename,"rb").read()
-		os.unlink(tmpfilename)
-		return data
-		
-		
-	elif formaOP.errors:
-		response.flash = 'Fechas erradas'
-	else:
-		response.flash = 'Exito!'
-		
-	mis_actividades = db(db.actividades.id>0)(db.actividades.cod_asig==db.asignacion.id)(db.asignacion.analista==me).select()
-	return locals()
-	
-
 
 @auth.requires_login()
 def crear_actividades_sd():
@@ -3293,11 +2689,7 @@ def editar_actividades2():
 	db.actividades.cod_asig.writable=False
 	db.actividades.cod_asig.readable=False
 	form=crud.update(db.actividades, actividad_reg.id, next=url('crear_actividades'))
-
-
 	return 	locals()
-
-
 
 
 def editar_actividades4():
@@ -3319,10 +2711,6 @@ def editar_actividades4():
 	editable = actividad.completado not in ("CERRADA") 
 	#if editable:
 	form=crud.update(db.actividades_sd, actividad.id, deletable=editable, next=url('list_actividades_sd'))
-	#else:
-	#	form=crud.read(db.actividades_sd, actividad.id )
-
-	#form=crud.update(db.actividades_sd, actividad_reg.id, next=url('crear_actividades_sd'))
 	return 	locals()
 
 
@@ -7398,192 +6786,6 @@ def excel_report_solutor():
 
 
 
-
-@auth.requires_login()
-def list_actividades_graca():
-	me = auth.user_id
-	actividades=''
-	response.files.append(URL(request.application,'static','data_table.css'))
-	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
-	script = SCRIPT('''$(document).ready(function(){
-	oTable = $('#list_actividades').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
-	});''')
-	#SafeLocale()
-	
-	ac = db.actividades
-	actividades = [OPTION(actividad.id  ,_value=actividad.id) for actividad in
-	db(ac.id>0).select(ac.ALL)]
-	
-	camposActividades = [
-		###########################################
-		# Asignacion
-		INPUT(_name='desde', _type='date'),
-		INPUT(_name='hasta', _type='date'),
-	]
-
-	formaOP = FORM(*camposActividades)
-	if formaOP.accepts(request.vars,formname='formaOPHTML',  onvalidation=valida_fechas2, keepvalues=True):
-		desde = request.vars.desde
-		hasta = request.vars.hasta
-		
-		
-		desde = request.vars.desde
-		hasta = request.vars.hasta
-		
-		
-		from datetime import datetime
-		import os
-		import xlwt
-		import uuid
-		from xlwt import Workbook #xlwt.Utils 
-		#import rowcol_to_cell
-		#from xlwt import *
-	
-		tmpfilename=os.path.join(request.folder,'private','example.xls')
-
-		font0 = xlwt.Font()
-		font0.name = 'Times New Roman'
-		font0.colour_index = 2
-		font0.bold = True
-
-		style0 = xlwt.XFStyle()
-		style0.font = font0
-
-		style1 = xlwt.XFStyle()
-		style1.num_format_str = 'DD-MM-YYYY'
-	
-		fnt = Font()
-		fnt.name = 'Arial'
-		fnt.colour_index = 4
-		fnt.bold = True
-		
-		border = xlwt.Borders()  # Frame cells
-		border.left = xlwt.Borders.THIN  # Left
-		border.top = xlwt.Borders.THIN  # upper
-		border.right = xlwt.Borders.THIN  # right
-		border.bottom = xlwt.Borders.THIN  # lower
-		border.left_colour = 0x40  # Border line color
-		border.right_colour = 0x40
-		border.top_colour = 0x40
-		border.bottom_colour = 0x40
-		
-	
-		pattern = xlwt.Pattern()
-		pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-		pattern.pattern_fore_colour = xlwt.Style.colour_map['pale_blue']
-	
-		encab = xlwt.easyxf('font: bold on; align: wrap on, vert center, horiz center')
-		encab.borders = border
-		encab.pattern = pattern
-	
-		style = XFStyle()
-		style.font = fnt
-		style.font.height = 180
-		style.num_format_str = '#,##0'
-		style.borders = border
-	
-		style2 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
-		num_format_str='#,##0.00')
-	
-		texto = XFStyle()
-		texto = xlwt.easyxf('align: wrap on, vert center, horiz left')
-		texto.alignment.wrap = 1
-		texto.borders = border
-		
-		textoC = XFStyle()
-		textoC = xlwt.easyxf('align: wrap on, vert center, horiz center')
-		textoC.alignment.wrap = 1
-		textoC.borders = border
-		
-		fecha = xlwt.easyxf('align: wrap on, vert center, horiz center')
-		fecha.num_format_str = 'DD-MM-YYYY'
-		fecha.borders = border
-		
-		hora = xlwt.easyxf('align: wrap on, vert center, horiz center',num_format_str='#,##0.00')
-		hora.borders = border
-	
-		wb = xlwt.Workbook(encoding="utf-8",style_compression=0)
-		ws = wb.add_sheet('Actividades')
-
-		ws.normal_magn=110
-
-		data = []
-		
-		fec = ws.col(0)
-		hor = ws.col(1)
-		
-		tipo = ws.col(2)
-		act = ws.col(3)
-		# sec_col = worksheet.col(0)
-		act.width = 650*20
-		fec.width = 150*20
-		hor.width = 125*20
-		tipo.width = 80*20
-		
-		head = ['Fecha', 'Horas laboradas', 'Tipo', 'Actividad']
-		for index, value in enumerate(head):
-			ws.write(0, index, value, encab)
-		
-		rows = db(db.actividades.cod_asig==db.asignacion.id)\
-		(db.actividades.fecha_inicio >= desde)(db.actividades.fecha_inicio <= hasta)\
-		(db.auth_user.id==db.asignacion.analista)(db.auth_user.id==me).\
-		select(db.actividades.descripcion,db.actividades.fecha_inicio,db.actividades.hora_inicio,\
-		db.actividades.horas_laboradas,db.actividades.tipo,(db.auth_user.first_name+' '+db.auth_user.last_name).with_alias("analista"), \
-		orderby="actividades.fecha_inicio, actividades.hora_inicio, analista")
-
-		row = 1
-		col = 0
-		
-		for index, r in enumerate(rows):
-			ws.row(index).height_mismatch = True
-			ws.row(index).height = 40*20
-			
-			ws.write (row, 0, r.actividades.fecha_inicio, fecha)
-			
-			ws.write (row, 1, r.actividades.horas_diurnas_r, hora)
-			ws.write (row, 2, r.actividades.tipo, textoC)
-			
-			ws.write (row, 3, r.actividades.descripcion, texto)
-			row +=1
-			
-		row +=2
-		#ws.write(row, 2, 'Total Horas')
-		#ws.write(row, 3, Formula("SUM($D$1:$D$100)"))
-		#ws.write(row, 5, xlwt.Formula('= D{} - E[]'.format(row,  row)))
-		
-		
-		
-		nombre=db.auth_user[me]
-		from datetime import datetime
-		fecha=convert_date(hasta)
-		
-			
-		#ws.write(row, 2, xlwt.Formula("sum(D$)"))
-		#ws.write(row, 0, Formula("SUM(R[C:R[-1]C)"))
-			
-		nombre=db.auth_user[me]
-		from datetime import datetime
-		fecha=convert_date(hasta)
-		
-		response.headers['Content-Type']='application/vnd.ms-excel'
-		response.headers['Content-disposition'] = 'attachment; filename=%s %s - %s - GL DyA.xls' % (nombre.first_name.upper(), nombre.last_name.upper().decode('utf-8'), fecha) 
-		wb.save(tmpfilename)
-		data = open(tmpfilename,"rb").read()
-		os.unlink(tmpfilename)
-		return data
-		
-		
-	elif formaOP.errors:
-		response.flash = 'Fechas erradas'
-	else:
-		response.flash = 'Exito!'
-		
-	mis_actividades = db(db.actividades.id>0)(db.actividades.cod_asig==db.asignacion.id)(db.asignacion.analista==me).select()
-	return locals()
-
-
-#--------- fin list actividades formato graca
-
 # -- list actividades solutor 
 @auth.requires_login()
 def list_actividades_solutor():
@@ -8715,8 +7917,8 @@ def horas_por_bd():
 	# Consulta SQL para obtener los meses disponibles con datos
 	sql_meses = """
 	SELECT DISTINCT 
-		   EXTRACT(YEAR FROM fecha_inicio) as año,
-		   EXTRACT(MONTH FROM fecha_inicio) as mes
+		EXTRACT(YEAR FROM fecha_inicio) as año,
+		EXTRACT(MONTH FROM fecha_inicio) as mes
 	FROM actividades_sd
 	ORDER BY año DESC, mes DESC
 	"""
@@ -8724,7 +7926,7 @@ def horas_por_bd():
 	# Consulta SQL principal modificada para incluir el nombre del servidor
 	sql = """
 	SELECT b.nombre, ser.nombre as servidor, 
-		   SUM(a.horas_laboradas + a.horas_extras) as total_horas
+		SUM(a.horas_laboradas + a.horas_extras) as total_horas
 	FROM actividades_sd a
 	JOIN servidores ser ON ser.id = a.cod_servidor
 	JOIN basedatos b ON b.servidor = ser.id
@@ -8791,8 +7993,8 @@ def horas_por_ambiente():
 	# Consulta para obtener meses disponibles con datos
 	sql_meses = """
 	SELECT DISTINCT 
-		   EXTRACT(YEAR FROM fecha_inicio) as año,
-		   EXTRACT(MONTH FROM fecha_inicio) as mes
+		EXTRACT(YEAR FROM fecha_inicio) as año,
+		EXTRACT(MONTH FROM fecha_inicio) as mes
 	FROM actividades_sd
 	ORDER BY año DESC, mes DESC
 	"""
@@ -8892,8 +8094,8 @@ def horas_por_analista():
 		# 1. Obtener meses disponibles
 		sql_meses = """
 		SELECT DISTINCT 
-			   EXTRACT(YEAR FROM fecha_inicio) as año,
-			   EXTRACT(MONTH FROM fecha_inicio) as mes
+		EXTRACT(YEAR FROM fecha_inicio) as año,
+		EXTRACT(MONTH FROM fecha_inicio) as mes
 		FROM actividades_sd
 		ORDER BY año DESC, mes DESC
 		"""
@@ -8912,7 +8114,7 @@ def horas_por_analista():
 		# 3. Datos por Base de Datos
 		sql_bd = """
 		SELECT b.nombre, ser.nombre as servidor, 
-			   SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
+		SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
 		FROM actividades_sd a
 		JOIN servidores ser ON ser.id = a.cod_servidor
 		JOIN basedatos b ON b.servidor = ser.id
@@ -8938,9 +8140,9 @@ def horas_por_analista():
 		# 4. Datos por Ambiente
 		sql_ambiente = """
 		SELECT am.descri as ambiente,
-			   SUM(a.horas_laboradas) as horas_normales,
-			   SUM(COALESCE(a.horas_extras, 0)) as horas_extras,
-			   SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
+		SUM(a.horas_laboradas) as horas_normales,
+		SUM(COALESCE(a.horas_extras, 0)) as horas_extras,
+		SUM(a.horas_laboradas + COALESCE(a.horas_extras, 0)) as total_horas
 		FROM ambiente am
 		JOIN actividades_sd a ON a.ambiente_id = am.id
 		WHERE EXTRACT(MONTH FROM a.fecha_inicio) = %s

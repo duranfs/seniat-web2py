@@ -39,6 +39,38 @@
     
     <!-- Custom CSS -->
     <style>
+        textarea {width:800px}
+        .PENDIENTE {background-color: white; color:black; padding:0px;}
+	    .oracle {color:yellow; padding:0px;}
+	    .postgres {color:blue; padding:0px;}
+	    .mysql {color:white; padding:0px;}
+	    .db2 {color:magenta; padding:0px; background-color: black}
+	    .RAC-SI {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .ASM-SI {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .NETWORKER {background-color: ; color:green; padding:0px; font-weight: bold;}
+        .A {background-color: ; color:orangered; padding:0px; font-weight: bold;}
+	    .VERITAS {background-color: ; color:blue; padding:0px; font-weight: bold;}
+	    .ONLINE {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .PRODUCCIÓN {background-color: ; color:green; padding:0px; font-weight: bold;}
+        .CALIDAD {background-color: ; color:blue; padding:0px; font-weight: bold;}
+        .LABORATORIO {background-color: ; color:darkred; padding:0px; font-weight: bold;}
+        .DESARROLLO {background-color: ; color:lightseagreen; padding:0px; font-weight: bold;}
+        .DATAGUARD {background-color: ; color:orangered; padding:0px; font-weight: bold;}
+	    .SIN {background-color: ; color:red; padding:0px; font-weight: bold;}
+        .DESINCORPORADA {background-color: ; color:red; padding:0px; font-weight: bold;}
+        .DISPONIBLE {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .REGISTRADO {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .INICIADO {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .NO {background-color: ; color:red; padding:0px; font-weight: bold;}
+	    .COMPLETADA {background-color: ; color:green; padding:0px; font-weight: bold;}
+	    .EN {background-color: ; color:blue; padding:0px; font-weight: bold;}
+	    .POR {background-color: ; color:red; padding:0px; font-weight: bold;}
+        .MTTO-PARCIAL {background-color: ; color:yellowgreen; padding:0px; font-weight: bold;}
+        .MTTO-SI {background-color: ; color:lightseagreen; padding:0px; font-weight: bold;}
+        .MTTO-NO {background-color: ; color:red; padding:0px; font-weight: bold;}
+        .CLUSTER-NO {background-color: ; color:red; padding:0px; font-weight: bold;}
+        .CLUSTER-SI {background-color: ; color: green; padding:0px; font-weight: bold;}
+        .'SENIAT.GOV.VE' {background-color: ; color: green; padding:0px; font-weight: bold;}
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #34495e;
@@ -310,7 +342,7 @@
                         <i class="fas fa-copyright me-1"></i>{{=T('Copyright')}} {{=request.now.year}} {{=T('All Rights Reserved')}}
                     </p>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 text-md-end">
                     <div class="footer-links">
                         <a href="{{=URL('default', 'about')}}">
                             <i class="fas fa-info-circle me-1"></i>{{=T('About')}}

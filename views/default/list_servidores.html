@@ -135,10 +135,7 @@ $(document).ready(function() {
             <a class="action-button" href="{{=URL(r=request,c='default',f='export_to_csv',args=['servidores'])}}" title="Exportar a CSV">
                 <img src="{{=URL(request.application,'static/images','csv.png')}}" alt="CSV">
             </a>
-            
-            <a class="action-button" href="{{=URL(r=request,c='bitacora',f='bitacora_servidores')}}" title="Bitácora de Servidores">
-                <img src="{{=URL(request.application,'static/images','bitacora.png')}}" alt="Bitácora">
-            </a>
+          
         </div>
     </div>
 
@@ -212,7 +209,7 @@ $(document).ready(function() {
                     
                     <td class="text-center">
                         <span class="badge {{='badge-success' if servidor.rac else 'badge-secondary'}}">
-                            {{=servidor.rac}}
+                            {{=show_status(servidor.rac)}}
                         </span>
                     </td>
                     
@@ -224,13 +221,13 @@ $(document).ready(function() {
                     
                     <td class="{{=servidor.ambiente_id.descri.upper() if servidor.ambiente_id else ''}}">
                         <span class="badge badge-{{='danger' if servidor.ambiente_id and servidor.ambiente_id.descri.upper() == 'PRODUCCION' else 'warning' if servidor.ambiente_id and servidor.ambiente_id.descri.upper() == 'PRUEBAS' else 'info'}}">
-                            {{=servidor.ambiente_id.descri if servidor.ambiente_id else '-'}}
+                            {{=show_status(servidor.ambiente_id.descri) if servidor.ambiente_id else '-'}}
                         </span>
                     </td>
                     
                     <td class="text-center">
                         <span class="badge {{='badge-primary' if servidor.dominio else 'badge-light'}}">
-                            {{=servidor.dominio if servidor.dominio else 'Sin dominio'}}
+                            {{=show_status(servidor.dominio) if servidor.dominio else 'Sin dominio'}}
                         </span>
                     </td>
                     
@@ -238,7 +235,7 @@ $(document).ready(function() {
                     
                     <td class="text-center">
                         <span class="badge {{='badge-success' if servidor.mtto_logs else 'badge-danger'}}">
-                            {{='ACTIVO' if servidor.mtto_logs else 'INACTIVO'}}
+                            {{=show_status(servidor.mtto_logs)}}
                         </span>
                     </td>
                     
@@ -257,10 +254,7 @@ $(document).ready(function() {
                     </td>
                     
                     <td class="actions-cell">
-                        <a href="{{=URL(r=request,c='default',f='view_servidor',args=[servidor.id])}}" title="Ver servidor">
-                            <img src="{{=URL(request.application,'static/images','view.png')}}" alt="Ver" class="action-icon">
-                        </a>
-                        
+                   
                         <a href="{{=URL(r=request,c='default',f='edit_servidor',args=[servidor.id])}}" title="Editar servidor">
                             <img src="{{=URL(request.application,'static/images','edit-1.ico')}}" alt="Editar" class="action-icon">
                         </a>
@@ -273,14 +267,10 @@ $(document).ready(function() {
                             <img src="{{=URL(request.application,'static/images','llave.png')}}" alt="Cuentas" class="action-icon">
                         </a>
                         
-                        <a href="{{=URL(r=request,c='default',f='monitor_servidor',args=[servidor.id])}}" title="Monitorear servidor">
-                            <img src="{{=URL(request.application,'static/images','monitor.png')}}" alt="Monitor" class="action-icon">
-                        </a>
-                        
-                        <a href="{{=URL(r=request,c='default',f='delete_servidor',args=[servidor.id])}}" 
+<!--                         <a href="{{=URL(r=request,c='default',f='delete_servidor',args=[servidor.id])}}" 
                            onclick="return confirm('¿Está seguro de eliminar este servidor?')" title="Eliminar servidor">
                             <img src="{{=URL(request.application,'static/images','delete.png')}}" alt="Eliminar" class="action-icon">
-                        </a>
+                        </a> -->
                     </td>
                 </tr>
                 {{pass}}
