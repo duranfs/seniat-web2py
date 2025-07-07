@@ -1,20 +1,18 @@
 {{extend 'layout.html'}}
-<!--<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es">
--->
+
 <style>
 body {
     background-color: #8877e1;
     /*background-image: url('{{=URL("static", "images/fondo2.jpg")}}');*/
-    background-size: cover; /* Cubre toda la pantalla */
-    background-position: center; /* Centra la imagen */
-    background-repeat: no-repeat; /* Evita que se repita */
-    background-attachment: fixed; /* Fija la imagen al desplazarse */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     text-align: center;
     color: white;
-    margin: 0; /* Elimina márgenes por defecto */
-    padding: 0; /* Elimina padding por defecto */
-    height: 100vh; /* Ocupa toda la altura de la ventana */
+    margin: 0;
+    padding: 0;
+    height: 100vh;
 }
 
 body .form_wrapper {
@@ -40,7 +38,6 @@ form {
     margin: auto;
 }
 
-/* Clase para títulos */
 .titulo_ppal {
     font-weight: bold;
     font-family: Arial, sans-serif;
@@ -52,46 +49,29 @@ form {
     height: 450px;
     border: 0;
     box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.4);
-    #transform: perspective(1000px) rotateY(-5deg);
-    #transition: transform 0.5s ease, box-shadow 0.5s ease;
+    /*transform: perspective(1000px) rotateY(-5deg);*/
+    /*transition: transform 0.5s ease, box-shadow 0.5s ease;*/
 }
 
-/* Efecto interactivo (opcional) */
 .efecto_3d:hover {
-    #transform: perspective(1000px) rotateY(0deg);
+    /*transform: perspective(1000px) rotateY(0deg);*/
     box-shadow: 20px 20px 30px rgba(0, 0, 0, 0.5);
+}
 
 .sombra_concentrica {
     box-shadow:
-        0 0 10px rgba(0, 0, 0, 0.3),   /* sombra interna cercana */
-        0 0 30px rgba(0, 0, 0, 0.2),   /* segunda capa más amplia */
-        0 0 60px rgba(0, 0, 0, 0.1);   /* tercera capa aún más amplia */
+        0 0 10px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(0, 0, 0, 0.2),
+        0 0 60px rgba(0, 0, 0, 0.1);
 }
-
-}
-
-
 </style>
 
-
-<head>
- </head>
-<body>
 <center>
-<h2 class="titulo_ppal">Sistema de Gestión Operativa e Inventario</h1><br/>
-<h2 class="titulo_ppal">División de Base de Datos y Plataforma de Internet SENIAT</h1><br/>
-<!-- <h1 style="font-size: 10px">{{=message}}</h1><br/>
-<h1 style="font-size: 18px">{{=user_ip}}</h1><br/> -->
-
-	<img class="efecto_3d sombra_concentrica" src="{{=URL(r=request,c='static/images',f='bd23.png')}}" />
-
-
+<h2 class="titulo_ppal">Sistema de Gestión Operativa e Inventario</h2><br/>
+<h2 class="titulo_ppal">División de Base de Datos y Plataforma de Internet SENIAT</h2><br/>
+<img class="efecto_3d sombra_concentrica" src="{{=URL(r=request,c='static/images',f='bd23.png')}}" />
 </center>
 
-
-</body>
-
-</html>
 
 
 
