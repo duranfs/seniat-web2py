@@ -1,3 +1,4 @@
+
 from gluon import current
 response = current.response
 

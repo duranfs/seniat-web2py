@@ -1,6 +1,11 @@
 {{extend 'layout.html'}}
+<!DOCTYPE html>
+<html>
+<head>
+  {{block head}}
+  <meta http-equiv="refresh" content="25">
 
-{{block head}}
+<body>
 <style>
   .card-shadow {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -60,7 +65,8 @@
   }
 </style>
 {{end}}
-
+</head>
+<body></body>
 <div class="container-fluid mt-4">
   <div class="row">
     <div class="col-lg-12">
@@ -192,7 +198,8 @@
     </div>
   </div>
 </div>
-
+</body>
+</html>
 {{block page_js}}
 <script>
 $(document).ready(function() {

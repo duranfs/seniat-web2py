@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
-   
 <head>
-
+    {{response.files.append(URL(r=request,c='static',f='templatemo_style.css'))}}
     <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
 
     <script>
@@ -110,7 +109,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            margin-bottom: 0px;
+            margin-bottom: 20px;
         }
         .ambiente-title {
             width: 100%;
@@ -197,7 +196,7 @@
         .resultado-ok { color: green; font-weight: bold; }
         .resultado-alerta { 
             color: red; 
-            /*font-weight: bold;*/
+            font-weight: bold;
             animation: blink 1s linear infinite;
         }
         .tooltip {
@@ -350,6 +349,7 @@
 
 {{ from collections import defaultdict }}
 {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
+
 {{ for m in mon: }}
  {{
     if '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
@@ -364,8 +364,8 @@
         {{ "Problemas en la conexion" }}    
     {{ pass }}
 {{ pass }}
+
 {{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
-{{ mon_set = set((m.tx_servidor.upper(), m.tx_instancia.upper()) for m in mon) }}
 
 {{ for ambiente in orden_ambientes: }}
     {{ if ambiente in agrupado: }}
@@ -373,17 +373,7 @@
         <div class="ambiente-title {{='ambiente-'+ambiente}}">
             <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
             {{if ambiente.upper()=='PRODUCCION':}} 
-                <!-- combo Ok o tistintos_ok -->
                 <div class="header-controls">
-                    <form method="get" id="filtroForm" class="mb-3">
-                     <label for="filtro_resultado" class="form-label">Parámetros a mostrar:</label>
-                        <select name="filtro_resultado" id="filtro_resultado" class="form-select form-select-sm w-auto d-inline-block" onchange="document.getElementById('filtroForm').submit();">
-                            <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
-                           <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Distinto de OK</option>
-                        </select>
-                    </form>
-                
-              
                     <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
                         Volver a la aplicación principal 
                     </button>
@@ -394,7 +384,8 @@
                 </div>
             {{pass}}        
         </div>
-        {{# Agrupar instancias por tipo de base de datos #}}
+        
+        {{# Agrupar instancias por tipo de base de datos }}
         {{ tipobd_dict = dict() }}
         {{ for servidor, instancias in agrupado[ambiente].items(): }}
             {{ for instancia, rutinas in instancias.items(): }}
@@ -403,78 +394,56 @@
                 {{ tipobd_dict[tipobd].append((servidor, instancia, rutinas)) }}
             {{ pass }}
         {{ pass }}
-        {{ # Orden deseado de tipos de base de datos }}
-        {{ orden_tipobd = ['ORACLE', 'MSSQLSERVER', 'POSTGRES', 'SQLSERVER', 'MYSQL', 'OTRO'] }}
-        {{ # Mostrar primero los de la lista, luego el resto }}
-        {{ for tipobd in orden_tipobd + [k for k in tipobd_dict.keys() if k not in orden_tipobd]: }}
-            {{ if tipobd in tipobd_dict: }}
-                <div class="ambiente-title" style="font-size:18px; color:#666; border:none; margin-top:10px;">{{=tipobd}}</div>
-                {{ for servidor, instancia, rutinas in tipobd_dict[tipobd]: }}
-                    {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
-                    <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
-                        <div class="instancia-header">
-                            {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }} <br>
-                            <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
-                                ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
-                            </span>
-                        </div>
-                        <div class="acciones">
-                            {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
-                            {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
-                        </div>
-                        <table class="rutinas-table">
-                            <thead>
-                                <tr>
-                                    <th>Rutina</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {{ for r in rutinas: }}
-                                <tr>
-                                    <td>{{=r.tx_rutina.capitalize()}}</td>
-                                    <td>
-                                        {{if r.tx_resultado == "OK":}}
-                                            <span class="tooltip">
-                                                <span style="text-align: center" class="resultado-ok">🟢</span>
-                                                <span class="tooltiptext">Estado: Correcto</span>
-                                            </span>
-                                        {{else:}}
-                                            <span class="tooltip">
-                                                <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
-                                                <span class="tooltiptext">Estado: Error o Alerta</span>
-                                            </span>
-                                        {{pass}}
-                                    </td>
-                                </tr>
-                                {{ pass }}
-                            </tbody>
-                        </table>
+        
+        {{# Ordenar: ORACLE primero, luego el resto alfabético }}
+        {{ tipobd_keys = list(tipobd_dict.keys()) }}
+        {{ tipobd_keys_ordenados = ['ORACLE'] + sorted([k for k in tipobd_keys if k != 'ORACLE']) if 'ORACLE' in tipobd_keys else sorted(tipobd_keys) }}
+        {{ for tipobd in tipobd_keys_ordenados: }}
+            <div style="width:100%;font-weight:bold;font-size:18px;color:#3181cd;margin:10px 0 5px 0;">{{=tipobd}}</div>
+            {{ for servidor, instancia, rutinas in tipobd_dict[tipobd]: }}
+                {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
+                <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
+                    <div class="instancia-header">
+                        {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }}<br>
+                        <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
+                            ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
+                        </span>
                     </div>
-                {{ pass }}
-                {{ if basedatos_mon: }}
-                    {{ for bd in basedatos_mon: }}
-                        {{ amb_bd = bd.ambiente_id.descri.lower() if hasattr(bd.ambiente_id, 'descri') else 'otros' }}
-                        {{ servidor_bd = bd.servidor.nombre.upper() if hasattr(bd.servidor, 'nombre') else str(bd.servidor).upper() }}
-                        {{ instancia_bd = bd.nombre.upper() }}
-                        {{ tipobd_bd = bd.tipobd_id.descri.upper() if hasattr(bd.tipobd_id, 'descri') else 'OTRO' }}
-                        {{ if amb_bd == ambiente and tipobd_bd == tipobd and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
-                            <div class="instancia-card alerta {{=ambiente}}">
-                                <div class="instancia-header">
-                                    {{=instancia_bd}} ({{=servidor_bd}})<br>
-                                    <span class="db-version-11">No disponible / No se puede conectar</span>
-                                </div>
-                                <div class="acciones">
-                                    <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
-                                </div>
-                                <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
-                            </div>
-                        {{pass}}
-                    {{pass}}
-                {{pass}}
+                    <div class="acciones">
+                        {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
+                        {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
+                    </div>
+                    <table class="rutinas-table">
+                        <thead>
+                            <tr>
+                                <th>Rutina</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ for r in rutinas: }}
+                            <tr>
+                                <td>{{=r.tx_rutina.capitalize()}}</td>
+                                <td>
+                                    {{if r.tx_resultado == "OK":}}
+                                        <span class="tooltip">
+                                            <span style="text-align: center" class="resultado-ok">🟢</span>
+                                            <span class="tooltiptext">Estado: Correcto</span>
+                                        </span>
+                                    {{else:}}
+                                        <span class="tooltip">
+                                            <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
+                                            <span class="tooltiptext">Estado: Error o Alerta</span>
+                                        </span>
+                                    {{pass}}
+                                </td>
+                            </tr>
+                            {{ pass }}
+                        </tbody>
+                    </table>
+                </div>
             {{ pass }}
         {{ pass }}
-        {{# Fin agrupación por tipo de BD #}}
     </div>
     {{ pass }}
 {{ pass }}

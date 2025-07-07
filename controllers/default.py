@@ -3323,7 +3323,7 @@ def editar_actividades4():
 	#	form=crud.read(db.actividades_sd, actividad.id )
 
 	#form=crud.update(db.actividades_sd, actividad_reg.id, next=url('crear_actividades_sd'))
-	return 	form
+	return 	locals()
 
 
 def valida_actividad():
@@ -4562,7 +4562,7 @@ def editable_grid():
 
 #@auth.requires_membership('ADMIN')
 auth.add_permission(1, 'edit', db.auth_user)
-@auth.requires(auth.has_membership('ADMIN'))
+@auth.requires(auth.has_membership('DBA'))
 @auth.requires_login()
 def list_dba():
 	response.files.append(URL(request.application,'static','data_table.css'))
@@ -4575,41 +4575,16 @@ def list_dba():
 	
 
 auth.add_permission(1, 'edit', db.auth_user)
-@auth.requires(auth.has_membership('ADMIN'))
+@auth.requires(auth.has_membership('DBA'))
 @auth.requires_login()
 def edit_dba():
 	dba_id=request.args(0)
-	create = auth.has_membership('ADMIN'),
-	editable = auth.has_membership('ADMIN'),
-	deletable = auth.has_membership('ADMIN'),
+	create = auth.has_membership('SYSTEM'),
+	editable = auth.has_membership('DBA'),
+	deletable = auth.has_membership('SYSTEM'),
 	dba=db.auth_user[dba_id] or redirect(error_page)
 	form=crud.update(db.auth_user,dba, next=url('list_dba'))
 	return dict(form=form)
-
-
-@auth.requires_login()
-def list_persons():
-	company_id=request.args(0)
-	company=db.company[company_id]
-	if company:
-		session.recent_companies = add(session.recent_companies,company)
-		db.person.company.default=company_id
-		db.person.company.writable=False
-		db.person.company.readable=False
-		form=crud.create(db.person)
-		persons=db(db.person.company==company.id)\
-			.select(orderby=db.person.name)
-	else:
-		form=None
-		persons=db(db.person.id>0).select(orderby=db.person.name)
-	return dict(company=company,persons=persons,form=form)
-
-@auth.requires_login()
-def view_person():
-	person_id=request.args(0)
-	person=db.person[person_id] or redirect(error_page)
-	session.recent_persons = add(session.recent_persons,person)
-	return dict(person=person)
 
 @auth.requires_login()
 def view_basedatos():
@@ -8660,7 +8635,7 @@ def dashboard():
 			})
 		
 
-		return dict(
+	return dict(
 		servidores=servidores,
 		bases_datos=bases_datos,
 		time=request.now

@@ -9,8 +9,8 @@
     {{asignaciones = db(db.rutina_status.id>0).select()}}
     
     <div class="table-responsive">
-        <table class="table table-sm table-bordered">
-            <thead class="thead-light">
+        <table class="tablex table-sm table-bordered">
+            <thead class="thead-lightxxx">
                 <tr>
                     <th>Rutina</th>
                     {{for servidor in servidores:}}
@@ -41,7 +41,7 @@
                                 {{else:}}
                                     <span class="badge badge-light" 
                                           onclick="manageAssignment({{=rutina.id}}, {{=servidor.id}}, false)">
-                                        ✖
+                                        
                                     </span>
                                 {{pass}}
                             </td>
@@ -199,8 +199,8 @@ $('#removeBtn').click(function() {
 }
 .badge {
     cursor: pointer;
-    font-size: 1rem;
-    padding: 0.35em 0.65em;
+    font-size: .80rem;
+    padding: 0.15em 0.15em;
 }
 .badge-success {
     background-color: #28a745;
