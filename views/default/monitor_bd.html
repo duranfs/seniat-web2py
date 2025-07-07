@@ -462,23 +462,15 @@
                             <div class="instancia-card alerta {{=ambiente}}">
                                 <div class="instancia-header">
                                     {{=instancia_bd}} ({{=servidor_bd}})<br>
-                                   {{
-                                        # Primero construimos la consulta para reutilizarla
-                                        query = (db.bdmon.tx_instancia == instancia_bd) & \
-                                                (db.bdmon.tx_servidor == servidor_bd) & \
-                                                (db.bdmon.tx_resultado == 'OK')
-                                        if db(query).select(limitby=(0,1)):  # Solo necesita saber si existe al menos un registro
-                                        }}
-                                            <span class="db-versionxx-11">Todos los Parametros 🟢 OK</span>
-                                        {{else:}}
-                                            <span class="db-version-11">No disponible / No se puede conectar</span>
-                                            <div class="acciones">
-                                                <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
-                                            </div>
-                                            <div style="color: #f44336; font-weight: bold; padding: 10px;">
-                                                La base de datos no está disponible o no se pudo conectar.
-                                            </div>
-                                        {{pass}}
+                                    {{if (db(db.bdmon.tx_instancia == instancia_bd)(db.bdmon.tx_servidor == servidor_bd)(db.bdmon.tx_resultado == 'OK').count()) > 0:}}
+                                        <span class="db-versionxx-11">Parametros 🟢</span>
+                                    {{else:}}
+                                        <span class="db-version-11">No disponible / No se puede conectar</span>
+                                          <div class="acciones">
+                                    <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
+                                </div>
+                                <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
+                                    {{pass}}
                                </div>
                               
                             </div>
