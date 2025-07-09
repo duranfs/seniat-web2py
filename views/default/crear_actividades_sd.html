@@ -116,7 +116,8 @@ select, option {
         height:20%;
         background-color:#D3D1C1;
         clear:both;
-        
+}
+
 #bd{
         height:10%;
         background-color:#BDD2EF;
@@ -125,6 +126,7 @@ select, option {
         overflow: hidden;
         border: blue 3px solid;
         overflow: auto;
+}
 
 #option {
     overflow: hidden;
@@ -466,8 +468,8 @@ jQuery(document).ready(function(){
                 <div class="row mb-3">
                     <div class="col-md-8">
                         <label for="descripcion" class="form-label">Descripcion de la actividad</label>
-                        <textarea class="form-control obligatorio" name="descripcion" id="descripcion" 
-                                  rows="3" maxlength="800" required></textarea>
+                        <textarea class="form-control obligatorio" name="descripcion" id="descripcion"
+                          rows="3" maxlength="800" required>{{=request.vars.descripcion or ''}}</textarea>
                         <div class="invalid-feedback">Ingrese una descripción</div>
                     </div>
                     
@@ -1064,8 +1066,5 @@ function initClock(){
   document.getElementById('clockDisplay').innerHTML = " Registro de actividades - hora : " + hr + ":" + min + ":" + sec ;
   setTimeout('initClock()', 500);
 
- }
-
+}
 </script>
-
-
