@@ -2133,10 +2133,11 @@ def func_mac_sd():
 			   
 			<table cellpadding='3' id='' style='max-width:100%; font-size: 12px;' class='table-bordered table-striped'>
 				<col style='width:5%;'>
-				<col style='width:15%'>
-				<col style='width:20%'>
 				<col style='width:10%'>
-				<col style='width:34%'>
+				<col style='width:10%'>
+				<col style='width:10%'>
+				<col style='width:10%'>
+    			<col style='width:34%'>
 				<col style='width:8%'>
 				<col style='width:8%'>
 				<col style='width:5%'>
@@ -2158,6 +2159,7 @@ def func_mac_sd():
 				ambiente = str(show_status(datos.ambiente_id.descri)) if datos.ambiente_id else ''
 				proyecto = str(datos.cod_proy.descri) if datos.cod_proy else ''
 				subproyecto = str(datos.cod_subp.descri) if datos.cod_subp else ''
+				servidor = str(datos.cod_servidor.nombre) if datos.cod_servidor and datos.cod_servidor > 0 else ''
 				basedatos = str(datos.cod_bd.nombre) if datos.cod_bd and datos.cod_bd > 0 else ''
 				
 				# Determinar estilo según tipo de incidencia
@@ -2180,6 +2182,7 @@ def func_mac_sd():
 					<td style='background-color: rgb(51,255,153)'>{ambiente}</td>
 					<td>{proyecto}</td>
 					<td>{subproyecto}</td>
+					<td>{servidor}</td>
 					<td>{basedatos}</td>
 					<td><a style='{desc_style}' href='editar_actividades3?act={datos.id}'>{desc_text}</a></td>
 					<td colspan='1'>{fecha_inicio}</td>
