@@ -12,65 +12,48 @@
 <link rel="stylesheet" href="{{=URL('static', 'bootstrap/css/bootstrap.min.css')}}">
 <!-- FontAwesome local -->
 <link rel="stylesheet" href="{{=URL('static', 'fontawesome/css/all.min.css')}}">
-
-    <!-- ========== PRELOAD DE RECURSOS CRÍTICOS ========== -->
-    <link rel="preload" href="{{=URL('static','css/bootstrap.min.css')}}" as="style">
-    <link rel="preload" href="{{=URL('static','js/bootstrap.bundle.min.js')}}" as="script">
-
-    <!-- ========== CSS LOCAL ========== -->
-    <link rel="stylesheet" href="{{=URL('static','css/bootstrap.min.css')}}">
-    <link rel="stylesheet" href="{{=URL('static','css/web2py-bootstrap4.css')}}">
-    <link rel="shortcut icon" href="{{=URL('static','images/favicon.ico')}}" type="image/x-icon">
-    <link rel="apple-touch-icon" href="{{=URL('static','images/favicon.png')}}">
-
-    <!-- Modernizr (para compatibilidad con navegadores antiguos) -->
-    <script src="{{=URL('static','js/modernizr-2.8.3.min.js')}}"></script>
-
-    <!-- jQuery local (mejor que CDN para evitar dependencias externas) -->
-    <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
-    {{include 'web2py_ajax.html'}} <!-- this includes jquery.js, calendar.js/.css and web2py.js -->
-    {{block head}}{{end}}
-    {{response.files.append(URL('static','css/bootstrap.min.css'))}}
-    {{response.files.append(URL('static','js/bootstrap.bundle.min.js'))}}
-    {{response.files.append(URL('static','css/custom.css'))}}
-
-    <!-- SENIAT Common CSS -->
-    <link rel="stylesheet" href="{{=URL('static','css/seniat-common.css')}}">
-    
-    <!-- Custom CSS -->
-    <style>
+<link rel="stylesheet" href="{{=URL('static','css/web2py-bootstrap4.css')}}">
+<link rel="stylesheet" href="{{=URL('static','css/custom.css')}}">
+<link rel="stylesheet" href="{{=URL('static','css/seniat-common.css')}}">
+<link rel="shortcut icon" href="{{=URL('static','images/favicon.ico')}}" type="image/x-icon">
+<link rel="apple-touch-icon" href="{{=URL('static','images/favicon.png')}}">
+<!-- Modernizr (para compatibilidad con navegadores antiguos) -->
+<script src="{{=URL('static','js/modernizr-2.8.3.min.js')}}"></script>
+{{include 'web2py_ajax.html'}} <!-- this includes jquery.js, calendar.js/.css and web2py.js -->
+{{block head}}{{end}}
+<style>
         textarea {width:800px}
         .PENDIENTE {background-color: white; color:black; padding:0px;}
-	    .oracle {color:yellow; padding:0px;}
-	    .postgres {color:blue; padding:0px;}
-	    .mysql {color:white; padding:0px;}
-	    .db2 {color:magenta; padding:0px; background-color: black}
-	    .RAC-SI {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .ASM-SI {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .NETWORKER {background-color: ; color:green; padding:0px; font-weight: bold;}
-        .A {background-color: ; color:orangered; padding:0px; font-weight: bold;}
-	    .VERITAS {background-color: ; color:blue; padding:0px; font-weight: bold;}
-	    .ONLINE {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .PRODUCCIÓN {background-color: ; color:green; padding:0px; font-weight: bold;}
-        .CALIDAD {background-color: ; color:blue; padding:0px; font-weight: bold;}
-        .LABORATORIO {background-color: ; color:darkred; padding:0px; font-weight: bold;}
-        .DESARROLLO {background-color: ; color:lightseagreen; padding:0px; font-weight: bold;}
-        .DATAGUARD {background-color: ; color:orangered; padding:0px; font-weight: bold;}
-	    .SIN {background-color: ; color:red; padding:0px; font-weight: bold;}
-        .DESINCORPORADA {background-color: ; color:red; padding:0px; font-weight: bold;}
-        .DISPONIBLE {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .REGISTRADO {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .INICIADO {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .NO {background-color: ; color:red; padding:0px; font-weight: bold;}
-	    .COMPLETADA {background-color: ; color:green; padding:0px; font-weight: bold;}
-	    .EN {background-color: ; color:blue; padding:0px; font-weight: bold;}
-	    .POR {background-color: ; color:red; padding:0px; font-weight: bold;}
-        .MTTO-PARCIAL {background-color: ; color:yellowgreen; padding:0px; font-weight: bold;}
-        .MTTO-SI {background-color: ; color:lightseagreen; padding:0px; font-weight: bold;}
-        .MTTO-NO {background-color: ; color:red; padding:0px; font-weight: bold;}
-        .CLUSTER-NO {background-color: ; color:red; padding:0px; font-weight: bold;}
-        .CLUSTER-SI {background-color: ; color: green; padding:0px; font-weight: bold;}
-        .'SENIAT.GOV.VE' {background-color: ; color: green; padding:0px; font-weight: bold;}
+        .oracle {color:yellow; padding:0px;}
+        .postgres {color:blue; padding:0px;}
+        .mysql {color:white; padding:0px;}
+        .db2 {color:magenta; padding:0px; background-color: black}
+        .RAC-SI {color:green; padding:0px; font-weight: bold;}
+        .ASM-SI {color:green; padding:0px; font-weight: bold;}
+        .NETWORKER {color:green; padding:0px; font-weight: bold;}
+        .A {color:orangered; padding:0px; font-weight: bold;}
+        .VERITAS {color:blue; padding:0px; font-weight: bold;}
+        .ONLINE {color:green; padding:0px; font-weight: bold;}
+        .PRODUCCIÓN {color:green; padding:0px; font-weight: bold;}
+        .CALIDAD {color:blue; padding:0px; font-weight: bold;}
+        .LABORATORIO {color:darkred; padding:0px; font-weight: bold;}
+        .DESARROLLO {color:lightseagreen; padding:0px; font-weight: bold;}
+        .DATAGUARD {color:orangered; padding:0px; font-weight: bold;}
+        .SIN {color:red; padding:0px; font-weight: bold;}
+        .DESINCORPORADA {color:red; padding:0px; font-weight: bold;}
+        .DISPONIBLE {color:green; padding:0px; font-weight: bold;}
+        .REGISTRADO {color:green; padding:0px; font-weight: bold;}
+        .INICIADO {color:green; padding:0px; font-weight: bold;}
+        .NO {color:red; padding:0px; font-weight: bold;}
+        .COMPLETADA {color:green; padding:0px; font-weight: bold;}
+        .EN {color:blue; padding:0px; font-weight: bold;}
+        .POR {color:red; padding:0px; font-weight: bold;}
+        .MTTO-PARCIAL {color:yellowgreen; padding:0px; font-weight: bold;}
+        .MTTO-SI {color:lightseagreen; padding:0px; font-weight: bold;}
+        .MTTO-NO {color:red; padding:0px; font-weight: bold;}
+        .CLUSTER-NO {color:red; padding:0px; font-weight: bold;}
+        .CLUSTER-SI {color: green; padding:0px; font-weight: bold;}
+        
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #34495e;
@@ -146,9 +129,9 @@
             box-shadow: none;
         }
 
-        .navbar-toggler-icon {
+        /* .navbar-toggler-icon {
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
+        } */
 
         .w2p_flash {
             margin: 0;
@@ -358,50 +341,53 @@
                 </div>
             </div>
         </div>
-    </footer>
-
-    <!-- Bootstrap JS local (al final del body) -->
-<script src="{{=URL('static', 'bootstrap/js/bootstrap.bundle.min.js')}}"></script>
-
-    <script src="{{=URL('static','js/web2py-bootstrap4.js')}}"></script>
-    {{block page_js}}{{end page_js}}
-    
-<script language="javaScript" type="text/javascript">
-<!--
-var autoCloseTimer;
-var timeoutObject;
-var timePeriod = 600000; // 10 min  ---90,1 seconds
-var warnPeriod = 5000; // 5 seconds
-// Warning period should always be a bit shorter then time period
-
-function promptForClose() {
 autoCloseDiv.style.display = 'block';
 autoCloseTimer = setTimeout("definitelyClose()", warnPeriod);
-}
-
-
-function autoClose() {
 autoCloseDiv.style.display = 'block'; //shows message on page
 autoCloseTimer = setTimeout("definitelyClose()", timePeriod); //starts countdown to closure
-}
-
-function cancelClose() {
 clearTimeout(autoCloseTimer); //stops auto-close timer
 autoCloseDiv.style.display = 'none'; //hides message
-}
-
-function resetTimeout() {
 clearTimeout(timeoutObject); //stops timer
 timeoutObject = setTimeout("promptForClose()", timePeriod); //restarts timer from 0
-}
 
-
-function definitelyClose() {
-
-window.top.location=self.location;
-}
-
-</script>
+    </footer>
+    <!-- Bootstrap JS local (al final del body) -->
+    <script src="{{=URL('static', 'bootstrap/js/bootstrap.bundle.min.js')}}"></script>
+    <script src="{{=URL('static','js/web2py-bootstrap4.js')}}"></script>
+    {{block page_js}}{{end page_js}}
+    <!-- Timeout/AutoClose scripts: si no es esencial, considera moverlo a una vista específica -->
+    <script type="text/javascript">
+    var autoCloseTimer;
+    var timeoutObject;
+    var timePeriod = 600000; // 10 min
+    var warnPeriod = 5000; // 5 seconds
+    function promptForClose() {
+        var autoCloseDiv = document.getElementById('autoCloseDiv');
+        if (autoCloseDiv) {
+            autoCloseDiv.style.display = 'block';
+            autoCloseTimer = setTimeout(definitelyClose, warnPeriod);
+        }
+    }
+    function autoClose() {
+        var autoCloseDiv = document.getElementById('autoCloseDiv');
+        if (autoCloseDiv) {
+            autoCloseDiv.style.display = 'block';
+            autoCloseTimer = setTimeout(definitelyClose, timePeriod);
+        }
+    }
+    function cancelClose() {
+        clearTimeout(autoCloseTimer);
+        var autoCloseDiv = document.getElementById('autoCloseDiv');
+        if (autoCloseDiv) autoCloseDiv.style.display = 'none';
+    }
+    function resetTimeout() {
+        clearTimeout(timeoutObject);
+        timeoutObject = setTimeout(promptForClose, timePeriod);
+    }
+    function definitelyClose() {
+        window.top.location = self.location;
+    }
+    </script>
 
 </body>
 </html>
