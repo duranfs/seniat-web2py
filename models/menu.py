@@ -77,9 +77,9 @@ dba_admin =  [
 reportes =  [
 	(T('Reportes'), False, '#', [
 				(T('Exportar inventario a Excel'), URL('default','exportar_inv_excel')==URL(),URL('default','exportar_inv_excel'),[]),
-				(T('Servidores'), URL('default','reporte_servidores')==URL(),URL('default','reporte_servidores'),[]),			
-				(T('Guardias'), URL('default','reporte_guardias')==URL(),URL('default','reporte_guardias'),[]),
-				(T('Servidores Parametrizado'), URL('default','rep_serv_respc')==URL(),URL('default','rep_serv_respc'),[]),]),
+				(T('Servidores'), URL('default','reporte_servidores')==URL(),URL('default','reporte_servidores'),[]),]),			
+				#(T('Guardias'), URL('default','reporte_guardias')==URL(),URL('default','reporte_guardias'),[]),
+				#(T('Servidores Parametrizado'), URL('default','rep_serv_respc')==URL(),URL('default','rep_serv_respc'),[]),]),
 			]
 
 graficas =  [
