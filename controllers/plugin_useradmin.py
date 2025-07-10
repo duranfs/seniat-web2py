@@ -91,7 +91,6 @@ def index():
         script=script
     )
 
-# ... (resto de funciones se mantienen igual)
 
 # ... (resto de las funciones se mantienen igual)
 

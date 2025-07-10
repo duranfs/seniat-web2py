@@ -668,7 +668,7 @@ def prueba_9i():
 	)
 
 
-@auth.requires_login()
+@auth.requires_membership('ADMIN')
 def asignar_rutinas():
 	"""
 	Asigna rutinas de monitoreo a servidores - Versión compatible con Web2py 3.12+
@@ -826,7 +826,7 @@ def guarda_log_bdmon():
 	
 	db.commit()
 
-
+@auth.requires_membership('ADMIN')
 def rutinas_asignadas():
 	# Esta función ahora es muy simple porque la vista hace las consultas directamente
 	return dict()
@@ -1419,7 +1419,7 @@ def basedatos_monitoreadas():
 	return dict(basedatos_mon=basedatos_mon,basedatos_st_mon=basedatos_st_mon,bd=outdb)
 
 
-@auth.requires_login()
+@auth.requires_membership('DBA')
 def list_servidores():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
@@ -1525,7 +1525,7 @@ def edit_servidor():
 	# Guardar la validación original del campo nombre
 	original_requires = db.servidores.nombre.requires
 
-	form=crud.update(db.servidores,servidor,next=url('list_servidores'))
+	form=crud.update(db.servidores,servidor,next=url('list_servidores'),deletable=auth.has_membership('ADMIN'))
 	
 	return dict(form=form)
 
@@ -1634,6 +1634,7 @@ def list_rutina_status():
 	rutina_status=db(db.rutina_status.id>0).select(orderby=db.rutina_status.rutina)
 	return dict(rutina_status=rutina_status,form=form, script=script)
 
+@auth.requires_membership('DBA')
 def list_rutinas():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
@@ -1654,7 +1655,7 @@ def edit_rutinas():
 	form=crud.update(db.rutinas,rutina,next=url('list_rutinas'))
 	return dict(form=form)
 
-@auth.requires_login()
+@auth.requires_membership('DBA')
 def view_rutinas():
 	rutina_id=request.args(0)
 	rutina=db.rutinas[rutina_id] or redirect(error_page)
@@ -3813,7 +3814,7 @@ def edit_basedatos():
 	#db.basedatos.servidor.readable=False
 	#if not basedatos.created_by==me: 
 		#crud.settings.update_deletable = False
-	form=crud.update(db.basedatos,basedatos,next=url('list_basedatos', session.servidor_aux))
+	form=crud.update(db.basedatos,basedatos,next=url('list_basedatos', session.servidor_aux), deletable=auth.has_membership('ADMIN'))
 	return dict(form=form)
 
 @auth.requires_login()
@@ -3821,7 +3822,7 @@ def edit_cuentas_so():
 	cuentas_so_id=request.args(0)
 	cuentas_so=db.cuentas_so[cuentas_so_id] or redirect(error_page)
 	session.servidor_id = cuentas_so.servidor_id
-	form=crud.update(db.cuentas_so,cuentas_so,next=url('list_cuentas_so', session.servidor_id))
+	form=crud.update(db.cuentas_so,cuentas_so,next=url('list_cuentas_so', session.servidor_id), deletable=auth.has_membership('ADMIN'))
 	return dict(form=form)
 
 @auth.requires_login()

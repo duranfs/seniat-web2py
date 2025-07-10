@@ -17,7 +17,7 @@ response.menu = [
 # provide shortcuts for development. you can remove everything below in production
 # ----------------------------------------------------------------------------------------------------------------------
 
-gestion_operativa_admin = [
+configuracion_actividades = [
     (T('Configurar Actividades'), False, '#', [
             (T('Ver tipo actividad'), URL('default','list_proyectos')==URL(),URL('default','list_proyectos'),[]),
 			(T('Crear tipo actividad'), URL('default','crear_proyectos')==URL(),URL('default','crear_proyectos'),[]),
@@ -28,7 +28,7 @@ gestion_operativa_admin = [
 ]
 
 
-gestion_operativa_analista_solutor = [
+actividades_dba = [
     (T('Actividades'), False, '#', [
 	      (T('Registrar Actividades '), URL('default','crear_actividades_sd')==URL(),URL('default','crear_actividades_sd'),[]),
           (T('Editar Actividades'), URL('default','list_actividades_sd')==URL(),URL('default','list_actividades_sd'),[]),
@@ -73,23 +73,8 @@ dba_admin =  [
 			]
 
 
-dba_solutor =  [
-	(T('DBA'), False, '#', [
-				(T('Administradores'), URL('default','list_dba')==URL(),URL('default','list_dba'),[]),
-				(T('Rol de Guardia'), URL('default','list_guardias')==URL(),URL('default','list_guardias'),[]),]),
-	(T('Tablas'), False, '#', [
-				(T('Tipo de Equipos'), URL('default','list_tipoequipo')==URL(),URL('default','list_tipoequipo'),[]),
-				(T('Tipos de Bases de Datos'), URL('default','list_dba')==URL(),URL('default','list_tipobd'),[]),
-				(T('Ubicacion/Area'), URL('default','list_dba')==URL(),URL('default','list_ubicacion'),[]),
-				(T('Ambiente'), URL('default','list_dba')==URL(),URL('default','list_ambiente'),[]),
-				(T('Versiones'), URL('default','list_dba')==URL(),URL('default','list_version'),[]),
-				(T('Sistema Operativo'), URL('default','list_dba')==URL(),URL('default','list_so'),[]),
-				(T('Estados Base de datos'), URL('default','list_dba')==URL(),URL('default','list_estados'),[]),
-				(T('Custodios por Aplicacion'), URL('default','list_dba')==URL(),URL('default','list_custodios'),[]),]),
-			]
 
-
-reportes_solutor =  [
+reportes =  [
 	(T('Reportes'), False, '#', [
 				(T('Exportar inventario a Excel'), URL('default','exportar_inv_excel')==URL(),URL('default','exportar_inv_excel'),[]),
 				(T('Servidores'), URL('default','reporte_servidores')==URL(),URL('default','reporte_servidores'),[]),			
@@ -116,9 +101,7 @@ administracion =[
 
 wiki =[
 	  (T('Wiki'), False, '#', [
-			
 	        (T('Wiki'), URL('default','list_program')==URL(),URL('default','list_program'),[]),
-            
              ]),
 		]			
 
@@ -135,7 +118,7 @@ monitor =[
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
-            (T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
+            #(T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
             #(T('Ejecutar SQL '), URL('default','ejecuta_comando_sql')==URL(),URL('default','ejecuta_comando_sql'),[]),
            
            # (T('9i'), URL('default','prueba_9i')==URL(),URL('default','prueba_9i'),[]),
@@ -161,8 +144,8 @@ if auth.is_logged_in():
 		_app = request.application
 		
 		if  auth.has_membership("DBA") and auth.has_membership("ADMIN") and auth.has_membership("SYSTEM"):
-			response.menu += gestion_operativa_admin
-			response.menu += gestion_operativa_analista_solutor
+			response.menu += configuracion_actividades
+			response.menu += actividades_dba
 			response.menu += inventario
 			response.menu += monitor
 			response.menu += graficas
@@ -170,21 +153,18 @@ if auth.is_logged_in():
 			response.menu += administracion
 			response.menu += wiki
 		elif auth.has_membership("DBA") and auth.has_membership("ADMIN"):
-			response.menu += gestion_operativa_admin
-			response.menu += gestion_operativa_analista_solutor
+			response.menu += configuracion_actividades
+			response.menu += actividades_dba
 			response.menu += inventario
 			response.menu += monitor
 			response.menu += graficas
-			#response.menu += dba_admin
-			#response.menu += administracion
-			#response.menu += system
 			response.menu += wiki
 		elif auth.has_membership("DBA") :
-			response.menu += gestion_operativa_analista_solutor
+			response.menu += actividades_dba
 			response.menu += inventario
 			response.menu += monitor
 			response.menu += graficas
-			response.menu += reportes_solutor
+			response.menu += reportes
 			response.menu += wiki
 		elif auth.has_membership("OPERADOR") :
 			response.menu += monitor_OPERADOR
