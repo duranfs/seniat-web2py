@@ -341,14 +341,6 @@
                 </div>
             </div>
         </div>
-autoCloseDiv.style.display = 'block';
-autoCloseTimer = setTimeout("definitelyClose()", warnPeriod);
-autoCloseDiv.style.display = 'block'; //shows message on page
-autoCloseTimer = setTimeout("definitelyClose()", timePeriod); //starts countdown to closure
-clearTimeout(autoCloseTimer); //stops auto-close timer
-autoCloseDiv.style.display = 'none'; //hides message
-clearTimeout(timeoutObject); //stops timer
-timeoutObject = setTimeout("promptForClose()", timePeriod); //restarts timer from 0
 
     </footer>
     <!-- Bootstrap JS local (al final del body) -->
