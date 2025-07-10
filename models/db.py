@@ -60,29 +60,29 @@ else:
     # session.connect(request, response, db = MEMDB(Client()))
     # ---------------------------------------------------------------------
 
-from gluon import current
+# from gluon import current
 
-# Configuración explícita de sesiones
-if not hasattr(db, 'web2py_session'):
-    db.define_table('web2py_session',
-        Field('locked', 'boolean', default=False),
-        Field('client_ip'),
-        Field('created_datetime', 'datetime', default=current.request.now),
-        Field('modified_datetime', 'datetime'),
-        Field('unique_key'),
-        Field('session_data', 'text'),
-        migrate='web2py_session.table'
-    )
+# # Configuración explícita de sesiones
+# if not hasattr(db, 'web2py_session'):
+#     db.define_table('web2py_session',
+#         Field('locked', 'boolean', default=False),
+#         Field('client_ip'),
+#         Field('created_datetime', 'datetime', default=current.request.now),
+#         Field('modified_datetime', 'datetime'),
+#         Field('unique_key'),
+#         Field('session_data', 'text'),
+#         migrate='web2py_session.table'
+#     )
 
-# Conexión forzada de sesiones
-current.session.connect(
-    current.request,
-    current.response,
-    db=db,
-    tablename='web2py_session',
-    #masterapp=None,  # Fundamental para evitar prefijos
-    #migrate=False    # No intentar crear tablas)
-)
+# # Conexión forzada de sesiones
+# current.session.connect(
+#     current.request,
+#     current.response,
+#     db=db,
+#     tablename='web2py_session',
+#     #masterapp=None,  # Fundamental para evitar prefijos
+#     #migrate=False    # No intentar crear tablas)
+# )
 # -------------------------------------------------------------------------
 # by default give a view/generic.extension to all actions from localhost
 # none otherwise. a pattern can be 'controller/function.extension'
