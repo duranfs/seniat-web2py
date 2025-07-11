@@ -675,19 +675,19 @@ def asignar_rutinas():
 	"""
 	# Cachear consultas de servidores y rutinas (válido por 1 hora)
 	cache_key = f"asignar_rutinas_data_{request.now}"
-	cached_data = cache.ram(cache_key, lambda: None, time_expire=100)
+	cached_data = cache.ram(cache_key, lambda: None, time_expire=1)
 	
 	if cached_data is None:
 		# Consulta optimizada para servidores
 		servidores=db((db.servidores.id > 0) & 
 					(db.servidores.status_mon == 'SI')).select(
 					orderby=db.servidores.nombre,
-					cache=(cache.ram, 100))
+					cache=(cache.ram, 1))
 		
 		# Consulta optimizada para rutinas
 		rutinas=db(db.rutinas.id > 0).select(
 				orderby=db.rutinas.nombre,
-				cache=(cache.ram, 100))
+				cache=(cache.ram, 1))
 		cached_data = (servidores, rutinas)
 	else:
 		servidores, rutinas = cached_data
@@ -706,7 +706,7 @@ def asignar_rutinas():
 			servidor_id = int(servidores_seleccionados[0])
 			rutinas_asignadas=[str(r.rutina) for r in 
 							db(db.rutina_status.servidor_id == servidor_id).select(
-							cache=(cache.ram, 100))]
+							cache=(cache.ram, 1))]
 		except ValueError:
 			pass
 	
@@ -1690,9 +1690,11 @@ def list_ubicacion():
 def list_proyectos():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+ 
 	script = SCRIPT('''$(document).ready(function(){
 	oTable = $('#list_servidores').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
+ 
 	form=SQLFORM.grid(db.proyectos, details=False, csv=False, 
 	create=False,editable=False,deletable=False,searchable=True, maxtextlength = 200)
 	db.proyectos.id.readable = False

@@ -811,6 +811,7 @@ db.define_table('bdmon',
 
 
 db.define_table('rutinas',
+    Field('tipobd_id', db.tipobd, ondelete='RESTRICT', label='Tipo de BD'),
     Field('nombre', 'string', required=True, label='Nombre de la rutina'),
     Field('descripcion', 'text', label='Descripción',
         represent=lambda x: MARKMIN(x), 
@@ -824,7 +825,7 @@ db.define_table('rutinas',
     format='%(nombre)s',
     migrate=migrate)
 
-
+db.rutinas.tipobd_id.requires = IS_IN_DB(db, 'tipobd.id', 'tipobd.descri')
 db.rutinas.sql_code.requires = IS_NOT_EMPTY()
 
 

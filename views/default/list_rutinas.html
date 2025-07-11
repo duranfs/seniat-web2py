@@ -89,13 +89,13 @@ $(document).ready(function() {
 <table id="list_rutinas" class="table-bordered table-striped smarttable">
 <thead>
     <tr>
-		<th>Nombre</th><th>Descripcion</th><th>Codigo SQL</th><th>Activo</th><th>Accion</th>
+		<th>Tipo BD</th><th>Nombre</th><th>Descripcion</th><th>Codigo SQL</th><th>Activo</th><th>Accion</th>
 	 </tr>    
 </thead>
 <tbody>
 {{for rutina in rutinas:}}
 		<tr>
-      
+    <td>{{=rutina.tipobd_id.descri}}</td>
     <td>{{=rutina.nombre}}</td>
 		<td>{{=rutina.descripcion}}</td>
 		<td>{{=rutina.sql_code}}</td>
