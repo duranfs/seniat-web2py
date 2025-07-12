@@ -29,9 +29,21 @@ form {
   max-width: 500px;
   margin: center;
 }
+
+.efecto_3d {
+    width: 1100px;
+    height: 350px;
+    border: 0;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.4);
+    /*transform: perspective(1000px) rotateY(-5deg);*/
+    /*transition: transform 0.5s ease, box-shadow 0.5s ease;*/
 }
 
 </style>
+
+<h2 class="titulo_ppal">Servicio Nacional Integrado de Administración Aduanera y Tributaria (SENIAT)</h2>
+<h2 class="titulo_ppal">División de base de datos</h2><br/>
+<h2 class="titulo_ppal">Sistema de Inventario y Monitoreo</h2><br/>
 
 <h2>{{=T( request.args(0).replace('_',' ').capitalize() )}}</h2>
 <div class="#content" id="web2py_user_form">
@@ -39,7 +51,9 @@ form {
 	<p>Usuario no autorizado, comuníquese con el administrador de la aplicación</p>
 {{else:}}
 
-  {{=form}} <img colspan="2" src="{{=URL(r=request,c='static/images',f='bd23.png')}}" style="border:0;width:1400px;height:500px"/>
+
+  {{=form}} 
+  <img class="efecto_3d sombra_concentrica" src="{{=URL(r=request,c='static/images',f='bd23.png')}}" />
 
   {{if request.args(0)=='login':}}
   	{{if not 'register' in auth.settings.actions_disabled:}}
