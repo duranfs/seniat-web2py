@@ -1,0 +1,1070 @@
+{{extend 'layout.html'}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/script.js'))}}
+{{response.files.append(URL(r=request,c='static',f='tooltip/style.css'))}}
+
+
+
+
+<script type="text/javascript">
+  <meta charset = "utf-8">  
+</script>  
+
+<script src="{{=URL('static','paging.js')}}"></script>
+<script type="text/javascript">
+            $(document).ready(function() {
+                $('#tableData').paging({limit:5});
+            });
+</script>
+
+
+
+<style type="text/css" media="screen">
+
+
+th, td {
+  border-color: blue;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+body {
+  //font-family: -apple-system, ".SFNSText-Regular", "Helvetica Neue", "Roboto", "Segoe UI", sans-serif;
+  background-color: rgba(0, 0, 0, 0.1);
+   background-color: #8877e1;
+}
+
+.toggle {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.toggle-switch {
+  display: inline-block;
+  background: #ccc;
+  border-radius: 16px;
+  width: 48px;
+  height: 22px;
+  position: relative;
+  vertical-align: middle;
+  transition: background 0.25s;
+}
+.toggle-switch:before, .toggle-switch:after {
+  content: "";
+}
+.toggle-switch:before {
+  display: block;
+  background: linear-gradient(to bottom, #fff 0%, #eee 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transition: left 0.25s;
+}
+.toggle:hover .toggle-switch:before {
+  background: linear-gradient(to bottom, #fff 0%, #fff 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.toggle-checkbox:checked + .toggle-switch {
+  background: #56c080;
+}
+.toggle-checkbox:checked + .toggle-switch:before {
+  left: 30px;
+}
+
+.toggle-checkbox {
+  position: absolute;
+  visibility: hidden;
+}
+
+.toggle-label {
+  margin-left: 5px;
+  position: relative;
+  top: 2px;
+}
+
+
+
+ 
+#midiv { text-align: center; } 
+
+select, option {
+    width: 200px;
+}
+
+#botones{
+        background-color: #40b5e1 ;
+        width:100%;
+        text-align: right;
+        padding: 10px 10px;
+        border-collapse: collapse;
+}
+#act{
+        height:100%;
+        background-color:white;
+        width:100%;
+         
+ }
+
+#pie{
+        height:20%;
+        background-color:#D3D1C1;
+        clear:both;
+}
+
+#bd{
+        height:10%;
+        background-color:#BDD2EF;
+        float:right;
+        width:30%;
+        overflow: hidden;
+        border: blue 3px solid;
+        overflow: auto;
+}
+
+#option {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+input:invalid {
+  border: 2px dashed red;
+}
+
+input:valid {
+  border: 2px solid black;
+}
+input[type=button], input[type=submit], input[type=reset] {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+.form-box {
+  padding: 8px; /*makes it look neat*/
+  border-radius: 4px; /*or 2px*/
+  border: 1px solid red;
+}
+
+.miDiv {
+  border: 3px outset #afc0c7;
+  background-color: #95abb4;    
+  text-align: center;
+}
+
+textarea {
+  resize: none;
+}
+
+textarea:invalid {
+  border: 2px dashed red;
+}
+
+textarea:valid {
+   border: 2px solid lime;
+}
+
+table {
+  border-collapse: collapse;}
+}
+
+caption {
+  font-family: 'Rock Salt', #cursive;
+  padding: 20px;
+  font-style: italic;
+  caption-side: bottom;
+  color: #666;
+  text-align: right;
+  letter-spacing: 1px;}
+}
+
+.texto {font-size: 12px; font-family: '-apple-system', #cursive; caption-side: bottom; text-align: left;  letter-spacing: 0px;}
+
+label {
+  #color: white;
+  padding: 8px;
+  font-size: 12px; font-family: '-apple-system ', #cursive; caption-side: bottom; text-align: left;  letter-spacing: 0px;}
+}
+
+
+input {
+  font-size: 12px; font-family: '-apple-system ', #cursive; caption-side: bottom; text-align: left;  letter-spacing: 0px;}
+}
+
+select {
+  font-size: 12px; font-family: '-apple-system ', #cursive; caption-side: bottom; text-align: left;  letter-spacing: 0px;}
+}
+
+
+.select {
+  width: 100%;
+  min-width: 15ch;
+  max-width: 35ch;
+  border: 1px solid var(--select-border);
+  border-radius: 0.25em;
+  padding: 0.25em 0.5em;
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1.1;
+  background: linear-gradient(to bottom, #ffffff 0%, #e5e5e5 100%);
+}
+
+
+.success {background-color: #4CAF50;} /* Green */
+.info {background-color: #2196F3;} /* Blue */
+.warning {background-color: #ff9800;} /* Orange */
+.danger {background-color: #f44336;} /* Red */
+.other {background-color: #e7e7e7; color: black;} /* Gray */
+
+
+.imagen {
+  width: 8%;
+  text-align: center;
+}
+.botones {
+  width: 8%;
+  text-align: right;
+}
+
+.titulo {
+  #font-family: -apple-system, Arial Narrow, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  text-decoration: underline;
+  color: #333333;
+}
+
+.boton {
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0.5em 1.2em;
+  background: #318aac;
+  border: 2px solid;
+  border-color: #318aac;
+  position: relative;
+}
+.boton:before {
+  content:"";
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 0px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 1s ease;
+}
+.boton:hover:before {
+width: 100%;
+}
+
+.boton:hover {
+  background: #318aac;
+  color: #fff !important;
+}
+
+
+
+.float-container {
+    border: 2px solid #fff;
+    padding: 3px;
+    font-size: 13px;
+    width: 100%;
+}
+
+.float-xchild {
+    width: 100%;
+    float: center;
+    padding: 5px;
+    border: 2px solid red;
+}  
+
+#container {width:100%; text-align:left; background-color: rgb(10, 68, 87);}
+
+.center {
+    #display: inline-grid; #flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.fadeIn{
+    display: none;
+    #border: 1px ouset red;
+    #background-color: lightblue;
+    padding: 0px 0px;
+    width: 100%;
+    height: 18px;
+    #box-shadow: 8px 8px 5px #444;
+}
+
+.textarea {
+  display: flex;
+  align-items: center;
+  #vertical-align: center;
+}
+
+.pushable {
+  background: hsl(210deg 100% 32%);
+  border : none;
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  outline-offset: 4px;
+}
+
+.front {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 1.0rem;
+  background: hsl(215deg 100% 47%);
+  color: white;
+  transform: translateY(-6px);
+}
+
+.pushable:focus:not(:focus-visible){
+  outline: none;
+}
+
+.pushable:hover .front{
+  transform: translateY(-6px);
+}
+
+.pushable:active .front{
+  transform: translateY(-2px);
+}
+
+.div-1 {
+    width: 100%;
+    height: 10px;
+    box-shadow: 0 10px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    border-radius: 1px;
+}
+
+.div-2 {
+    width: 100px;
+    height: 100px;
+    box-shadow: width:100%;height: 100%;box-shadow: 0 0 5px #aaa inset;
+    border-radius: 10px;
+}
+
+.custom-select {
+  position: relative;
+  font-family: Arial;
+  cursor: pointer;
+  padding: 3px;
+}
+
+.custom-select select {
+  display: none;
+}
+
+.select-selected {
+  background-color: dodgerblue;
+}
+
+input[type=datetime-local]{
+  padding: 7px;
+  border-radius: 4px;
+  border-color: lightblue;
+}
+
+input[type=text]{
+  padding: 7px;
+  border-radius: 4px;
+  border-color: lightblue;
+}
+
+input[type=checkbox]{
+  padding: 1px;
+  border-radius: 1px;
+  border-color: lightblue;
+}
+
+textarea{
+  border-radius: 4px;
+  border-color: lightblue;
+}
+
+.form-label {
+  font-size: 1.2rem; /* Ejemplo: 20px */
+  font-weight: 600;  /* Negrita */
+}
+</style>
+
+
+<script>
+jQuery(document).ready(function(){
+   jQuery('.smarttable').dataTable();
+   jQuery('#bd').hide();
+   jQuery('#act').hide();
+   actualiza_actividades;
+   {{pass}}
+});
+</script>
+{{=script}}
+
+
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Registrar actividades</h4>
+        </div>
+        
+        <div class="card-body">
+            <form id="actividadForm" class="needs-validation" novalidate action="" enctype="multipart/form-data" method="post">
+                <input type="hidden" name="_formname" value="formaActHTML"/>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="cod_proy" class="form-label">Tipo de actividad</label>
+                        <select name="cod_proy" class="form-select obligatorio" required
+                                onchange="jQuery('#cod_subp').empty(); ajax('subproyecto', ['cod_proy'], 'cod_subp');">
+                            {{for pa in proyectos:}}
+                            <option value="{{=pa.id}}" {{="selected" if str(pa.id)==request.vars.cod_proy else ""}}>
+                                {{=pa.descri}}
+                            </option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione tipo de actividad</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_subp" class="form-label">Subactividad</label>
+                        <select name="cod_subp" id="cod_subp" class="form-select obligatorio" required>
+                            {{for datos in subproyectos:}}
+                            <option value="{{=datos.id}}">{{=str(datos.descri) }}</option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione subactividad</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_servidor" class="form-label">Servidor</label>
+                        <select name="cod_servidor" class="form-select obligatorio" required
+                                onchange="jQuery('#cod_bd').empty(); ajax('func_bd', ['cod_servidor'], 'cod_bd');">
+                            {{for ser in servidores:}}
+                            <option value="{{=ser.id}}" {{="selected" if str(ser.id)==request.vars.cod_servidor else ""}}>
+                                {{=ser.nombre}}
+                            </option>
+                            {{pass}}
+                        </select>
+                        <div class="invalid-feedback">Seleccione un servidor</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label for="descripcion" class="form-label">Descripcion de la actividad</label>
+                        <textarea class="form-control obligatorio" name="descripcion" id="descripcion"
+                          rows="3" maxlength="800" required>{{=request.vars.descripcion or ''}}</textarea>
+                        <div class="invalid-feedback">Ingrese una descripción</div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="cod_bd" class="form-label">Base de Datos</label>
+                        <select name="cod_bd" id="cod_bd" class="form-select">
+                            {{for datos in basedatos:}}
+                            <option value="{{=datos.id}}">{{=str(datos.nombre) }}</option>
+                            {{pass}}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                        <input type="datetime-local" class="form-control obligatorio" name="fecha_inicio" 
+                               id="fecha_inicio" required onchange="actualiza_actividades(); resta();">
+                        <div class="invalid-feedback">Ingrese fecha válida</div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                        <input type="datetime-local" class="form-control obligatorio" name="fecha_fin" 
+                               id="fecha_fin" required onchange="resta();">
+                        <div class="invalid-feedback">Ingrese fecha válida</div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="horas_laboradas" class="form-label">Horas</label>
+                        <input type="text" class="form-control" name="horas_laboradas" 
+                               id="horas_laboradas" value="0.00" readonly>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="horas_extras" class="form-label">Extras</label>
+                        <input type="text" class="form-control" name="horas_extras" 
+                               id="horas_extras" value="0.00" readonly>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select id="tipo" name="tipo" class="form-select obligatorio" required>
+                            <option value="P">PRESENCIAL</option>
+                            <option value="R">REMOTO</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un tipo</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="producto" class="form-label">Producto</label>
+                        <select id="producto" name="producto" class="form-select obligatorio" required>
+                            <option value="CORREO">CORREO</option>
+                            <option value="INFORME">INFORME</option>
+                            <option value="DOCUMENTO">DOCUMENTO</option>
+                            <option value="CC">CC</option>
+                            <option value="WHATSAPP">WHATSAPP</option>
+                            <option value="LLAMADA">LLAMADA</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un producto</div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="completado" class="form-label">Estatus</label>
+                        <select id="completado" name="completado" class="form-select obligatorio" required>
+                            <option value="CERRADA">CERRADA</option>
+                            <option value="ABIERTA">ABIERTA</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione un estatus</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="incid_bd" name="incid_bd" onclick="fade2()">
+                            <label class="form-check-label" for="incid_bd">Incidencia BD</label>
+                        </div>
+                        
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="incid_otros" name="incid_otros" onclick="fade();fade3();">
+                            <label class="form-check-label" for="incid_otros">Incidencia Otros</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fade" class="fadeIn mb-3" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label for="obs_otros" class="form-label">Observaciones</label>
+                            <textarea class="form-control" name="obs_otros" id="obs_otros" rows="1" maxlength="300"></textarea>
+                        </div>
+                        <div class="col-md-4 mt-4 pt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="otros_afecta" name="otros_afecta">
+                                <label class="form-check-label" for="otros_afecta">Afectó otras BD</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fade2" class="fadeIn mb-3" style="display:none;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="bd_afecta" name="bd_afecta">
+                        <label class="form-check-label" for="bd_afecta">Afectó otras BD</label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        {{=A(IMG(_src=URL(request.application,'static/images','marcapaginas.png'),
+                            _alt="Gestión de Actividades", _title="Gestión de Actividades",
+                            _class="click", _style="border:2;width:40px;height:50px"),
+                            _href=URL(r=request,c='default',f='list_actividades_sd',args=[]))}}
+                        
+                        {{=A(IMG(_src=URL(request.application,'static/images','contactos.png'),
+                            _alt="Bitácora de actividades", _title="Bitácora de actividades",
+                            _class="click", _style="border:2;width:40px;height:40px"),
+                            _href=URL(r=request,c='bitacora',f='bitacora_actividades_sd',args=[]))}}
+                        
+                        {{=A(IMG(_src=URL(request.application,'static/images','libro.png'),
+                            _alt="Subproyectos", _title="Subproyectos",
+                            _class="click", _style="border:2;width:40px;height:40px"),
+                            _href=URL(r=request,c='subproyectos',f='crear_subproyectos',args=[]))}}
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="bi bi-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<div  class="float-child" id="bd" style="text-decoration: bold; font-size: 12px; width: 100%; height: 250px; overflow-y: scroll; float: left;">
+<table id="basedatos" class="smarttable table table-bordered table-striped" >
+    <col style="width:5%">
+    <col style="width:5%"> 
+    <col style="width:5%">  
+    <col style="width:5%">  
+    <col style="width:40%">  
+<thead> <tr><th>Ambiente</th>
+            <th>Servidor</th>
+            <th>IP</th>
+            <th>BD</th>
+            <th>Descripcion</th> 
+        </tr></thead>
+<tbody>
+{{for a in appl:}}
+<tr>
+    <td>{{=a.servidor.ambiente_id.descri}}</td>
+    <td>{{=a.servidor.nombre}}</td>
+    <td>{{=a.servidor.ip}}</td>
+    <td>{{=a.nombre}}</td>
+    <td>{{=a.appl}}</td></tr>
+{{pass}}
+</tbody>
+</table>
+</div>
+
+
+{{if 'tablaHTML':}}
+<div style='max-width:95%;'  class='container card-body' id="act"></div>
+{{pass}}
+
+</div> <!-- div principal -->
+
+
+<script type="text/javascript">
+
+window.onload = initClock;
+	
+$(document).ready( function() {
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('fecha_inicio').value = now.toISOString().slice(0,16);
+    document.getElementById('fecha_fin').value = now.toISOString().slice(0,16);
+    
+    actualiza_actividades();
+
+    jQuery('#cod_subp').empty();
+    ajax('subproyecto', ['cod_proy'], 'cod_subp');
+ 
+    jQuery('#cod_bd').empty();
+    ajax('func_bd', ['cod_servidor'], 'cod_bd');
+    
+    document.getElementById("incid_otros").checked = false;
+
+});
+
+
+function fade(){
+    $('#fade').toggle();
+}
+
+function fade2(){
+    $('#fade2').toggle();
+}
+
+function fade3(){
+    $('#fade3').toggle();
+}
+
+$('form').submit(function(){
+			// Validando los campos obligatorios
+			flag = true;
+			var 
+			campos=$('.obligatorio');
+			campos.each(function(){
+				if(!$(this).val()){
+					//alert('validando campos obligatorio');
+					 flag = false;
+				}});
+
+			  var inicio = new Date(document.getElementById("fecha_inicio").value);
+        var fin = new Date(document.getElementById("fecha_fin").value);
+        var fechaActual = new Date();
+        if (fin < inicio){
+              alert("La fecha final de la actividad debe ser mayor a la fecha inicial");
+              return false;
+        }
+       
+       //  if (fin > fechaActual){
+       //    alert("Fecha final de la actividad es  mayor a la fecha actual"); 
+       //    return false;
+       // }
+
+       // if (inicio > fechaActual){
+       //    alert("Fecha inicio de la actividade es mayor a la fecha actual"); 
+       //    return false;
+       // }
+        else  if(!flag){
+                alert('Faltó llenar algún campo ó algún valor está en cero');
+                return false;
+        }}
+);
+	
+
+$('#cod_proyx').change(function(){	
+			alert($(cod_proy).val());
+});
+
+
+$('#fecha_iniciox').change(function(){  
+      fecha = new Date(document.getElementById("fecha_inicio").value);
+      document.getElementById("fecha_fin").value = fecha;
+});
+
+
+function actualiza_actividades(){
+		ajax('{{=URL("default", "func_mac_sd")}}',['fecha_inicio'], 'act');	
+			jQuery('#act').show();
+}
+
+//$('#fecha_inicio').change(function(){
+//			ajax('{{=URL("default", "func_mac_sd")}}',['fecha_inicio'], 'act');	
+//			jQuery('#act').show();
+//		})
+
+
+function valida_fechas() {
+        var inicio = new Date(document.getElementById("fecha_inicio").value);
+        var fin = new Date(document.getElementById("fecha_fin").value);
+        var actualDate = new Date();
+        if (fin < inicio){
+              alert("La fecha final de la actividad debe ser mayor a la fecha inicial");
+        }
+        if (fin > actualDate){
+           alert("La fecha fin mayor a la fecha actual"); 
+        }
+
+        if (inicio > actualDate){
+           alert("La fecha inicio mayor a la fecha actual"); 
+        }
+    }
+
+function resta(){
+
+  var now = new Date();
+  var dia_actual = now.getDate();
+  var inicio = new Date(document.getElementById("fecha_inicio").value);
+  var fin = new Date(document.getElementById("fecha_fin").value);
+
+  //if (dia_actual == inicio.getDate()){
+  
+      var hi = inicio.getTime();
+      var hf = fin.getTime();
+      var extras = 0;
+
+      var first = inicio.getDate() - inicio.getDay(); //domingo del fin de semana
+      var last =  first + 6; //sabado del fin de semana
+
+      var dia_semana = inicio.getDay(); // dia de la semana (0..6) 6-sabado, 0-domingo
+
+      if (dia_semana == 0 || dia_semana == 6 ){
+        //alert('Fin de semana');
+        if (hi <= hf)
+      {
+          var difference = Math.abs(fin-inicio);
+          var horas = difference / 1000 / 60 / 60;
+            document.getElementById("horas_laboradas").value = '0.00';   
+            document.getElementById("horas_extras").value = horas.toFixed(2); 
+            //document.getElementById("horas_extras").value = dia_semana; 
+      
+      } else { 
+            document.getElementById("horas_laboradas").value = '0.00';   
+            document.getElementById("horas_extras").value = '0.00'; 
+      }
+        
+      } 
+      else 
+      {
+      if (hi <= hf)
+      {
+          var difference = Math.abs(fin-inicio);
+          var horas = difference / 1000 / 60 / 60;
+          //horas = convierte_60(horas);
+          //horas = horas / 60 ;
+          extras = extra(); 
+          if (extras > 0)
+          {
+             horas = horas - extras;
+            document.getElementById("horas_laboradas").value = horas.toFixed(2); 
+          } else {
+            document.getElementById("horas_laboradas").value = horas.toFixed(2); 
+            //document.getElementById("horas_extras").value = dia_semana; 
+          }
+      } else { 
+            document.getElementById("horas_laboradas").value = '0.00';   
+            document.getElementById("horas_extras").value = '0.00'; 
+      }
+    }
+}
+
+
+function convierte_60(h){
+  h = (h * 60) ;
+  return h;
+}
+
+function pad(n) {
+    return n<10 ? '0'+n : n
+}
+
+
+
+function extra(){
+  inicio = new Date(document.getElementById("fecha_inicio").value);
+  fin = new Date(document.getElementById("fecha_fin").value);
+ 
+  var i_hora8am = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 8, 0, 0  );
+  var i_hora5pm = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 17, 0, 0  );
+  var i_hora23 = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 23, 59, 59  );
+
+  var f_hora8am = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 8, 0, 0  );
+  var f_hora5pm = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 17, 0, 0  );
+  var f_hora23 = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 23, 59, 59  );
+  var f_hora00 = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 0, 0, 1  );
+  var f_hora7am = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 7, 59, 59  );
+
+  // anula las horas en 0
+  //var f1 = new Date(2015, 11, 31);
+  //var f2 = new Date(2015, 11, 31, 2);
+  //f1.setHours(0,0,0,0)
+  //f2.setHours(0,0,0,0)
+  //if (f1.getTime() == f2.getTime()){
+  //  console.log("son iguales")
+  //}
+
+  //var dia1 = inicio.getDate();
+  //var dia2 = fin.getDate();
+  //var diferencia_dias = Math.abs(dia2 - dia1);
+  
+  // 15 horas extras cada dia
+
+  var diferencia_dias = Math.trunc((fin.getTime() - inicio.getTime())/(1000 * 60 * 60 * 24));
+
+
+  if (inicio.getDate() == fin.getDate()){
+    if (inicio < i_hora8am && (fin >= f_hora8am && fin < f_hora5pm) ){
+      a = calcula_diferencia(i_hora8am, inicio);
+      horas = a;
+    }
+    else if (inicio < i_hora8am && fin >= f_hora5pm){
+      a = calcula_diferencia(i_hora8am, inicio);
+      b  = calcula_diferencia(fin,f_hora5pm);
+      horas = a + b;
+    }
+    else if (fin >= f_hora5pm && (inicio >= i_hora8am && inicio < i_hora5pm)){
+      a = calcula_diferencia(f_hora5pm, fin);
+      horas = a;
+    }
+    else if (inicio < i_hora8am && fin < f_hora8am || inicio >= i_hora5pm && fin >= f_hora5pm){
+        a = calcula_diferencia(fin, inicio);
+        horas = a;  
+    }
+    else{
+      horas=0;
+    }
+
+  }
+ 
+
+  else if ( (fin.getDate() - inicio.getDate()) == 1 ){
+     //alert( fin.getDate() - inicio.getDate() )
+    if (inicio <= i_hora8am && fin <= f_hora7am){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7;
+        c = calcula_diferencia(fin, f_hora00);  
+        horas = a + b + c ;
+    }
+    if (inicio <= i_hora8am && ( fin >= f_hora7am && fin <= f_hora5pm) ){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7;
+        c = 8;
+        horas = a + b + c ;
+    }
+    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && fin <= f_hora7am){
+    
+        a = 7;
+        b = calcula_diferencia(fin, f_hora00);  
+        horas = a + b;
+    }
+    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora7am && fin <= f_hora5pm) ){
+        a = 7;
+        b = 8;  
+        horas = a + b;
+    }
+    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora5pm) ){
+        //alert('paso1')
+        a = 7;
+        b = 8;
+        d = calcula_diferencia(fin, f_hora5pm);  
+        horas = a + b + d;
+    }
+    
+   else if (inicio <= i_hora8am && fin >= f_hora5pm ){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7;
+        c = 8;
+        d = calcula_diferencia(fin, f_hora5pm);
+        horas = a + b + c + d;
+    }
+   else if ( inicio >= i_hora5pm && fin <= f_hora7am){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = calcula_diferencia(fin, f_hora00);  
+        horas = a + b;
+    }
+    else if (inicio >= i_hora5pm && (fin >= f_hora8am && fin <= f_hora5pm) ){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = 8;  
+        horas = a + b;  
+    }
+    else if (inicio >= i_hora5pm && ( fin >= f_hora5pm) ){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = 13;
+        c = calcula_diferencia(fin, f_hora5pm);
+        horas = a + b + c;
+    }
+    else if (fin >= f_hora5pm){
+        a = calcula_diferencia(fin, f_hora5pm)
+        b = calcula_diferencia(i_hora8am, inicio);
+        c = calcula_diferencia(f_hora5pm, fin);
+        horas = a + b + c;
+    }
+}
+
+else if ( (fin.getDate() - inicio.getDate()) > 1) {
+   //alert( fin.getDate() - inicio.getDate() )
+ 
+    if (inicio <= i_hora8am && fin <= f_hora7am){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7 * diferencia_dias;
+        c = calcula_diferencia(fin, f_hora00);  
+        horas = a + b + c ;
+    }
+    if (inicio <= i_hora8am && ( fin >= f_hora7am && fin <= f_hora5pm) ){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7 * diferencia_dias;
+        c = 8 * diferencia_dias;
+        horas = a + b + c ;
+    }
+    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && fin <= f_hora7am){
+        a = 7 * diferencia_dias;
+        b = calcula_diferencia(fin, f_hora00);  
+        horas = a + b;
+    }
+    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora7am && fin <= f_hora5pm) ){
+        a = 7 * diferencia_dias;
+        b = 8 * diferencia_dias;  
+        horas = a + b;
+    }
+     else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora5pm) ){
+        a = 7 * diferencia_dias;
+        b = 8 * diferencia_dias;
+        d = calcula_diferencia(fin, f_hora5pm);  
+        horas = a + b + d;
+    }
+    else if (inicio <= i_hora8am && fin >= f_hora5pm ){
+        a = calcula_diferencia(i_hora8am, inicio);
+        b = 7 * diferencia_dias;
+        c = 8 * diferencia_dias;
+        d = calcula_diferencia(fin, f_hora5pm);
+        horas = a + b + c + d;
+    }
+    else if ( inicio >= i_hora5pm && fin <= f_hora7am){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = calcula_diferencia(fin, f_hora00); 
+        c = 15 * diferencia_dias; 
+        horas = a + b + c ;
+    }
+    else if (inicio >= i_hora5pm && (fin >= f_hora8am && fin <= f_hora5pm) ){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = 8 * diferencia_dias;  
+        horas = a + b;  
+    }
+    else if (inicio >= i_hora5pm && ( fin >= f_hora5pm) ){
+        a = calcula_diferencia(i_hora23, inicio);
+        b = 13 * diferencia_dias;
+        c = calcula_diferencia(fin, f_hora5pm);
+        horas = a + b + c;
+    }
+    else if (fin >= f_hora5pm){
+        //alert('paso')
+        a = calcula_diferencia(fin, f_hora5pm)
+        b = calcula_diferencia(i_hora8am, inicio);
+        c = calcula_diferencia(f_hora5pm, fin);
+        horas = a + b + c;
+    }
+}
+
+  //horas = convierte_60(horas);
+  document.getElementById("horas_extras").value = (horas).toFixed(2) ;
+  return horas;
+}
+
+
+
+function calcula_diferencia(h1, h2){
+    return (Math.abs(h1-h2) /1000 / 60 / 60);
+}
+
+function restaTiempoFecha(objDateInicio, objDateFin){
+    var diferencia = Math.abs(objDateFin.getTime() - objDateInicio.getTime());
+    var horas = diferencia / (60 * 60000);
+    alert(horas);
+    return horas;
+  }
+
+function getDateAgo(date, days) {
+  let dateCopy = new Date(date);
+  dateCopy.setDate(date.getDate() - days);
+  return dateCopy.getDate();
+}
+
+function getLastDayOfMonth(year, month) {
+  let date = new Date(year, month + 1, 0);
+  return date.getDate();
+}
+
+function getSecondsToday() {
+  let d = new Date();
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+}
+
+function getSecondsToTomorrow() {
+  let now = new Date();
+  let hour = now.getHours();
+  let minutes = now.getMinutes();
+  let seconds = now.getSeconds();
+  let totalSecondsToday = (hour * 60 + minutes) * 60 + seconds;
+  let totalSecondsInADay = 86400;
+  return totalSecondsInADay - totalSecondsToday;
+}
+
+function initClock(){
+  var now = new Date();
+  var hr = now.getHours();
+  var min = now.getMinutes();
+  var sec = now.getSeconds();
+  if (min < 10) min = "0" + min;
+  if (sec < 10) sec = "0" + sec;
+  //document.getElementById('picture').innerHTML = "{{URL('download', args=pic)}}"  ;
+  document.getElementById('clockDisplay').innerHTML = " Registro de actividades - hora : " + hr + ":" + min + ":" + sec ;
+  setTimeout('initClock()', 500);
+
+}
+</script>

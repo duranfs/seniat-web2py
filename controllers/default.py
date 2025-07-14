@@ -2172,7 +2172,7 @@ def crear_actividades_sd():
 	
 	now = datetime.datetime.now()
 	hoy = now.strftime("%Y-%m-%d")
-	
+	#tipos_bd = db(db.tipobd.id > 0).select() 
 	a=db.actividades_sd
 	mis_actividades = db(a.id>0)(a.fecha_inicio==formaAct.vars.fecha_inicio).select(orderby="fecha_inicio")
 	act_abiertas=db(a.id>0)(a.completado !='CERRADA').select(orderby=a.analista|a.fecha_inicio)
@@ -2181,6 +2181,15 @@ def crear_actividades_sd():
 	select(db.basedatos.nombre, db.basedatos.appl, db.basedatos.servidor, distinct=True, orderby="nombre")
 	return locals()
 
+def filtrar_servidores():
+    tipo_bd = request.vars.tipo_bd
+    if tipo_bd:
+        servidores = db((db.servidores.id == db.basedatos.servidor)(db.basedatos.tipo_bd == tipo_bd)).select()
+    else:
+        servidores = db(db.servidores.id > 0).select()
+    
+    options = [OPTION(servidor.nombre, _value=servidor.id) for servidor in servidores]
+    return XML(SELECT(*options, _name='cod_servidor', _id='cod_servidor', _class='form-select obligatorio'))
 
 def subproyecto():
 	#response.flash='Codigo del proyecto: ' + request.vars.cod_proy
