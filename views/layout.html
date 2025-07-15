@@ -24,8 +24,9 @@
 <style>
         textarea {width:800px}
         .PENDIENTE {background-color: white; color:black; padding:0px;}
-        .oracle {color:yellow; padding:0px;}
-        .postgres {color:blue; padding:0px;}
+        .ORACLE {color:green; padding:0px;}
+        .POSTGRESQL {color:rgb(161, 10, 47); padding:0px;}
+        .MSSQLSERVER {color:blue; padding:0px;}
         .mysql {color:white; padding:0px;}
         .db2 {color:magenta; padding:0px; background-color: black}
         .RAC-SI {color:green; padding:0px; font-weight: bold;}
@@ -129,10 +130,7 @@
             box-shadow: none;
         }
 
-        /* .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        } */
-
+    
         .w2p_flash {
             margin: 0;
             padding: 1rem;
@@ -210,7 +208,7 @@
         }
     </style>
 </head>
-<body onmousedown="resetTimeout();" onmouseup="resetTimeout();" onmousemove="resetTimeout();" onkeydown="resetTimeout();" onload="timeoutObject=setTimeout('promptForClose()',timePeriod);">
+<body>
     <div class="w2p_flash alert alert-dismissable">{{=response.flash or ''}}</div>
     
     <!-- Navbar -->
@@ -305,17 +303,6 @@
         {{end}}
     </main>
 
-    <div class="leftcolNon">
-    <div id='autoCloseDiv' style="display:none">
-    <center>
-    <b>Alerta de Inactividad!</b><br />
-    Esta página se recargará automáticamente a menos que le de 'Cancel.'
-    </p>
-    <input type='button' value='Load' onclick='definitelyClose();' />
-    <input type='button' value='Cancel' onclick='cancelClose();' />
-    </center>
-    </div>
-    </div>
 
     <!-- Footer -->
     <footer class="footer">
@@ -346,40 +333,6 @@
     <!-- Bootstrap JS local (al final del body) -->
     <script src="{{=URL('static', 'bootstrap/js/bootstrap.bundle.min.js')}}"></script>
     <script src="{{=URL('static','js/web2py-bootstrap4.js')}}"></script>
-    {{block page_js}}{{end page_js}}
-    <!-- Timeout/AutoClose scripts: si no es esencial, considera moverlo a una vista específica -->
-    <script type="text/javascript">
-    var autoCloseTimer;
-    var timeoutObject;
-    var timePeriod = 600000; // 10 min
-    var warnPeriod = 5000; // 5 seconds
-    function promptForClose() {
-        var autoCloseDiv = document.getElementById('autoCloseDiv');
-        if (autoCloseDiv) {
-            autoCloseDiv.style.display = 'block';
-            autoCloseTimer = setTimeout(definitelyClose, warnPeriod);
-        }
-    }
-    function autoClose() {
-        var autoCloseDiv = document.getElementById('autoCloseDiv');
-        if (autoCloseDiv) {
-            autoCloseDiv.style.display = 'block';
-            autoCloseTimer = setTimeout(definitelyClose, timePeriod);
-        }
-    }
-    function cancelClose() {
-        clearTimeout(autoCloseTimer);
-        var autoCloseDiv = document.getElementById('autoCloseDiv');
-        if (autoCloseDiv) autoCloseDiv.style.display = 'none';
-    }
-    function resetTimeout() {
-        clearTimeout(timeoutObject);
-        timeoutObject = setTimeout(promptForClose, timePeriod);
-    }
-    function definitelyClose() {
-        window.top.location = self.location;
-    }
-    </script>
 
 </body>
 </html>

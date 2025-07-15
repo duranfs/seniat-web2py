@@ -604,6 +604,12 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 		return m.id, error_msg, False
 
 def actualizar_y_mostrar_monitor_parallel(tipobd=None):
+	import threading
+	import logging
+	logging.basicConfig(level=logging.INFO)
+	thread_id = threading.current_thread().ident
+	logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo en paralelo: --------------------------------------")
+	
 	"""Función principal para monitoreo paralelo multi-BD"""
 	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias");
 	logging.error(f"Iniciando monitoreo: {tipobd} ")
@@ -623,6 +629,7 @@ def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 			m = futures[future]
 			try:
 				m_id, mensaje, success = future.result()
+		
 				logging.info(f"[MAIN] Resultado para {m.tx_instancia} ({m.id}): {mensaje[:100]}...")
 				if success:
 					conexiones_exitosas += 1
@@ -794,6 +801,8 @@ def asignar_rutinas():
 	cache_key = f"asignar_rutinas_data_{request.now}"
 	cached_data = cache.ram(cache_key, lambda: None, time_expire=1)
 	
+	tipos_bd = db(db.tipobd.id > 0).select()
+	
 	if cached_data is None:
 		# Consulta optimizada para servidores
 		servidores=db((db.servidores.id > 0) & 
@@ -896,7 +905,7 @@ def asignar_rutinas():
 		servidores=servidores,
 		rutinas=rutinas,
 		rutinas_asignadas=rutinas_asignadas,
-		servidores_seleccionados=servidores_seleccionados
+		servidores_seleccionados=servidores_seleccionados, tipos_bd=tipos_bd
 	)
 
 def guarda_log_bdmon():
