@@ -1834,7 +1834,7 @@ def list_proyectos():
 	oTable = $('#list_servidores').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
 	form=SQLFORM.grid(db.proyectos, details=False, csv=False, 
-	create=False,editable=False,deletable=False,searchable=True, maxtextlength = 200)
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
 	db.proyectos.id.readable = False
 	return dict(form=form, script=script)
 
