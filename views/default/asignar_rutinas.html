@@ -57,7 +57,7 @@
                value="{{=rutina.id}}" id="rutina{{=rutina.id}}"
                {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
         <label class="list-label" for="rutina{{=rutina.id}}">
-          {{=rutina.nombre}} <span class="text-muted">({{=rutina.tipobd_id.descri}})</span>
+          {{=rutina.nombre}} <span class="text-muted">({{=show_status(rutina.tipobd_id.descri)}})</span>
         </label>
       </div>
       {{pass}}
