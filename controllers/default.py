@@ -218,120 +218,120 @@ def user_conn():
 
 @auth.requires_login()
 def monitor_bd():
-    from gluon import current
-    from gluon.cache import Cache
-    from gluon.scheduler import Scheduler
-    import datetime
-    import hashlib
-    
-    # Obtener el objeto cache
-    cache = Cache(current.request)
-    
-    # Resto del código...
-    filtro_resultado = request.vars.get('filtro_resultado', 'todos')
-    tipo_bd = request.args(0) or 9
-    cache_key = hashlib.md5(f"monitor_bd_{tipo_bd}_{filtro_resultado}".encode()).hexdigest()
+	from gluon import current
+	from gluon.cache import Cache
+	from gluon.scheduler import Scheduler
+	import datetime
+	import hashlib
+	
+	# Obtener el objeto cache
+	cache = Cache(current.request)
+	
+	# Resto del código...
+	filtro_resultado = request.vars.get('filtro_resultado', 'todos')
+	tipo_bd = request.args(0) or 9
+	cache_key = hashlib.md5(f"monitor_bd_{tipo_bd}_{filtro_resultado}".encode()).hexdigest()
 
-    # Obtener la descripción del tipo de base de datos (con caché)
-    def get_tipo_bd_descri():
-        descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
-        return descri._extra['UPPER("tipobd"."descri")'] if descri else None
+	# Obtener la descripción del tipo de base de datos (con caché)
+	def get_tipo_bd_descri():
+		descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+		return descri._extra['UPPER("tipobd"."descri")'] if descri else None
 
-    tipo_bd_descri = cache.ram(f'tipo_bd_descri_{tipo_bd}', get_tipo_bd_descri, time_expire=3600)
-    
-    # Inicializar variables
-    now = datetime.datetime.now()
-    mensajes = None
+	tipo_bd_descri = cache.ram(f'tipo_bd_descri_{tipo_bd}', get_tipo_bd_descri, time_expire=3600)
+	
+	# Inicializar variables
+	now = datetime.datetime.now()
+	mensajes = None
 
-    # 1. Obtener datos de monitoreo con filtro (con caché)
-    def obtener_datos_actualizados():
-        query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
-        if filtro_resultado == 'distinto_ok':
-            query &= (db.bdmon.tx_resultado != 'OK')
-        return db(query).select(
-            orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina
-        )
+	# 1. Obtener datos de monitoreo con filtro (con caché)
+	def obtener_datos_actualizados():
+		query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
+		if filtro_resultado == 'distinto_ok':
+			query &= (db.bdmon.tx_resultado != 'OK')
+		return db(query).select(
+			orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina
+		)
 
-    mon = cache.ram(f'datos_mon_{cache_key}', obtener_datos_actualizados, time_expire=60)
+	mon = cache.ram(f'datos_mon_{cache_key}', obtener_datos_actualizados, time_expire=60)
 
-    # 2. Verificar si necesitamos actualización (con caché)
-    def verificar_actualizacion_necesaria():
-        ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(
-            db.bdmon.f_corrida, 
-            orderby=~db.bdmon.f_corrida
-        ).first()
+	# 2. Verificar si necesitamos actualización (con caché)
+	def verificar_actualizacion_necesaria():
+		ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(
+			db.bdmon.f_corrida, 
+			orderby=~db.bdmon.f_corrida
+		).first()
 
-        if not ultima_actualizacion or not ultima_actualizacion.f_corrida:
-            return True
+		if not ultima_actualizacion or not ultima_actualizacion.f_corrida:
+			return True
 
-        if isinstance(ultima_actualizacion.f_corrida, datetime.date):
-            ultima_actualizacion_dt = datetime.datetime.combine(
-                ultima_actualizacion.f_corrida, 
-                datetime.time.min
-            )
-        else:
-            ultima_actualizacion_dt = ultima_actualizacion.f_corrida
-            
-        diferencia = now - ultima_actualizacion_dt
-        return diferencia.total_seconds() > 1000
+		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+			ultima_actualizacion_dt = datetime.datetime.combine(
+				ultima_actualizacion.f_corrida, 
+				datetime.time.min
+			)
+		else:
+			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+			
+		diferencia = now - ultima_actualizacion_dt
+		return diferencia.total_seconds() > 1000
 
-    necesita_actualizar = cache.ram(f'actualizacion_necesaria_{cache_key}', 
-                                   verificar_actualizacion_necesaria, 
-                                   time_expire=30)
+	necesita_actualizar = cache.ram(f'actualizacion_necesaria_{cache_key}', 
+								   verificar_actualizacion_necesaria, 
+								   time_expire=30)
 
-    # 3. Procesamiento asíncrono si es necesario
-    if necesita_actualizar:
-        task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=300)
-        if not task_running:
-            try:
-                scheduler = Scheduler(db)
-                if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
-                    scheduler.queue_task(
-                        'actualizar_monitoreo_async', 
-                        timeout=3000,
-                        sync_output=5,
-                        immediate=True
-                    )
-                    cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=300)
-                    mensajes = "Los datos se están actualizando en segundo plano..."
-                else:
-                    mensajes = "Actualización en progreso... (por favor espere)"
-            except Exception as e:
-                mensajes = "Iniciando actualización directa (modo seguro)..."
-                try:
-                    resultado = actualizar_y_mostrar_monitor_parallel(tipo_bd_descri)
-                    if resultado and 'resumen' in resultado:
-                        mensajes = resultado['resumen']
-                    mon = obtener_datos_actualizados()
-                except Exception as e2:
-                    mensajes = "Error en actualización directa"
+	# 3. Procesamiento asíncrono si es necesario
+	if necesita_actualizar:
+		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=300)
+		if not task_running:
+			try:
+				scheduler = Scheduler(db)
+				if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+					scheduler.queue_task(
+						'actualizar_monitoreo_async', 
+						timeout=3000,
+						sync_output=5,
+						immediate=True
+					)
+					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=300)
+					mensajes = "Los datos se están actualizando en segundo plano..."
+				else:
+					mensajes = "Actualización en progreso... (por favor espere)"
+			except Exception as e:
+				mensajes = "Iniciando actualización directa (modo seguro)..."
+				try:
+					resultado = actualizar_y_mostrar_monitor_parallel(tipo_bd_descri)
+					if resultado and 'resumen' in resultado:
+						mensajes = resultado['resumen']
+					mon = obtener_datos_actualizados()
+				except Exception as e2:
+					mensajes = "Error en actualización directa"
 
-    # 4. Obtener lista de bases de datos (con caché de largo plazo)
-    def obtener_basedatos():
-        return db(db.basedatos.status_mon.upper() == 'SI')(
-            db.basedatos.tipobd_id==tipo_bd
-        ).select(
-            db.basedatos.id,
-            db.basedatos.nombre,
-            db.basedatos.servidor,
-            db.basedatos.tipobd_id,
-            db.basedatos.version_id,
-            db.basedatos.puerto,
-            db.basedatos.ambiente_id,
-            cacheable=False
-        )
+	# 4. Obtener lista de bases de datos (con caché de largo plazo)
+	def obtener_basedatos():
+		return db(db.basedatos.status_mon.upper() == 'SI')(
+			db.basedatos.tipobd_id==tipo_bd
+		).select(
+			db.basedatos.id,
+			db.basedatos.nombre,
+			db.basedatos.servidor,
+			db.basedatos.tipobd_id,
+			db.basedatos.version_id,
+			db.basedatos.puerto,
+			db.basedatos.ambiente_id,
+			cacheable=False
+		)
 
-    basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=3600)
+	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=3600)
 
-    return dict(
-        mon=mon, 
-        mensajes=mensajes, 
-        ultima_actualizacion=now, 
-        basedatos_mon=basedatos_mon,
-        necesita_actualizar=necesita_actualizar,
-        tipo_bd_descri=tipo_bd_descri,
-        filtro_resultado=filtro_resultado
-    )
+	return dict(
+		mon=mon, 
+		mensajes=mensajes, 
+		ultima_actualizacion=now, 
+		basedatos_mon=basedatos_mon,
+		necesita_actualizar=necesita_actualizar,
+		tipo_bd_descri=tipo_bd_descri,
+		filtro_resultado=filtro_resultado
+	)
 
 def monitor_bdxxxx():
 	from gluon.cache import Cache
@@ -1790,37 +1790,49 @@ def view_rutinas():
 
 @auth.requires_login()
 def list_tipoequipo():
-	form=SQLFORM.smartgrid(db.tipo_equipos, 
-	details=True, 	create=True,	editable=True,	deletable=False,
-	searchable=False,	csv = False,	links_in_grid=True)
-	db.tipobd.id.readable = False
-	return dict(form=form)
+	response.files.append(URL(request.application,'static','data_table.css'))
+	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+ 
+	script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_tipo_equipos').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+	form=SQLFORM.grid(db.tipo_equipos, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
+	
+	return dict(form=form,script=script)
 
 @auth.requires_login()
 def list_tipobd():
-	form=SQLFORM.smartgrid(db.tipobd, 
-	details=True, 	create=True,	editable=True,	deletable=False,
-	searchable=False,	csv = False,	links_in_grid=True)
+	response.files.append(URL(request.application,'static','data_table.css'))
+	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+	script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_tipobd').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+	form=SQLFORM.grid(db.tipobd, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
 	db.tipobd.id.readable = False
-	return dict(form=form)
+	return dict(form=form,script=script)
 
 @auth.requires_login()
 def list_ubicacion():
-	form=SQLFORM.smartgrid(db.ubicacion, details=False, csv=False, 
-	create=True,editable=True,deletable=False,searchable=False,)
+	response.files.append(URL(request.application,'static','data_table.css'))
+	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+	script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_ubicacion').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+	form=SQLFORM.grid(db.ubicacion, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
 	db.ubicacion.id.readable = False
-	return dict(form=form)
+	return dict(form=form, script=script)
 
 @auth.requires_login()
 @auth.requires_membership('ADMIN') 
 def list_proyectos():
 	response.files.append(URL(request.application,'static','data_table.css'))
 	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
- 
 	script = SCRIPT('''$(document).ready(function(){
 	oTable = $('#list_servidores').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
 	});''')
- 
 	form=SQLFORM.grid(db.proyectos, details=False, csv=False, 
 	create=False,editable=False,deletable=False,searchable=True, maxtextlength = 200)
 	db.proyectos.id.readable = False
@@ -2191,14 +2203,14 @@ def crear_actividades_sd():
 	return locals()
 
 def filtrar_servidores():
-    tipo_bd = request.vars.tipo_bd
-    if tipo_bd:
-        servidores = db((db.servidores.id == db.basedatos.servidor)(db.basedatos.tipo_bd == tipo_bd)).select()
-    else:
-        servidores = db(db.servidores.id > 0).select()
-    
-    options = [OPTION(servidor.nombre, _value=servidor.id) for servidor in servidores]
-    return XML(SELECT(*options, _name='cod_servidor', _id='cod_servidor', _class='form-select obligatorio'))
+	tipo_bd = request.vars.tipo_bd
+	if tipo_bd:
+		servidores = db((db.servidores.id == db.basedatos.servidor)(db.basedatos.tipo_bd == tipo_bd)).select()
+	else:
+		servidores = db(db.servidores.id > 0).select()
+	
+	options = [OPTION(servidor.nombre, _value=servidor.id) for servidor in servidores]
+	return XML(SELECT(*options, _name='cod_servidor', _id='cod_servidor', _class='form-select obligatorio'))
 
 def subproyecto():
 	#response.flash='Codigo del proyecto: ' + request.vars.cod_proy
@@ -2275,14 +2287,14 @@ def func_mac_sd():
 				<col style='width:10%'>
 				<col style='width:10%'>
 				<col style='width:10%'>
-    			<col style='width:34%'>
+				<col style='width:34%'>
 				<col style='width:8%'>
 				<col style='width:8%'>
 				<col style='width:5%'>
 				<col style='width:5%'>
 				<thead>
 					<tr style='background-color: #c1edd6;' rowspan='1'>
-						<th colspan='5' style='color: black; font-weight: bold; font-size: 14px;'>Descripción de actividades realizadas</th>
+						<th colspan='6' style='color: black; font-weight: bold; font-size: 14px; text-align: center;'>Descripción de las actividades realizadas en el día</th>
 						<th colspan='2' style='text-align: center;'>Fechas</th>
 						<th colspan='1' style='text-align: center;'>Total</th>
 						<th colspan='1' style='text-align: center;'>Extra</th>
@@ -2338,9 +2350,9 @@ def func_mac_sd():
 				</tbody>
 				<tfoot>
 					<tr>
-						<th style='font-size: 14px; color: #40b5e1;' id='total' colspan='7'>Total horas:</th>
-						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_horas}</td>
-						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{total_extra}</td>
+						<th style='font-size: 14px; color: #40b5e1;' id='total' colspan='8'>Total horas:</th>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{round(total_horas,2)}</td>
+						<td colspan='' style='color: red; font-weight: bold; font-size: 14px;'>{round(total_extra,2)}</td>
 						<td style='color: black; font-weight: bold; font-size: 18px;'>{cant_act}</td>
 					</tr>
 				</tfoot>
@@ -3493,36 +3505,52 @@ def reporte_actividades2():
 
 @auth.requires_login()
 def list_ambiente():
-	form=SQLFORM.grid(db.ambiente, details=False, create=True,
-	editable=True,deletable=False,searchable=False,
-	csv = False,
-	links_in_grid=False)
-	db.ambiente.id.readable = False
-	return dict(form=form)
+    response.files.append(URL(request.application,'static','data_table.css'))
+    response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+    script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_ambiente').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+    form=SQLFORM.grid(db.ambiente, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
+    db.ambiente.id.readable = False
+    return dict(form=form, script=script)
 
 @auth.requires_login()
 def list_estados():
-	form=SQLFORM.grid(db.estadobd, details=False, create=True,
-	editable=True,deletable=False,searchable=False,
-	csv = False,
-	links_in_grid=False)
-	db.estadobd.id.readable = False
-	return dict(form=form)
+    response.files.append(URL(request.application,'static','data_table.css'))
+    response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+    script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_estados').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+    form=SQLFORM.grid(db.estadobd, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
+    db.estadobd.id.readable = False
+    return dict(form=form,script=script)
 	
 @auth.requires_login()
 def list_so():
-	form=SQLFORM.smartgrid(db.so, details=False, create=True,editable=True,deletable=False,searchable=False,
-	csv = False	)
+	response.files.append(URL(request.application,'static','data_table.css'))
+	response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+	script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_so').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+	form=SQLFORM.grid(db.so, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
 	db.so.id.readable = False
-	return dict(form=form)
+	return dict(form=form,script=script)
 
 	
 @auth.requires_login()
 def list_version():
-	form=SQLFORM.smartgrid(db.ver, details=False, create=True,editable=True,deletable=False,searchable=False,
-	csv = False)
-	db.ver.id.readable = False
-	return dict(form=form)
+    response.files.append(URL(request.application,'static','data_table.css'))
+    response.files.append(URL(request.application,'static/DataTables/media/js','jquery.DataTables.min.js'))
+    script = SCRIPT('''$(document).ready(function(){
+	oTable = $('#list_version').dataTable({"bStateSave": true,"sPaginationType": "full_numbers"});
+	});''')
+    form=SQLFORM.grid(db.ver, details=False, csv=False, 
+	create=True,editable=True,deletable=False,searchable=True, maxtextlength = 200)
+    db.ver.id.readable = False
+    return dict(form=form,script=script)
 
 @auth.requires_login()
 def list_custodios():
