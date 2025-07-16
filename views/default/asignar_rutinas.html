@@ -28,7 +28,8 @@
                          value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
                          {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
                   <label class="list-label" for="servidor{{=servidor.id}}">
-                    {{=servidor.nombre}}
+                    {{=servidor.nombre}}({{=show_status(servidor.ambiente_id.descri)}})
+                    {{=db(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first()}}
                   </label>
                 </div>
                 {{pass}}
