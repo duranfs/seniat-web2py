@@ -455,91 +455,235 @@ def ejecutar_sql2():
     
     
     #------- declaraciones ------------
+
+# En el controlador (por ejemplo, default.py)
+
+from datetime import datetime, timedelta  # Agrega esta línea
+
 def declaraciones():
-    # Obtener parámetros de fecha (con valores por defecto)
-    fecha_inicio = request.vars.fecha_inicio or '25-03-2025'
-    fecha_fin = request.vars.fecha_fin or '28-03-2025'
+    # Importaciones necesarias
+    from datetime import datetime, timedelta
+    import json
     
-    # Validar fechas
+    # Obtener parámetros del request
+    fecha_inicio = request.vars.fecha_inicio or (datetime.now() - timedelta(days=7)).strftime('%d-%m-%Y')
+    fecha_fin = request.vars.fecha_fin or datetime.now().strftime('%d-%m-%Y')
+    dia_seleccionado = request.vars.dia
+    
+    # obtener datos del servidor y bd
+    datos = db(
+        (db.servidores.id == 486) & #servidor cygnus prod
+        (db.servidores.id == db.basedatos.servidor)
+    ).select(
+        db.servidores.ip,
+        db.basedatos.nombre,
+        db.basedatos.puerto,
+        left=db.basedatos.on(db.basedatos.servidor == db.servidores.id)
+    ).first()
+    
+    # Validación de fechas
     try:
         fecha_inicio_dt = datetime.strptime(fecha_inicio, '%d-%m-%Y')
         fecha_fin_dt = datetime.strptime(fecha_fin, '%d-%m-%Y')
-        
         if fecha_fin_dt < fecha_inicio_dt:
-            return dict(error="La fecha final no puede ser anterior a la fecha inicial")
-            
+            return dict(error="La fecha final no puede ser anterior a la inicial")
     except ValueError:
         return dict(error="Formato de fecha inválido. Use DD-MM-YYYY")
     
-    # Obtener conexión a Oracle
-    connection = get_oracle_connection("172.16.32.66", "SENIAT.seniat.gov.ve", "1521", "11")
+    # Conexión a Oracle
+    connection = get_oracle_connection(
+        datos.servidores.ip,
+        "SENIAT.seniat.gov.ve",
+        datos.basedatos.puerto,
+        "11"
+    )
     
     try:
-        # Consulta con parámetros de fecha
+        # Consulta SQL para Oracle
         sql = """
-        SELECT TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY') AS "DAY"
-            , count(*) AS Total
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '00', 1, 0), '99')) "00"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '01', 1, 0), '99')) "01"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '02', 1, 0), '99')) "02"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '03', 1, 0), '99')) "03"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '04', 1, 0), '99')) "04"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '05', 1, 0), '99')) "05"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '06', 1, 0), '99')) "06"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '07', 1, 0), '99')) "07"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '08', 1, 0), '99')) "08"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '09', 1, 0), '99')) "09"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '10', 1, 0), '99')) "10"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '11', 1, 0), '99')) "11"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '12', 1, 0), '99')) "12"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '13', 1, 0), '99')) "13"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '14', 1, 0), '99')) "14"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '15', 1, 0), '99')) "15"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '16', 1, 0), '99')) "16"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '17', 1, 0), '99')) "17"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '18', 1, 0), '99')) "18"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '19', 1, 0), '99')) "19"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '20', 1, 0), '99')) "20"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '21', 1, 0), '99')) "21"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '22', 1, 0), '99')) "22"
-            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '23', 1, 0), '99')) "23"
+        SELECT TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY') AS "DAY",
+               count(*) AS TOTAL,
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '00', 1, 0), '99')) "00",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '01', 1, 0), '99')) "01",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '02', 1, 0), '99')) "02",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '03', 1, 0), '99')) "03",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '04', 1, 0), '99')) "04",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '05', 1, 0), '99')) "05",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '06', 1, 0), '99')) "06",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '07', 1, 0), '99')) "07",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '08', 1, 0), '99')) "08",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '09', 1, 0), '99')) "09",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '10', 1, 0), '99')) "10",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '11', 1, 0), '99')) "11",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '12', 1, 0), '99')) "12",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '13', 1, 0), '99')) "13",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '14', 1, 0), '99')) "14",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '15', 1, 0), '99')) "15",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '16', 1, 0), '99')) "16",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '17', 1, 0), '99')) "17",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '18', 1, 0), '99')) "18",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '19', 1, 0), '99')) "19",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '20', 1, 0), '99')) "20",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '21', 1, 0), '99')) "21",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '22', 1, 0), '99')) "22",
+               SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '23', 1, 0), '99')) "23"
         FROM declaracion
-        WHERE extract(year FROM trunc(FECHA_INGRESO_DECLARACION)) = 2025
-            and trunc(fecha_ingreso_declaracion) BETWEEN TO_DATE(:fecha_inicio,'dd-mm-rrrr') AND TO_DATE(:fecha_fin,'dd-mm-rrrr') 
+        WHERE trunc(fecha_ingreso_declaracion) BETWEEN TO_DATE(:fecha_inicio,'dd-mm-rrrr') 
+                                                  AND TO_DATE(:fecha_fin,'dd-mm-rrrr') 
         GROUP BY TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY')
-        ORDER BY 1
+        ORDER BY TO_DATE("DAY", 'DD/MON/YYYY')
         """
         
         cursor = connection.cursor()
         cursor.execute(sql, {'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin})
         
-        # Obtener datos
-        columns = [col[0] for col in cursor.description]
-        rows = cursor.fetchall()
+        # Procesar resultados
+        columns = [col[0].upper() for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        horas = [f"{h:02d}" for h in range(24)]  # ['00', '01', ..., '23']
+        total_general = sum(row['TOTAL'] for row in rows) if rows else 0
+        dias = (fecha_fin_dt - fecha_inicio_dt).days + 1
+        promedio_diario = round(total_general / dias, 2) if dias > 0 else 0
+        acumulado_por_hora = {hora: sum(row[hora] for row in rows) for hora in horas} if rows else {hora: 0 for hora in horas} 
+        # Preparar datos para el gráfico si hay día seleccionado
+        datos_grafico = None
+        if dia_seleccionado:
+            for row in rows:
+                if row['DAY'] == dia_seleccionado:
+                    valores = [row[hora] for hora in horas]
+                    max_val = max(valores) if valores else 0
+                    
+                    # Preparar colores basados en los valores
+                    colores = []
+                    for valor in valores:
+                        if valor == max_val and max_val > 0:  # Solo si hay valores
+                            colores.append('rgba(220, 53, 69, 0.7)')  # Rojo para el máximo
+                        else:
+                            colores.append('rgba(13, 110, 253, 0.7)')  # Azul normal
+                    
+                    datos_grafico = {
+                        'dia': dia_seleccionado,
+                        'total': row['TOTAL'],
+                        'horas': horas,
+                        'valores': valores,
+                        'colores': colores
+                    }
+                    break
         
-        # Preparar datos para el gráfico
-        horas = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', 
-                '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+        # Calcular distribución acumulada
+        distribucion_acumulada = {hora: sum(row[hora] for row in rows) for hora in horas}
+        total_general = sum(distribucion_acumulada.values())
         
-        # Sumar totales por hora para todas las fechas
-        totales_por_hora = [0] * 24
-        for row in rows:
-            for i in range(24):
-                totales_por_hora[i] += row[i+2] or 0  # Las horas empiezan en la columna 2
+        # Calcular porcentajes
+        porcentajes = {hora: round((count/total_general)*100, 2) if total_general > 0 else 0 
+                      for hora, count in distribucion_acumulada.items()}
         
         return dict(
-            columns=columns,
             rows=rows,
             horas=horas,
-            totales_por_hora=totales_por_hora,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
+            dia_seleccionado=dia_seleccionado,
+            datos_grafico=datos_grafico,
+            totales_por_hora=distribucion_acumulada,  # Datos acumulados por hora
+            total_general=total_general,              # Total general acumulado
+            porcentajes=porcentajes,                  # Porcentajes por hora
+            promedio_diario=promedio_diario,
+            acumulado_por_hora=acumulado_por_hora,
             error=None
         )
         
     except Exception as e:
-        return dict(error=str(e))
+        return dict(error=f"Error en la consulta: {str(e)}")
+    finally:
+        if connection:
+            connection.close()
+def declaraciones_por_anio():
+    from datetime import datetime
+    import calendar
+
+    # Obtener y validar año
+    anio = request.vars.anio or str(datetime.now().year)
+    try:
+        anio_int = int(anio)
+        if anio_int < 2000 or anio_int > datetime.now().year:
+            return dict(anio=anio, error="Año inválido. Debe estar entre 2000 y el año actual")
+    except ValueError:
+        return dict(anio=anio, error="Año inválido. Debe ser un número")
+
+    # Conexión a Oracle
+    try:
+        datos = db(
+            (db.servidores.id == 488) &
+            (db.servidores.id == db.basedatos.servidor)
+        ).select().first()
         
+        if not datos:
+            return dict(anio=anio, error="No se pudo obtener información del servidor")
+
+        connection = get_oracle_connection(
+            datos.servidores.ip,
+            "SENIAT.seniat.gov.ve",
+            datos.basedatos.puerto,
+            "11"
+        )
+
+        # Consulta SQL optimizada
+        sql = """
+        SELECT 
+            TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MONTH') AS MES_NOMBRE,
+            COUNT(*) AS TOTAL_MENSUAL,
+            ROUND(COUNT(*) / 
+                EXTRACT(DAY FROM LAST_DAY(TO_DATE('01-'||TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MM-YYYY'), 'DD-MM-YYYY')))
+            , 2) AS PROMEDIO_DIARIO
+        FROM 
+            declaracion
+        WHERE 
+            EXTRACT(YEAR FROM FECHA_INGRESO_DECLARACION) = :anio
+        GROUP BY 
+            TRUNC(FECHA_INGRESO_DECLARACION, 'MM')
+        ORDER BY 
+            TRUNC(FECHA_INGRESO_DECLARACION, 'MM')
+        """
+
+        cursor = connection.cursor()
+        cursor.execute(sql, {'anio': anio_int})
+        
+        # Procesar resultados
+        columns = [col[0].upper() for col in cursor.description]
+        rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        # Completar meses faltantes
+        meses_completos = []
+        nombres_meses = [calendar.month_name[i].upper() for i in range(1, 13)]
+        
+        for i, nombre_mes in enumerate(nombres_meses, 1):
+            mes_encontrado = next((m for m in rows if m['MES_NOMBRE'].strip().upper() == nombre_mes), None)
+            
+            if mes_encontrado:
+                mes_encontrado['MES_NOMBRE'] = mes_encontrado['MES_NOMBRE'].strip().title()
+                meses_completos.append(mes_encontrado)
+            else:
+                meses_completos.append({
+                    'MES_NOMBRE': calendar.month_name[i-1],
+                    'TOTAL_MENSUAL': 0,
+                    'PROMEDIO_DIARIO': 0.00
+                })
+
+        # Calcular totales
+        total_anual = sum(mes['TOTAL_MENSUAL'] for mes in meses_completos)
+        promedio_anual = round(total_anual / 12, 2) if total_anual > 0 else 0.00
+
+        return dict(
+            anio=anio,
+            meses=meses_completos,
+            total_anual=total_anual,
+            promedio_anual=promedio_anual,
+            error=None
+        )
+
+    except Exception as e:
+        return dict(anio=anio, error=f"Error en la consulta: {str(e)}")
     finally:
         if connection:
             connection.close()

@@ -1,0 +1,183 @@
+{{extend 'layout.html'}}
+{{import json}}
+
+<style>
+.chart-container {
+    min-height: 400px;
+    margin-bottom: 20px;
+}
+.month-card {
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+.month-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.card-header {
+    font-weight: bold;
+}
+.total-display {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+.table-responsive {
+    overflow-x: auto;
+}
+</style>
+
+<h2 class="mb-4">Declaraciones por Mes - Año {{=anio}}</h2>
+
+<form class="mb-4">
+  <div class="form-row align-items-center">
+    <div class="col-auto">
+      <label class="mr-2">Seleccione el año:</label>
+    </div>
+    <div class="col-auto">
+      <select class="form-control" name="anio" onchange="this.form.submit()">
+        {{current_year = datetime.datetime.now().year}}
+        {{for y in range(current_year, current_year - 11, -1):}}
+          <option value="{{=y}}" {{='selected' if str(y) == anio else ''}}>{{=y}}</option>
+        {{pass}}
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </div>
+</form>
+
+{{if error:}}
+  <div class="alert alert-danger">{{=error}}</div>
+{{else:}}
+  {{if meses:}}
+    <!-- Resumen Anual -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Resumen Anual {{=anio}}</h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-6 mb-3">
+            <div class="card h-100">
+              <div class="card-header bg-light">Total Anual</div>
+              <div class="card-body">
+                <div class="total-display text-primary">{{='{:,}'.format(total_anual)}}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <div class="card h-100">
+              <div class="card-header bg-light">Promedio Mensual</div>
+              <div class="card-body">
+                <div class="total-display text-success">{{='{:,.2f}'.format(promedio_anual)}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico anual -->
+    <div class="card mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Distribución por Mes</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="graficoAnual"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Detalle Mensual</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered mb-0">
+            <thead class="thead-dark">
+              <tr>
+                <th class="text-center">Mes</th>
+                <th class="text-center">Total Mensual</th>
+                <th class="text-center">Promedio Diario</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{for mes in meses:}}
+              <tr class="{{='table-warning' if mes['TOTAL_MENSUAL'] == 0 else ''}}">
+                <td class="text-center font-weight-bold">{{=mes['MES_NOMBRE']}}</td>
+                <td class="text-center">{{='{:,}'.format(mes['TOTAL_MENSUAL'])}}</td>
+                <td class="text-center">{{='{:,.2f}'.format(mes['PROMEDIO_DIARIO'])}}</td>
+              </tr>
+              {{pass}}
+            </tbody>
+            <tfoot class="bg-light">
+              <tr>
+                <th class="text-center">TOTAL</th>
+                <th class="text-center">{{='{:,}'.format(total_anual)}}</th>
+                <th class="text-center">{{='{:,.2f}'.format(promedio_anual)}}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  {{else:}}
+    <div class="alert alert-info">
+      No se encontraron datos para el año {{=anio}}
+    </div>
+  {{pass}}
+{{pass}}
+
+<script>
+$(document).ready(function() {
+    var ctx = document.getElementById('graficoAnual').getContext('2d');
+    var chartData = {
+        labels: {{=XML(json.dumps([m['MES_NOMBRE'] for m in meses]))}},
+        datasets: [{
+            label: 'Declaraciones Mensuales',
+            data: {{=XML(json.dumps([m['TOTAL_MENSUAL'] for m in meses]))}},
+            backgroundColor: function(context) {
+                return context.raw === 0 ? 'rgba(200, 200, 200, 0.5)' : 'rgba(75, 192, 192, 0.7)';
+            },
+            borderColor: function(context) {
+                return context.raw === 0 ? 'rgba(200, 200, 200, 1)' : 'rgba(75, 192, 192, 1)';
+            },
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y === 0 ? 'Sin datos' : context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value === 0 ? '0' : value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

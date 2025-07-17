@@ -119,6 +119,7 @@ monitor =[
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
             (T('Declaraciones'), URL('oracle','declaraciones')==URL(),URL('oracle','declaraciones'),[]),
+            (T('DeclaracionesXAño'), URL('oracle','declaraciones_por_anio')==URL(),URL('oracle','declaraciones_por_anio'),[]),
             #(T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
             #(T('Ejecutar SQL '), URL('default','ejecuta_comando_sql')==URL(),URL('default','ejecuta_comando_sql'),[]),
            
