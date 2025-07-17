@@ -807,12 +807,11 @@ def asignar_rutinas():
 		# Consulta optimizada para servidores
 		servidores=db((db.servidores.id > 0) & 
 					(db.servidores.status_mon == 'SI')).select(
-					orderby=db.servidores.nombre,
-					cache=(cache.ram, 1))
+					orderby=db.servidores.ambiente_id)
 		
 		# Consulta optimizada para rutinas
 		rutinas=db(db.rutinas.id > 0).select(
-				orderby=db.rutinas.nombre,
+				orderby=db.rutinas.tipobd_id,
 				cache=(cache.ram, 1))
 		cached_data = (servidores, rutinas)
 	else:

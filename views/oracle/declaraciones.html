@@ -1,0 +1,110 @@
+{{extend 'layout.html'}}
+{{import json}}
+<h2>Declaraciones por Hora</h2>
+
+<!-- Formulario de filtros -->
+<div class="well">
+    <form class="form-inline" method="get">
+        <div class="form-group">
+            <label for="fecha_inicio">Desde:</label>
+            <input type="text" class="form-control datepicker" id="fecha_inicio" name="fecha_inicio" 
+                   value="{{=fecha_inicio}}" placeholder="DD-MM-YYYY">
+        </div>
+        <div class="form-group">
+            <label for="fecha_fin">Hasta:</label>
+            <input type="text" class="form-control datepicker" id="fecha_fin" name="fecha_fin" 
+                   value="{{=fecha_fin}}" placeholder="DD-MM-YYYY">
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </form>
+</div>
+
+{{if error:}}
+<div class="alert alert-danger">
+    {{=error}}
+</div>
+{{else:}}
+
+<!-- Gráfico -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Total de declaraciones por hora ({{=fecha_inicio}} al {{=fecha_fin}})</h3>
+    </div>
+    <div class="panel-body">
+        <canvas id="graficoHoras" width="800" height="300"></canvas>
+    </div>
+</div>
+
+<!-- Tabla de datos -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Detalle por día</h3>
+    </div>
+    <div class="panel-body" style="overflow-x: auto;">
+        <table class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    {{for col in columns:}}
+                    <th>{{=col}}</th>
+                    {{pass}}
+                </tr>
+            </thead>
+            <tbody>
+                {{for row in rows:}}
+                <tr>
+                    {{for col in row:}}
+                    <td>{{=col}}</td>
+                    {{pass}}
+                </tr>
+                {{pass}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Script para el gráfico -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    var ctx = document.getElementById('graficoHoras').getContext('2d');
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{=XML(json.dumps(horas))}},
+            datasets: [{
+                label: 'Declaraciones por hora',
+                data: {{=XML(json.dumps(totales_por_hora))}},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cantidad de declaraciones'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Hora del día'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Inicializar datepicker
+    $('.datepicker').datepicker({
+        format: 'dd-mm-yyyy',
+        autoclose: true,
+        todayHighlight: true
+    });
+});
+</script>
+{{pass}}

@@ -1,153 +1,112 @@
+
 {{extend 'layout.html'}}
 
-<div class="container">
-  <h2 class="text-center my-4">Asignar Rutinas a Servidores</h2>
-
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <form method="post" id="mainForm">
-        <!-- Combo para seleccionar tipo de BD -->
-        <div class="row mb-4">
-          <div class="col-md-12">
-            <div class="form-group">
-              <label for="tipoBD" class="form-label"><strong>Filtrar por Tipo de Base de Datos:</strong></label>
-              <select class="form-select" id="tipoBD" name="tipoBD">
-                <option value="0">Todos los tipos</option>
-                {{for tipo in tipos_bd:}}
-                <option value="{{=tipo.id}}" {{if tipo_bd_filtro == str(tipo.id):}}selected{{pass}}>
-                  {{=tipo.descri}}
-                </option>
-                {{pass}}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <!-- Columna de Servidores -->
-          <div class="col-md-6">
-            <div class="form-group mb-4">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="section-title">Seleccione servidores:</h5>
-                <div>
-                  <button type="button" id="selectAllServers" class="btn btn-outline-primary btn-action">
-                    <i class="bi bi-check-square"></i> Todos
-                  </button>
-                  <button type="button" id="deselectAllServers" class="btn btn-outline-danger btn-action">
-                    <i class="bi bi-square"></i> Ninguno
-                  </button>
-                </div>
-              </div>
-              <div class="list-container" id="servidores-container">
-                {{for item in servidores_con_tipo:}}
-                  {{servidor = item['servidor']}}
-                  {{tipobd = item['tipobd']}}
-                  <div class="list-item">
-                    <input type="checkbox" class="custom-checkbox" name="servidores" 
-                           value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
-                           {{if str(servidor.id) in servidores_seleccionados:}}checked{{pass}}>
-                    <label class="list-label" for="servidor{{=servidor.id}}">
-                      {{=servidor.nombre}} 
-                      <span class="text-muted">
-                        ({{=tipobd.descri if tipobd else 'Sin tipo asignado'}})
-                      </span>
-                    </label>
-                  </div>
-                {{pass}}
-              </div>
-            </div>
-          </div>
-
-          <!-- Columna de Rutinas -->
-          <div class="col-md-6">
-            <div class="form-group">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="section-title">Seleccione las rutinas:</h5>
-                <div>
-                  <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
-                    <i class="bi bi-check-square"></i> Todas
-                  </button>
-                  <button type="button" id="deselectAllRutinas" class="btn btn-outline-danger btn-action">
-                    <i class="bi bi-square"></i> Ninguna
-                  </button>
-                </div>
-              </div>
-              <div class="list-container" id="rutinas-container">
-                {{for rutina in rutinas:}}
-                <div class="list-item">
-                  <input type="checkbox" class="custom-checkbox" name="rutinas" 
-                         value="{{=rutina.rutinas.id}}" id="rutina{{=rutina.rutinas.id}}"
-                         {{if str(rutina.rutinas.id) in rutinas_asignadas:}}checked{{pass}}>
-                  <label class="list-label" for="rutina{{=rutina.rutinas.id}}">
-                    {{=rutina.rutinas.nombre}} 
-                    <span class="text-muted">({{=rutina.tipobd.descri}})</span>
-                  </label>
-                </div>
-                {{pass}}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-grid gap-2 mt-4">
-          <button type="submit" class="btn btn-primary btn-lg">
-            <i class="bi bi-save"></i> Guardar Asignaciones
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
-  // Función para recargar la página con el filtro seleccionado
-  document.getElementById('tipoBD').addEventListener('change', function() {
-    const form = document.getElementById('mainForm');
-    const action = form.getAttribute('action') || window.location.pathname;
-    const formData = new FormData(form);
-    
-    // Crear URL con parámetros
-    const params = new URLSearchParams();
-    formData.forEach((value, key) => {
-      if (key === 'servidores' || key === 'rutinas') {
-        // Manejar arrays para servidores y rutinas
-        document.querySelectorAll(`input[name="${key}"]:checked`).forEach(el => {
-          params.append(key, el.value);
-        });
-      } else {
-        params.append(key, value);
-      }
-    });
-    
-    window.location.href = `${action}?${params.toString()}`;
-  });
-
-  // Funciones para seleccionar/deseleccionar
-  document.getElementById('selectAllServers').addEventListener('click', function() {
-    document.querySelectorAll('#servidores-container .custom-checkbox').forEach(checkbox => {
-      checkbox.checked = true;
-    });
-  });
-
-  document.getElementById('deselectAllServers').addEventListener('click', function() {
-    document.querySelectorAll('#servidores-container .custom-checkbox').forEach(checkbox => {
-      checkbox.checked = false;
-    });
-  });
-
-  document.getElementById('selectAllRutinas').addEventListener('click', function() {
-    document.querySelectorAll('#rutinas-container .custom-checkbox').forEach(checkbox => {
-      checkbox.checked = true;
-    });
-  });
-
-  document.getElementById('deselectAllRutinas').addEventListener('click', function() {
-    document.querySelectorAll('#rutinas-container .custom-checkbox').forEach(checkbox => {
-      checkbox.checked = false;
-    });
-  });
-</script>
 
 <style>
-  /* ... (mantener tus estilos existentes) ... */
+
+.titulo {
+ background-color: white;
+ color: green;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ #box-shadow: 8px 8px 100px #444;
+ background-image: linear-gradient(180deg, #fff, #ddd 80%, #ccc);
+}
+.titulo1 {
+ background-color: blue;
+ color: blue;
+ font-size: 10px;
+ text-align: center;
+ font-stretch: extra-condensed;
+ font-family: Arial, Helvetica, sans-serif;
+ box-shadow: 8px 8px 100px #10;#444;
+ background-image: linear-gradient(180deg, #fff, #ddd 10%, #ccc);
+}
+
+
+.container {
+  max-width: 95%;
+  margin: 10px auto;
+  padding: 10px;
+  background-color: rgb(208, 216, 230);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+   overflow-x: auto;
+}
+
+/* Tabla de servidores */
+.table-container {
+  overflow-x: auto;
+}
+
+#list_servidores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#list_servidores thead th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 500;
+}
+
+#list_servidores tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e1e5eb;
+  vertical-align: middle;
+}
+
+#list_servidores tbody tr:hover {
+  background-color: #f1f7fd;
+}
+
 </style>
+
+<script>
+$(document).ready(function() { 
+   jQuery('.smarttable').dataTable(); 
+   {{if not form.errors:}}jQuery('#form').hide();{{pass}}
+});
+
+</script>
+
+
+<h5>Lista de Rutinas / Parámetros de BD</h5>
+
+[<a href="#nil" onclick="jQuery('#form').slideToggle();">Crear rutina</a>]
+<br>
+<div id="form">
+<h2>Nueva Rutina</h2>
+{{=form}}
+</div>
+
+<div class="container">
+<table id="list_rutinas" class="table-bordered table-striped smarttable">
+<thead>
+    <tr>
+    <td>Tipo BD</td><th>Nombre</th><th>Descripcion</th><th>Codigo SQL</th><th>Activo</th><th>Accion</th>
+   </tr>    
+</thead>
+<tbody>
+{{for rutina in rutinas:}}
+    <tr>
+    <td>{{=show_status(rutina.tipobd_id.descri)}}</td>  
+    <td>{{=rutina.nombre}}</td>
+    <td>{{=rutina.descripcion}}</td>
+    <td>{{=rutina.sql_code}}</td>
+    <td>{{=rutina.activo}}</td>
+    <td>
+      {{=button('editar','edit_rutinas',rutina.id)}}
+      {{=button('ver','view_rutinas',rutina.id)}}
+    </td>
+    </tr>
+   
+{{pass}}
+</tbody>
+</table>
+</div>

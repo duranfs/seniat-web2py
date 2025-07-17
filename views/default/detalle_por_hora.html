@@ -1,0 +1,26 @@
+{{if detalle_por_hora:}}
+    <h4>Gráfico de Declaraciones por Hora para {{=fecha_detalle}}</h4>
+    <canvas id="graficoHora" height="100"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('graficoHora').getContext('2d');
+        const grafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{=XML(str(horas))}},
+                datasets: [{
+                    label: 'Declaraciones por hora',
+                    data: {{=XML(str(detalle_por_hora))}},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+{{pass}}

@@ -451,3 +451,95 @@ def ejecutar_sql2():
     
     return dict(form=form, columns=columns, rows=rows, error=error, 
                 total_registros=total_registros, consulta_original=consulta_original)
+    
+    
+    
+    #------- declaraciones ------------
+def declaraciones():
+    # Obtener parámetros de fecha (con valores por defecto)
+    fecha_inicio = request.vars.fecha_inicio or '25-03-2025'
+    fecha_fin = request.vars.fecha_fin or '28-03-2025'
+    
+    # Validar fechas
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%d-%m-%Y')
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%d-%m-%Y')
+        
+        if fecha_fin_dt < fecha_inicio_dt:
+            return dict(error="La fecha final no puede ser anterior a la fecha inicial")
+            
+    except ValueError:
+        return dict(error="Formato de fecha inválido. Use DD-MM-YYYY")
+    
+    # Obtener conexión a Oracle
+    connection = get_oracle_connection("172.16.32.66", "SENIAT.seniat.gov.ve", "1521", "11")
+    
+    try:
+        # Consulta con parámetros de fecha
+        sql = """
+        SELECT TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY') AS "DAY"
+            , count(*) AS Total
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '00', 1, 0), '99')) "00"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '01', 1, 0), '99')) "01"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '02', 1, 0), '99')) "02"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '03', 1, 0), '99')) "03"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '04', 1, 0), '99')) "04"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '05', 1, 0), '99')) "05"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '06', 1, 0), '99')) "06"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '07', 1, 0), '99')) "07"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '08', 1, 0), '99')) "08"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '09', 1, 0), '99')) "09"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '10', 1, 0), '99')) "10"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '11', 1, 0), '99')) "11"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '12', 1, 0), '99')) "12"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '13', 1, 0), '99')) "13"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '14', 1, 0), '99')) "14"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '15', 1, 0), '99')) "15"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '16', 1, 0), '99')) "16"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '17', 1, 0), '99')) "17"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '18', 1, 0), '99')) "18"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '19', 1, 0), '99')) "19"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '20', 1, 0), '99')) "20"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '21', 1, 0), '99')) "21"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '22', 1, 0), '99')) "22"
+            , SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '23', 1, 0), '99')) "23"
+        FROM declaracion
+        WHERE extract(year FROM trunc(FECHA_INGRESO_DECLARACION)) = 2025
+            and trunc(fecha_ingreso_declaracion) BETWEEN TO_DATE(:fecha_inicio,'dd-mm-rrrr') AND TO_DATE(:fecha_fin,'dd-mm-rrrr') 
+        GROUP BY TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY')
+        ORDER BY 1
+        """
+        
+        cursor = connection.cursor()
+        cursor.execute(sql, {'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin})
+        
+        # Obtener datos
+        columns = [col[0] for col in cursor.description]
+        rows = cursor.fetchall()
+        
+        # Preparar datos para el gráfico
+        horas = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', 
+                '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+        
+        # Sumar totales por hora para todas las fechas
+        totales_por_hora = [0] * 24
+        for row in rows:
+            for i in range(24):
+                totales_por_hora[i] += row[i+2] or 0  # Las horas empiezan en la columna 2
+        
+        return dict(
+            columns=columns,
+            rows=rows,
+            horas=horas,
+            totales_por_hora=totales_por_hora,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            error=None
+        )
+        
+    except Exception as e:
+        return dict(error=str(e))
+        
+    finally:
+        if connection:
+            connection.close()
