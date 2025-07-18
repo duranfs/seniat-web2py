@@ -551,7 +551,7 @@ def declaraciones():
     import json
     
     # Obtener parámetros del request
-    fecha_inicio = request.vars.fecha_inicio or (datetime.now() - timedelta(days=7)).strftime('%d-%m-%Y')
+    fecha_inicio = request.vars.fecha_inicio or (datetime.now() - timedelta(days=4)).strftime('%d-%m-%Y')
     fecha_fin = request.vars.fecha_fin or datetime.now().strftime('%d-%m-%Y')
     dia_seleccionado = request.vars.dia
     
@@ -683,9 +683,17 @@ def declaraciones():
     finally:
         if connection:
             connection.close()
+
+
 def declaraciones_por_anio():
     from datetime import datetime
-    import calendar
+    import locale
+
+    # Configurar locale para español
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except:
+        locale.setlocale(locale.LC_TIME, 'spanish')
 
     # Obtener y validar año
     anio = request.vars.anio or str(datetime.now().year)
@@ -699,7 +707,7 @@ def declaraciones_por_anio():
     # Conexión a Oracle
     try:
         datos = db(
-            (db.servidores.id == 488) &
+            (db.servidores.id == 486) &
             (db.servidores.id == db.basedatos.servidor)
         ).select().first()
         
@@ -713,10 +721,10 @@ def declaraciones_por_anio():
             "11"
         )
 
-        # Consulta SQL optimizada
+        # Consulta SQL con formato de mes en español
         sql = """
         SELECT 
-            TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MONTH') AS MES_NOMBRE,
+            TRIM(TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MONTH', 'NLS_DATE_LANGUAGE=SPANISH')) AS MES_NOMBRE,
             COUNT(*) AS TOTAL_MENSUAL,
             ROUND(COUNT(*) / 
                 EXTRACT(DAY FROM LAST_DAY(TO_DATE('01-'||TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MM-YYYY'), 'DD-MM-YYYY')))
@@ -738,19 +746,24 @@ def declaraciones_por_anio():
         columns = [col[0].upper() for col in cursor.description]
         rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
 
+        # Nombres de meses en español para completar
+        meses_espanol = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ]
+        
         # Completar meses faltantes
         meses_completos = []
-        nombres_meses = [calendar.month_name[i].upper() for i in range(1, 13)]
-        
-        for i, nombre_mes in enumerate(nombres_meses, 1):
-            mes_encontrado = next((m for m in rows if m['MES_NOMBRE'].strip().upper() == nombre_mes), None)
+        for i, nombre_mes in enumerate(meses_espanol, 1):
+            mes_encontrado = next((m for m in rows if m['MES_NOMBRE'].strip().upper() == nombre_mes.upper()), None)
             
             if mes_encontrado:
-                mes_encontrado['MES_NOMBRE'] = mes_encontrado['MES_NOMBRE'].strip().title()
+                # Asegurar formato consistente (primera letra mayúscula)
+                mes_encontrado['MES_NOMBRE'] = mes_encontrado['MES_NOMBRE'].strip().capitalize()
                 meses_completos.append(mes_encontrado)
             else:
                 meses_completos.append({
-                    'MES_NOMBRE': calendar.month_name[i-1],
+                    'MES_NOMBRE': nombre_mes,
                     'TOTAL_MENSUAL': 0,
                     'PROMEDIO_DIARIO': 0.00
                 })
@@ -759,11 +772,16 @@ def declaraciones_por_anio():
         total_anual = sum(mes['TOTAL_MENSUAL'] for mes in meses_completos)
         promedio_anual = round(total_anual / 12, 2) if total_anual > 0 else 0.00
 
+        # Generar colores para el gráfico
+        colores, bordes = generar_colores_meses(meses_completos)
+
         return dict(
             anio=anio,
             meses=meses_completos,
             total_anual=total_anual,
             promedio_anual=promedio_anual,
+            colores_barras=colores,
+            bordes_barras=bordes,
             error=None
         )
 
@@ -772,3 +790,59 @@ def declaraciones_por_anio():
     finally:
         if connection:
             connection.close()
+            
+
+def generar_colores_meses(meses):
+    # Colores base para los meses (puedes personalizarlos)
+    colores_base = {
+        'Enero': 'rgba(54, 162, 235, 0.7)',     # Azul
+        'Febrero': 'rgba(255, 99, 132, 0.7)',    # Rojo
+        'Marzo': 'rgba(75, 192, 192, 0.7)',      # Verde azulado
+        'Abril': 'rgba(255, 159, 64, 0.7)',      # Naranja
+        'Mayo': 'rgba(153, 102, 255, 0.7)',      # Morado
+        'Junio': 'rgba(255, 205, 86, 0.7)',      # Amarillo
+        'Julio': 'rgba(201, 203, 207, 0.7)',     # Gris
+        'Agosto': 'rgba(54, 162, 235, 0.7)',     # Azul
+        'Septiembre': 'rgba(255, 99, 132, 0.7)', # Rojo
+        'Octubre': 'rgba(75, 192, 192, 0.7)',    # Verde azulado
+        'Noviembre': 'rgba(255, 159, 64, 0.7)',  # Naranja
+        'Diciembre': 'rgba(153, 102, 255, 0.7)'  # Morado
+    }
+    
+    # Colores para bordes
+    bordes_base = {
+        'Enero': 'rgba(54, 162, 235, 1)',
+        'Febrero': 'rgba(255, 99, 132, 1)',
+        'Marzo': 'rgba(75, 192, 192, 1)',
+        'Abril': 'rgba(255, 159, 64, 1)',
+        'Mayo': 'rgba(153, 102, 255, 1)',
+        'Junio': 'rgba(255, 205, 86, 1)',
+        'Julio': 'rgba(201, 203, 207, 1)',
+        'Agosto': 'rgba(54, 162, 235, 1)',
+        'Septiembre': 'rgba(255, 99, 132, 1)',
+        'Octubre': 'rgba(75, 192, 192, 1)',
+        'Noviembre': 'rgba(255, 159, 64, 1)',
+        'Diciembre': 'rgba(153, 102, 255, 1)'
+    }
+    
+    # Encontrar el valor máximo para destacarlo
+    max_valor = max(mes['TOTAL_MENSUAL'] for mes in meses) if meses else 0
+    
+    colores = []
+    bordes = []
+    for mes in meses:
+        nombre_mes = mes['MES_NOMBRE']
+        if mes['TOTAL_MENSUAL'] == max_valor and max_valor > 0:
+            # Destacar el mes con mayor valor
+            colores.append('rgba(220, 53, 69, 0.7)')  # Rojo más intenso
+            bordes.append('rgba(220, 53, 69, 1)')
+        elif mes['TOTAL_MENSUAL'] == 0:
+            # Meses sin datos
+            colores.append('rgba(200, 200, 200, 0.5)')
+            bordes.append('rgba(200, 200, 200, 1)')
+        else:
+            # Usar color asignado al mes
+            colores.append(colores_base.get(nombre_mes, 'rgba(75, 192, 192, 0.7)'))
+            bordes.append(bordes_base.get(nombre_mes, 'rgba(75, 192, 192, 1)'))
+    
+    return colores, bordes

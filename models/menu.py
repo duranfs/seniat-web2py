@@ -88,8 +88,10 @@ graficas =  [
 				(T('Horas por Ambiente'), URL('default','horas_por_ambiente')==URL(),URL('default','horas_por_ambiente'),[]),
 				(T('Horas por Analista'), URL('default','horas_por_analista')==URL(),URL('default','horas_por_analista'),[]),
 				(T('Horas por Actividades'), URL('default','horas_por_actividades')==URL(),URL('default','horas_por_actividades'),[]),
-				])
-			]
+				(T('Declaraciones'), URL('oracle','declaraciones')==URL(),URL('oracle','declaraciones'),[]),
+            	(T('DeclaracionesXAño'), URL('oracle','declaraciones_por_anio')==URL(),URL('oracle','declaraciones_por_anio'),[]),
+     ])
+	]
 
 administracion =[
 	(T('Administración'), False, '#', [
@@ -118,9 +120,7 @@ monitor =[
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
-            (T('Declaraciones'), URL('oracle','declaraciones')==URL(),URL('oracle','declaraciones'),[]),
-            (T('DeclaracionesXAño'), URL('oracle','declaraciones_por_anio')==URL(),URL('oracle','declaraciones_por_anio'),[]),
-            #(T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
+              #(T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
             #(T('Ejecutar SQL '), URL('default','ejecuta_comando_sql')==URL(),URL('default','ejecuta_comando_sql'),[]),
            
            # (T('9i'), URL('default','prueba_9i')==URL(),URL('default','prueba_9i'),[]),

@@ -132,22 +132,21 @@
     </div>
   {{pass}}
 {{pass}}
-
 <script>
 $(document).ready(function() {
     var ctx = document.getElementById('graficoAnual').getContext('2d');
+    
+    // Preparar datos para el tooltip
+    var promedios_diarios = {{=XML(json.dumps([m['PROMEDIO_DIARIO'] for m in meses]))}};
+    
     var chartData = {
         labels: {{=XML(json.dumps([m['MES_NOMBRE'] for m in meses]))}},
         datasets: [{
             label: 'Declaraciones Mensuales',
             data: {{=XML(json.dumps([m['TOTAL_MENSUAL'] for m in meses]))}},
-            backgroundColor: function(context) {
-                return context.raw === 0 ? 'rgba(200, 200, 200, 0.5)' : 'rgba(75, 192, 192, 0.7)';
-            },
-            borderColor: function(context) {
-                return context.raw === 0 ? 'rgba(200, 200, 200, 1)' : 'rgba(75, 192, 192, 1)';
-            },
-            borderWidth: 1
+            backgroundColor: {{=XML(json.dumps(colores_barras))}},
+            borderColor: {{=XML(json.dumps(bordes_barras))}},
+            borderWidth: 2
         }]
     };
     
@@ -162,7 +161,11 @@ $(document).ready(function() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y === 0 ? 'Sin datos' : context.parsed.y.toLocaleString();
+                            if (context.parsed.y === 0) return 'Sin datos';
+                            var mes = context.label;
+                            var total = context.parsed.y.toLocaleString();
+                            var promedio = promedios_diarios[context.dataIndex];
+                            return [mes, 'Total: ' + total, 'Promedio diario: ' + promedio.toLocaleString()];
                         }
                     }
                 }
@@ -173,6 +176,22 @@ $(document).ready(function() {
                     ticks: {
                         callback: function(value) {
                             return value === 0 ? '0' : value.toLocaleString();
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Cantidad de Declaraciones',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Meses del Año',
+                        font: {
+                            weight: 'bold'
                         }
                     }
                 }
