@@ -5,7 +5,23 @@ import json  # Añade esta línea al inicio del archivo
 
 def consulta_log_error():
     # Obtener conexión
-    connection = get_oracle_connection("172.16.32.67", "SENIAT.seniat.gov.ve", "1523","11")
+    
+    datos = db(
+        (db.servidores.id == 488) &
+        (db.servidores.id == db.basedatos.servidor)
+    ).select().first()
+    
+    error=''    
+    if not datos:
+        return dict(error="No se pudo obtener información del servidor")
+
+    connection = get_oracle_connection(
+        datos.servidores.ip,
+        "SENIAT.seniat.gov.ve",
+        datos.basedatos.puerto,
+        "11"
+    )
+    
     
     try:
         # Consulta para obtener los últimos errores
@@ -40,7 +56,24 @@ def consulta_log_error():
 
 def consulta_seniatfe():
     # Obtener conexión
-    connection = get_oracle_connection("172.17.34.106", "SENIATFE", "1521","11")
+    
+    datos = db(
+        (db.servidores.id == 501) & #seniatfe
+        (db.servidores.id == db.basedatos.servidor)
+    ).select().first()
+    
+    error=''    
+    if not datos:
+        return dict(error="No se pudo obtener información del servidor")
+
+    connection = get_oracle_connection(
+        datos.servidores.ip,
+        "SENIATFE",
+        datos.basedatos.puerto,
+        "12"
+    )
+    
+  
     
     try:
         # Consulta para obtener los últimos errores
@@ -74,7 +107,24 @@ def consulta_seniatfe():
 
 def refresh_data():
     """Función para actualizar los datos via AJAX"""
-    connection = get_oracle_connection("172.16.32.67", "SENIAT.seniat.gov.ve", "1523","11")
+    
+    datos = db(
+        (db.servidores.id == 488) &
+        (db.servidores.id == db.basedatos.servidor)
+    ).select().first()
+    
+    error=''    
+    if not datos:
+        return dict(error="No se pudo obtener información del servidor")
+
+    connection = get_oracle_connection(
+        datos.servidores.ip,
+        "SENIAT.seniat.gov.ve",
+        datos.basedatos.puerto,
+        "11"
+    )
+    
+    
     
     try:
         # Usar la misma consulta que en index()
@@ -296,7 +346,25 @@ def ejecutar_sql():
     
     if form.process().accepted:
         try:
-            connection = get_oracle_connection("172.16.32.67", "SENIAT.seniat.gov.ve", "1523","11")
+            
+            datos = db(
+                (db.servidores.id == 488) &
+                (db.servidores.id == db.basedatos.servidor)
+            ).select().first()
+            
+            error=''    
+            if not datos:
+                return dict(error="No se pudo obtener información del servidor")
+
+            connection = get_oracle_connection(
+                datos.servidores.ip,
+                "SENIAT.seniat.gov.ve",
+                datos.basedatos.puerto,
+                "11"
+            )
+    
+            
+            # Obtener la consulta SQL del formulario
             consulta_original = form.vars.consulta_sql.strip()
             
             # Limpiar la consulta y agregar límite si no tiene
@@ -393,7 +461,24 @@ def ejecutar_sql2():
     if form.process().accepted:
         try:
             #connection = get_oracle_connection("172.0.0.1", "SEN.ve", "1523", "11")
-            connection = get_oracle_connection("172.16.32.67", "SENIAT.seniat.gov.ve", "1523","11")
+            
+            datos = db(
+                (db.servidores.id == 488) &
+                (db.servidores.id == db.basedatos.servidor)
+            ).select().first()
+            
+            error=''    
+            if not datos:
+                return dict(error="No se pudo obtener información del servidor")
+
+            connection = get_oracle_connection(
+                datos.servidores.ip,
+                "SENIAT.seniat.gov.ve",
+                datos.basedatos.puerto,
+                "11"
+            )
+    
+            
             consulta_original = form.vars.consulta_sql.strip()
             
             # Limpiar la consulta y agregar límite si no tiene
