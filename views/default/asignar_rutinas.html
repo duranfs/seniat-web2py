@@ -1,12 +1,19 @@
 {{extend 'layout.html'}}
 
+{{if 'tipobd_id' not in globals():}}
+    {{tipobd_id = ''}}
+{{pass}}
+
 <div class="container">
   <h2 class="text-center my-4">Asignar Rutinas a Servidores</h2>
+
+  <!-- Filtro por tipo de base de datos -->
+  
 
   <div class="card shadow-sm">
     <div class="card-body">
       <form method="post" id="mainForm">
-        <div class="row">
+          <div class="row">
           <!-- Columna de Servidores -->
           <div class="col-md-6">
             <div class="form-group mb-4">
@@ -28,8 +35,9 @@
                          value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
                          {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
                   <label class="list-label" for="servidor{{=servidor.id}}">
-                    {{=servidor.nombre}}({{=show_status(servidor.ambiente_id.descri)}})
-                    {{=db(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first()}}
+                    {{=servidor.nombre}} ({{=show_status(servidor.ambiente_id.descri)}})
+                    <!-- Mostrar tipo de BD principal del servidor si existe -->
+                    {{=show_status(db(db.servidores.id==servidor.id)(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first().tipobd_id.descri) if db(db.servidores.id==servidor.id)(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first() else ''}}
                   </label>
                 </div>
                 {{pass}}
@@ -38,33 +46,33 @@
           </div>
 
           <!-- Columna de Rutinas -->
-<div class="col-md-6">
-  <div class="form-group">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="section-title">Seleccione las rutinas:</h5>
-      <div>
-        <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
-          <i class="bi bi-check-square"></i> Todas
-        </button>
-        <button type="button" id="deselectAllRutinas" class="btn btn-outline-danger btn-action">
-          <i class="bi bi-square"></i> Ninguna
-        </button>
-      </div>
-    </div>
-    <div class="list-container">
-      {{for rutina in rutinas:}}
-      <div class="list-item">
-        <input type="checkbox" class="custom-checkbox" name="rutinas" 
-               value="{{=rutina.id}}" id="rutina{{=rutina.id}}"
-               {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
-        <label class="list-label" for="rutina{{=rutina.id}}">
-          {{=rutina.nombre}} <span class="text-muted">({{=show_status(rutina.tipobd_id.descri)}})</span>
-        </label>
-      </div>
-      {{pass}}
-    </div>
-  </div>
-</div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="section-title">Seleccione las rutinas:</h5>
+                <div>
+                  <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
+                    <i class="bi bi-check-square"></i> Todas
+                  </button>
+                  <button type="button" id="deselectAllRutinas" class="btn btn-outline-danger btn-action">
+                    <i class="bi bi-square"></i> Ninguna
+                  </button>
+                </div>
+              </div>
+              <div class="list-container">
+                {{for rutina in rutinas:}}
+                <div class="list-item">
+                  <input type="checkbox" class="custom-checkbox" name="rutinas" 
+                         value="{{=rutina.id}}" id="rutina{{=rutina.id}}"
+                         {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
+                  <label class="list-label" for="rutina{{=rutina.id}}">
+                    {{=rutina.nombre}} <span class="text-muted">({{=show_status(rutina.tipobd_id.descri)}})</span>
+                  </label>
+                </div>
+                {{pass}}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="d-grid gap-2 mt-4">
