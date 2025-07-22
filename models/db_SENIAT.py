@@ -834,7 +834,7 @@ TIPO_COMANDO = ("BD","SO")
 
 db.define_table("rutina_status",
 	Field("rutina", db.rutinas),
-	Field("servidor_id",db.servidores),
+	Field("servidor_id",db.servidores, ondelete='CASCADE'),
 	Field("tipobd_id",db.tipobd,default=9),
 	Field("status",type="string",default="HABILITADO", requires=IS_IN_SET(STATUS)),
 	Field("resaltado",type="string",default="SI",requires=IS_IN_SET(SN)),

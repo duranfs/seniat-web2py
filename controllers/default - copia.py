@@ -619,7 +619,7 @@ def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 	conexiones_fallidas = 0
 	resultados = {}
 	
-	with ThreadPoolExecutor(max_workers=2) as executor:
+	with ThreadPoolExecutor(max_workers=5) as executor:
 		futures = {
 			executor.submit(execute_single_monitor, m, db, get_oracle_connection, get_sqlserver_connection, get_postgresql_connection): m
 			for m in monitoreos
@@ -713,190 +713,9 @@ def update_monitor_record(db, monitor, resultado, mensaje, success):
 		logging.error(f"[ERROR CRÍTICO] En update_monitor_record: {str(e)}\n{traceback.format_exc()}")
 		raise
 
-#--- verificar los threads en ejecución y el estado de la tarea
-def check_threads_old():
 
-    import threading
-    import sys
-    import os
-    
-    # Obtener información detallada de los hilos
-    active_threads = []
-    for thread in threading.enumerate():
-        active_threads.append({
-            'name': thread.name,
-            'ident': thread.ident,
-            'daemon': thread.daemon,
-            'alive': thread.is_alive(),
-            'native_id': thread.native_id if hasattr(thread, 'native_id') else 'N/A'
-        })
-    
-    # Ordenar por nombre de hilo
-    active_threads.sort(key=lambda x: x['name'])
-    
-    # Información adicional del sistema
-    system_info = {
-        'python_version': sys.version,
-        'platform': sys.platform,
-        'web2py_version': request.env.web2py_version,
-        'pid': os.getpid()
-    }
-    
-    return dict(
-        active_threads=active_threads,
-        system_info=system_info
-    )
-
-
-import threading
-import sys
-import os
-import time
-import psutil
-from gluon.http import HTTP
-
-def check_threads():
-    import threading
-    import sys
-    import os
-    import time
-    import psutil
-    import traceback
-    from collections import defaultdict
-
-    try:
-        current_process = psutil.Process(os.getpid())
-        thread_cpu_times = defaultdict(float)
-        
-        # Obtener tiempos de CPU para cada hilo
-        for thread in current_process.threads():
-            thread_cpu_times[thread.id] = thread
-        
-        threads_info = []
-        for thread in threading.enumerate():
-            # Calcular tiempo de vida aproximado
-            lifetime = round(time.time() - (thread._start_time if hasattr(thread, '_start_time') else time.time()), 2)
-            
-            # Obtener uso de CPU y memoria de forma segura
-            cpu_usage = 0.0
-            memory_usage = 0.0
-            try:
-                if thread.ident in {t.id for t in current_process.threads()}:
-                    # Obtener el porcentaje de CPU de forma alternativa
-                    cpu_usage = round(current_process.cpu_percent(interval=0.1) / os.cpu_count(), 1)
-                    memory_usage = round(current_process.memory_info().rss / (1024 * 1024), 2)
-            except Exception as e:
-                cpu_usage = -1  # Valor indicador de error
-                memory_usage = -1
-            
-            # Obtener stack trace de forma segura
-            stack = []
-            try:
-                frame = sys._current_frames().get(thread.ident)
-                if frame:
-                    for filename, lineno, name, line in traceback.extract_stack(frame):
-                        stack.append(f"File: {filename}, line {lineno}, in {name}")
-                        if line: stack.append(f"  {line.strip()}")
-            except:
-                stack = ["No se pudo obtener el stack trace"]
-            
-            threads_info.append({
-                'name': thread.name,
-                'ident': thread.ident,
-                'native_id': getattr(thread, 'native_id', 'N/A'),
-                'type': 'MainThread' if thread.name == 'MainThread' else 'Worker',
-                'alive': thread.is_alive(),
-                'daemon': thread.daemon,
-                'lifetime': lifetime,
-                'cpu': cpu_usage,
-                'memory': memory_usage,
-                'stack': '\n'.join(stack) if stack else 'No disponible'
-            })
-        
-        # Estadísticas generales
-        stats = {
-            'total_threads': len(threads_info),
-            'active_threads': sum(1 for t in threads_info if t['alive']),
-            'busy_threads': sum(1 for t in threads_info if t['cpu'] > 10),
-            'cpu_percent': round(psutil.cpu_percent()),
-            'threads_info': sorted(threads_info, key=lambda x: x['cpu'], reverse=True)
-        }
-        
-        return stats
-    
-    except Exception as e:
-        return {
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }
-
-def thread_monitor():
-    monitor_data = check_threads()
-    
-    if 'error' in monitor_data:
-        return dict(
-            error=True,
-            error_message=monitor_data['error'],
-            traceback=monitor_data['traceback']
-        )
-    
-    return dict(
-        total_threads=monitor_data['total_threads'],
-        active_threads=monitor_data['active_threads'],
-        busy_threads=monitor_data['busy_threads'],
-        cpu_percent=monitor_data['cpu_percent'],
-        threads_info=monitor_data['threads_info'],
-        system_info={
-            'python_version': sys.version.split('\n')[0],
-            'platform': sys.platform,
-            'web2py_version': request.env.web2py_version,
-            'pid': os.getpid(),
-            'uptime': round(time.time() - request.env.start_time, 2)
-        }
-    )
-
-def thread_monitor():
-    stats = monitor_threads()
-    return dict(
-        total_threads=stats['total_threads'],
-        active_threads=stats['active_threads'],
-        busy_threads=stats['busy_threads'],
-        cpu_percent=stats['cpu_percent'],
-        threads_info=stats['threads_info'],
-        system_info={
-            'python_version': sys.version.split('\n')[0],
-            'platform': sys.platform,
-            'web2py_version': request.env.web2py_version,
-            'pid': os.getpid(),
-            'uptime': round(time.time() - request.env.start_time, 2)
-        }
-    )
-
-def kill_thread():
-    if not request.post_vars.thread_id:
-        raise HTTP(400, "Se requiere thread_id")
-    
-    thread_id = int(request.post_vars.thread_id)
-    for thread in threading.enumerate():
-        if thread.ident == thread_id and thread.name != 'MainThread':
-            # Esto es peligroso en producción!
-            import ctypes
-            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-                ctypes.c_long(thread_id), 
-                ctypes.py_object(SystemExit)
-            )
-            if res == 0:
-                return response.json({'success': False, 'error': 'Hilo no encontrado'})
-            if res != 1:
-                ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
-                return response.json({'success': False, 'error': 'Error al terminar hilo'})
-            
-            return response.json({'success': True})
-    
-    return response.json({'success': False, 'error': 'Hilo no encontrado o no se puede terminar'})
 
 #------ en paralelo ------------------------------------------------------------------------
-
 
 
 
@@ -1136,8 +955,6 @@ def guarda_log_bdmon():
 def rutinas_asignadas():
 	# Esta función ahora es muy simple porque la vista hace las consultas directamente
 	return dict()
-
-
 
 
 
