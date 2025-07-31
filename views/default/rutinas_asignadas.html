@@ -1,8 +1,8 @@
 {{extend 'layout.html'}}
 
 <div class="container mt-4">
-    <h3 class="mb-4">Asignación de Rutinas a Servidores</h3>
-    
+    <h3 class="mb-4">Parámetros asociados a Servidores</h3>
+
     {{# Primero preparar los datos necesarios}}
     {{servidores = db(db.servidores.id>0)(db.servidores.status_mon=='SI').select(orderby=db.servidores.nombre)}}
     {{rutinas = db(db.rutinas.id>0).select(orderby=db.rutinas.nombre)}}
@@ -12,7 +12,7 @@
         <table class="tablex table-sm table-bordered">
             <thead class="thead-lightxxx">
                 <tr>
-                    <th>Rutina</th>
+                    <th>Parámetro</th>
                     {{for servidor in servidores:}}
                         <th class="text-center">{{=servidor.nombre}}</th>
                     {{pass}}

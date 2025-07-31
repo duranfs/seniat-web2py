@@ -1173,7 +1173,7 @@ def asignar_rutinas():
 						])
 				
 				db.commit()
-				response.flash = 'Rutinas asignadas correctamente'
+				response.flash = 'Parámetros asignados correctamente'
 				
 				# Invalidar caché
 				cache.ram.clear(regex='^asignar_rutinas_data_.*')
@@ -1196,7 +1196,7 @@ def asignar_rutinas():
 					db(db.rutina_status.servidor_id == servidor_id).delete()
 				
 				db.commit()
-				response.flash = 'Rutinas eliminadas correctamente'
+				response.flash = 'Parámetros eliminados correctamente'
 				guarda_log_bdmon()
 		except Exception as e:
 				db.rollback()
