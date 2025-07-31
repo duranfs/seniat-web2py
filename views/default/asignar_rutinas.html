@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 
 <div class="container">
-  <h2 class="text-center my-4">Asignar Rutinas a Servidores</h2>
+  <h2 class="text-center my-4">Asignar parámetros a Servidores</h2>
 
   <div class="card shadow-sm">
     <div class="card-body">
@@ -22,17 +22,21 @@
                 </div>
               </div>
               <div class="list-container">
-                {{for servidor in servidores:}}
-                <div class="list-item">
-                  <input type="checkbox" class="custom-checkbox" name="servidores" 
-                         value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
-                         {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
+                {{if not servidores:}}
+                  <p class="text-muted">No hay servidores disponibles.</p>
+                {{else:}}
+                  {{for servidor in servidores:}}
+                  <div class="list-item">
+                    <input type="checkbox" class="custom-checkbox" name="servidores" 
+                           value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
+                           {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
                   <label class="list-label" for="servidor{{=servidor.id}}">
                     {{=servidor.nombre}}
                     [{{=show_status(servidor.ambiente_id.descri)}}]
                     {{=show_status(db(db.servidores.id==servidor.id)(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first().tipobd_id.descri)}}
                   </label>
                 </div>
+                {{pass}}
                 {{pass}}
               </div>
             </div>
@@ -42,7 +46,7 @@
 <div class="col-md-6">
   <div class="form-group">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="section-title">Seleccione las rutinas:</h5>
+      <h5 class="section-title">Seleccione las Parámetros:</h5>
       <div>
         <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
           <i class="bi bi-check-square"></i> Todas

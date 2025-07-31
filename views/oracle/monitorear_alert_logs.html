@@ -1,0 +1,28 @@
+{{extend 'layout.html'}}
+
+<h2>Monitoreo de Alert Logs en Bases de Datos Oracle</h2>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Base de Datos</th>
+            <th>Servidor</th>
+            <th>Fecha/Hora</th>
+            <th>Mensaje de Error</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{for resultado in resultados:}}
+        <tr class="{{='danger' if 'error' in resultado['status'].lower() else 'success'}}">
+            <td>{{=resultado['basedatos']}}</td>
+            <td>{{=resultado['servidor']}}</td>
+            <td>{{=resultado['timestamp']}}</td>
+            <td style="max-width: 500px; overflow: hidden; text-overflow: ellipsis;">
+                {{=resultado['error']}}
+            </td>
+            <td>{{=resultado['status']}}</td>
+        </tr>
+        {{pass}}
+    </tbody>
+</table>

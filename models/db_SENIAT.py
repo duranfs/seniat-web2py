@@ -938,19 +938,11 @@ db.task_guardias.impacto.requires=IS_IN_SET(IMPACTO)
 ## Setup Auth Groups
 #########################################################################
 
-if db(db.auth_group.role=="admin").count() == 0:
-    auth.add_group(role = 'admin')
-    auth.add_group(role = 'dba')
-    auth.add_group(role = 'consulta')
-    auth.add_group(role = 'add_servidor')
-    auth.add_group(role = 'add_basedatos')
-    auth.add_group(role = 'system')
-    auth.add_group(role = 'ADMINISTRADOR ORACLE')
-    auth.add_group(role = 'ADMINISTRADOR POSTGRESQL')
-    auth.add_group(role = 'ADMINISTRADOR MYSQL')
-    auth.add_group(role = 'ADMINISTRADOR SQLSERVER')
-    
-    
+if db(db.auth_group.role=="ADMIN").count() == 0:
+    auth.add_group(role = 'ADMIN')
+    auth.add_group(role = 'DBA')
+    auth.add_group(role = 'CONSULTA')
+    auth.add_group(role = 'SYSTEM')
 
 
 # -------   wiki --------------------------------------------------------------------------

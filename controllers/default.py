@@ -333,6 +333,128 @@ def monitor_bd():
 		filtro_resultado=filtro_resultado
 	)
 
+
+#----- monitor_bd_compacto ------------------------------------------------
+
+@auth.requires_login()
+def monitor_bd_compacto():
+	from gluon import current
+	from gluon.cache import Cache
+	from gluon.scheduler import Scheduler
+	import datetime
+	import hashlib
+	
+	# Obtener el objeto cache
+	cache = Cache(current.request)
+	
+	# Resto del código...
+	filtro_resultado = request.vars.get('filtro_resultado', 'todos')
+	tipo_bd = request.args(0) or 9
+	cache_key = hashlib.md5(f"monitor_bd_{tipo_bd}_{filtro_resultado}".encode()).hexdigest()
+
+	# Obtener la descripción del tipo de base de datos (con caché)
+	def get_tipo_bd_descri():
+		descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
+		return descri._extra['UPPER("tipobd"."descri")'] if descri else None
+
+	tipo_bd_descri = cache.ram(f'tipo_bd_descri_{tipo_bd}', get_tipo_bd_descri, time_expire=3600)
+	
+	# Inicializar variables
+	now = datetime.datetime.now()
+	mensajes = None
+
+	# 1. Obtener datos de monitoreo con filtro (con caché)
+	def obtener_datos_actualizados():
+		query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
+		if filtro_resultado == 'distinto_ok':
+			query &= (db.bdmon.tx_resultado != 'OK')
+		return db(query).select(
+			orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina
+		)
+
+	mon = cache.ram(f'datos_mon_{cache_key}', obtener_datos_actualizados, time_expire=60)
+
+	# 2. Verificar si necesitamos actualización (con caché)
+	def verificar_actualizacion_necesaria():
+		ultima_actualizacion = db(db.bdmon.tx_tipobd==tipo_bd_descri).select(
+			db.bdmon.f_corrida, 
+			orderby=~db.bdmon.f_corrida
+		).first()
+
+		if not ultima_actualizacion or not ultima_actualizacion.f_corrida:
+			return True
+
+		if isinstance(ultima_actualizacion.f_corrida, datetime.date):
+			ultima_actualizacion_dt = datetime.datetime.combine(
+				ultima_actualizacion.f_corrida, 
+				datetime.time.min
+			)
+		else:
+			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
+			
+		diferencia = now - ultima_actualizacion_dt
+		return diferencia.total_seconds() > 1000
+
+	necesita_actualizar = cache.ram(f'actualizacion_necesaria_{cache_key}', 
+								   verificar_actualizacion_necesaria, 
+								   time_expire=30)
+
+	# 3. Procesamiento asíncrono si es necesario
+	if necesita_actualizar:
+		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=300)
+		if not task_running:
+			try:
+				scheduler = Scheduler(db)
+				if not scheduler.task_status('actualizar_monitoreo_async', status='RUNNING'):
+					scheduler.queue_task(
+						'actualizar_monitoreo_async', 
+						timeout=3000,
+						sync_output=5,
+						immediate=True
+					)
+					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=300)
+					mensajes = "Los datos se están actualizando en segundo plano..."
+				else:
+					mensajes = "Actualización en progreso... (por favor espere)"
+			except Exception as e:
+				mensajes = "Iniciando actualización directa (modo seguro)..."
+				try:
+					resultado = actualizar_y_mostrar_monitor_parallel(tipo_bd_descri)
+					if resultado and 'resumen' in resultado:
+						mensajes = resultado['resumen']
+					mon = obtener_datos_actualizados()
+				except Exception as e2:
+					mensajes = "Error en actualización directa"
+
+	# 4. Obtener lista de bases de datos (con caché de largo plazo)
+	def obtener_basedatos():
+		return db(db.basedatos.status_mon.upper() == 'SI')(
+			db.basedatos.tipobd_id==tipo_bd
+		).select(
+			db.basedatos.id,
+			db.basedatos.nombre,
+			db.basedatos.servidor,
+			db.basedatos.tipobd_id,
+			db.basedatos.version_id,
+			db.basedatos.puerto,
+			db.basedatos.ambiente_id,
+			cacheable=False
+		)
+
+	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=3600)
+
+	return dict(
+		mon=mon, 
+		mensajes=mensajes, 
+		ultima_actualizacion=now, 
+		basedatos_mon=basedatos_mon,
+		necesita_actualizar=necesita_actualizar,
+		tipo_bd_descri=tipo_bd_descri,
+		filtro_resultado=filtro_resultado
+	)
+
+
+
 def monitor_bdxxxx():
 	from gluon.cache import Cache
 	from gluon.scheduler import Scheduler

@@ -7,7 +7,7 @@ def consulta_log_error():
     # Obtener conexión
     
     datos = db(
-        (db.servidores.id == 488) &
+        (db.servidores.id == 486) &
         (db.servidores.id == db.basedatos.servidor)
     ).select().first()
     
@@ -846,3 +846,148 @@ def generar_colores_meses(meses):
             bordes.append(bordes_base.get(nombre_mes, 'rgba(75, 192, 192, 1)'))
     
     return colores, bordes
+
+
+
+def monitorear_alert_logs():
+    """Función principal para monitorear alert logs con manejo mejorado de errores"""
+    # Consulta todas las BD Oracle del ambiente 4 (producción)
+    bds_oracle = db((db.basedatos.tipobd_id == db.tipobd.id) & 
+                   (db.basedatos.ambiente_id == 4) &
+                   (db.tipobd.descri.like('%ORACLE%'))).select(
+                       db.basedatos.ALL, 
+                       db.servidores.ip,
+                       db.basedatos.version_id,
+                       join=[
+                           db.servidores.on(db.basedatos.servidor == db.servidores.id),
+                           db.tipobd.on(db.basedatos.tipobd_id == db.tipobd.id)
+                       ])
+    
+    resultados = []
+    
+    for bd in bds_oracle:
+        try:
+            # Obtener información de versión
+            version_row = db(db.ver.id == bd.basedatos.version_id).select(db.ver.descri).first()
+            version_desc = version_row.descri if version_row else 'Desconocida'
+            
+            # Extraer versión numérica
+            try:
+                ver = int(version_desc.split('.')[0])  # Tomar solo el número mayor
+            except:
+                ver = 0  # Valor por defecto
+            
+            # Establecer conexión
+            connection = get_oracle_connection(
+                bd.servidores.ip, 
+                bd.basedatos.nombre, 
+                bd.basedatos.puerto, 
+                ver
+            )
+            
+            if not connection:
+                resultados.append({
+                    'basedatos': bd.basedatos.nombre,
+                    'servidor': bd.servidores.ip,
+                    'timestamp': 'N/A',
+                    'error': 'Error de conexión a la BD',
+                    'status': 'Error conexión'
+                })
+                continue
+                
+            try:
+                cursor = connection.cursor()
+                
+                # Primero verificamos qué vista está disponible
+                vista_disponible = detectar_vista_alert_log(cursor, ver)
+                
+                if not vista_disponible:
+                    resultados.append({
+                        'basedatos': bd.basedatos.nombre,
+                        'servidor': bd.servidores.ip,
+                        'timestamp': 'N/A',
+                        'error': 'No se encontraron vistas de alert log accesibles',
+                        'status': 'Error permisos'
+                    })
+                    continue
+                
+                # Consulta para alert logs
+                query = f"""
+                SELECT 
+                    TO_CHAR(originating_timestamp, 'DD-MON-YYYY HH24:MI:SS') AS timestamp,
+                    message_text AS error_message
+                FROM 
+                    {vista_disponible}
+                WHERE 
+                    (message_text LIKE '%ORA-%' OR
+                     message_text LIKE '%error%' OR
+                     message_text LIKE '%failed%' OR
+                     message_text LIKE '%failure%')
+                    AND originating_timestamp > SYSDATE - 1
+                ORDER BY 
+                    originating_timestamp DESC
+                """
+                
+                cursor.execute(query)
+                logs = cursor.fetchall()
+                
+                if logs:
+                    for log in logs:
+                        resultados.append({
+                            'basedatos': bd.basedatos.nombre,
+                            'servidor': bd.servidores.ip,
+                            'timestamp': log[0],
+                            'error': log[1],
+                            'status': 'Conectado'
+                        })
+                else:
+                    resultados.append({
+                        'basedatos': bd.basedatos.nombre,
+                        'servidor': bd.servidores.ip,
+                        'timestamp': datetime.datetime.now().strftime('%d-%b-%Y %H:%M:%S'),
+                        'error': 'No se encontraron errores en el alert log',
+                        'status': 'Sin errores'
+                    })
+                
+            except Exception as e:
+                resultados.append({
+                    'basedatos': bd.basedatos.nombre,
+                    'servidor': bd.servidores.ip,
+                    'timestamp': 'N/A',
+                    'error': f'Error al consultar: {str(e)}',
+                    'status': 'Error consulta'
+                })
+            finally:
+                if 'cursor' in locals():
+                    cursor.close()
+                connection.close()
+                
+        except Exception as e:
+            resultados.append({
+                'basedatos': bd.basedatos.nombre,
+                'servidor': bd.servidores.ip,
+                'timestamp': 'N/A',
+                'error': f'Error general: {str(e)}',
+                'status': 'Error'
+            })
+    
+    return dict(resultados=resultados)
+
+def detectar_vista_alert_log(cursor, version):
+    """Detecta qué vista de alert log está disponible"""
+    vistas_a_probar = [
+        'v$diag_alert_ext',  # Versiones modernas
+        'x$dbgalertext',     # Versiones antiguas
+        'v$alert_log',       # Algunas configuraciones
+        'gv$diag_alert_ext'  # Para RAC
+    ]
+    
+    for vista in vistas_a_probar:
+        try:
+            cursor.execute(f"SELECT 1 FROM {vista} WHERE ROWNUM = 1")
+            cursor.fetchone()  # Solo probamos si podemos acceder
+            return vista
+        except:
+            continue
+    
+    return None

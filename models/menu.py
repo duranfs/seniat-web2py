@@ -113,14 +113,16 @@ wiki =[
 
 monitor =[
 	(T('Mónitor'), False, '#', [
-            (T('Rutinas'), URL('default','list_rutinas')==URL(),URL('default','list_rutinas'),[]),
-            (T('Asignar Rutinas'), URL('default','asignar_rutinas')==URL(),URL('default','asignar_rutinas'),[]),
-			(T('Administrar Rutinas'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
+            (T('Parámetros'), URL('default','list_rutinas')==URL(),URL('default','list_rutinas'),[]),
+            (T('Asignar Parámetros'), URL('default','asignar_rutinas')==URL(),URL('default','asignar_rutinas'),[]),
+			(T('Administrar Parámetros'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
 			(T('Monitor ORACLE'), False, URL('default','monitor_bd', args=['9']), []), #oracle
 			(T('Monitor SQLServer'), False, URL('default','monitor_bd', args=['11']), []), 
-			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
+			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['9']), []),
+			(T('Monitor Compacto'), False, URL('default','monitor_bd_compacto', args=['9']), []),
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
+            (T('Monitor Alert Logs'), URL('oracle','monitorear_alert_logs')==URL(),URL('oracle','monitorear_alert_logs'),[]),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
               #(T('Prueba SQLSERVER'), URL('sqlserver','index')==URL(),URL('sqlserver','index'),[]),
             #(T('Ejecutar SQL '), URL('default','ejecuta_comando_sql')==URL(),URL('default','ejecuta_comando_sql'),[]),
