@@ -2476,9 +2476,7 @@ def crear_actividades_sd():
 		
 	proyectos = db(db.proyectos.id >0)(db.proyectos.status != 'COMPLETADO').select(db.proyectos.ALL, orderby=db.proyectos.descri)
 	subproyectos=db(db.subproyectos.id>0).select(db.subproyectos.ALL, orderby=db.subproyectos.descri)
-	servidores=db(db.servidores.id>0)(db.servidores.status=='OPERATIVO')(db.servidores.id==db.basedatos.servidor)\
-    (db.basedatos.ambiente_id==db.ambiente.id)\
-    .select(db.servidores.ALL, orderby=db.servidores.ambiente_id|db.servidores.nombre)
+	servidores=db(db.servidores.id>0)(db.servidores.status=='OPERATIVO').select(db.servidores.ALL, orderby=db.servidores.nombre)
 	ambiente=db(db.ambiente.id>0).select()
 
 	if request.vars.cod_proy:

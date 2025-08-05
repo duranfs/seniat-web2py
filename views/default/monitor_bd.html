@@ -379,7 +379,7 @@
                      <label for="filtro_resultado" class="form-label">Parámetros a mostrar:</label>
                         <select name="filtro_resultado" id="filtro_resultado" class="form-select form-select-sm w-auto d-inline-block" onchange="document.getElementById('filtroForm').submit();">
                             <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
-                           <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Distinto de OK</option>
+                           <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo alertas</option>
                         </select>
                     </form>
                 

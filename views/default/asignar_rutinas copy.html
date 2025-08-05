@@ -1,0 +1,207 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+  <h2 class="text-center my-4">Asignar parámetros a Servidores</h2>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" id="mainForm">
+        <div class="row">
+          <!-- Columna de Servidores -->
+          <div class="col-md-6">
+            <div class="form-group mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="section-title">Seleccione servidores:</h5>
+                <div>
+                  <button type="button" id="selectAllServers" class="btn btn-outline-primary btn-action">
+                    <i class="bi bi-check-square"></i> Todos
+                  </button>
+                  <button type="button" id="deselectAllServers" class="btn btn-outline-danger btn-action">
+                    <i class="bi bi-square"></i> Ninguno
+                  </button>
+                </div>
+              </div>
+              <div class="list-container">
+                {{if not servidores:}}
+                  <p class="text-muted">No hay servidores disponibles.</p>
+                {{else:}}
+                  {{for servidor in servidores:}}
+                  <div class="list-item">
+                    <input type="checkbox" class="custom-checkbox" name="servidores" 
+                           value="{{=servidor.id}}" id="servidor{{=servidor.id}}"
+                           {{if str(servidor.id) in (request.vars.servidores or []):}}checked{{pass}}>
+                  <label class="list-label" for="servidor{{=servidor.id}}">
+                    {{=servidor.nombre}}
+                    [{{=show_status(servidor.ambiente_id.descri)}}]
+                    {{=show_status(db(db.servidores.id==servidor.id)(db.servidores.id==db.basedatos.servidor)(db.basedatos.tipobd_id).select(db.basedatos.tipobd_id).first().tipobd_id.descri)}}
+                  </label>
+                </div>
+                {{pass}}
+                {{pass}}
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna de Rutinas -->
+<div class="col-md-6">
+  <div class="form-group">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="section-title">Seleccione las Parámetros:</h5>
+      <div>
+        <button type="button" id="selectAllRutinas" class="btn btn-outline-primary btn-action">
+          <i class="bi bi-check-square"></i> Todas
+        </button>
+        <button type="button" id="deselectAllRutinas" class="btn btn-outline-danger btn-action">
+          <i class="bi bi-square"></i> Ninguna
+        </button>
+      </div>
+    </div>
+    <div class="list-container">
+      {{for rutina in rutinas:}}
+      <div class="list-item">
+        <input type="checkbox" class="custom-checkbox" name="rutinas" 
+               value="{{=rutina.id}}" id="rutina{{=rutina.id}}"
+               {{if str(rutina.id) in (rutinas_asignadas or []):}}checked{{pass}}>
+        <label class="list-label" for="rutina{{=rutina.id}}">
+          {{=rutina.nombre}} <span class="text-muted">({{=show_status(rutina.tipobd_id.descri)}})</span>
+        </label>
+      </div>
+      {{pass}}
+    </div>
+  </div>
+</div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save"></i> Guardar Asignaciones
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ESTILOS PRINCIPALES */
+  .card {
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 15px;
+    padding: 0px;
+  }
+  
+  /* CONTENEDORES DE LISTAS */
+  .list-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 2px;
+    background-color: #f9f9f9;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  
+  /* ESTILOS PARA ITEMS DE LISTA */
+  .list-item {
+    display: flex;
+    align-items: center;
+    padding: 0px 0px;
+    border-bottom: 1px solid #eee;
+    margin: 0;
+    min-height: 32px;
+  }
+  
+  .list-item:last-child {
+    border-bottom: none;
+  }
+  
+  /* CHECKBOXES PERSONALIZADOS - SOLUCIÓN DEFINITIVA */
+  .custom-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 20px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid #6c757d;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+  
+  .custom-checkbox:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+  
+  .custom-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  
+  .list-label {
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    flex-grow: 1;
+    padding-top: 2px;
+  }
+  
+  /* BOTONES */
+  .btn-action {
+    margin-left: 10px;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+  }
+  
+  /* TÍTULOS */
+  .section-title {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+  
+  /* BOTÓN PRINCIPAL */
+  .btn-lg {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+  }
+</style>
+
+<script>
+  // Seleccionar todos los servidores
+  document.getElementById('selectAllServers').addEventListener('click', function() {
+    document.querySelectorAll('.custom-checkbox[name="servidores"]').forEach(checkbox => {
+      checkbox.checked = true;
+    });
+  });
+
+  // Deseleccionar todos los servidores
+  document.getElementById('deselectAllServers').addEventListener('click', function() {
+    document.querySelectorAll('.custom-checkbox[name="servidores"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+  });
+
+  // Seleccionar todas las rutinas
+  document.getElementById('selectAllRutinas').addEventListener('click', function() {
+    document.querySelectorAll('.custom-checkbox[name="rutinas"]').forEach(checkbox => {
+      checkbox.checked = true;
+    });
+  });
+
+  // Deseleccionar todas las rutinas
+  document.getElementById('deselectAllRutinas').addEventListener('click', function() {
+    document.querySelectorAll('.custom-checkbox[name="rutinas"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+  });
+</script>

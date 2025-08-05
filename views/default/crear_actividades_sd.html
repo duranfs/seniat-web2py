@@ -457,7 +457,7 @@ jQuery(document).ready(function(){
                                 onchange="jQuery('#cod_bd').empty(); ajax('func_bd', ['cod_servidor'], 'cod_bd');">
                             {{for ser in servidores:}}
                             <option value="{{=ser.id}}" {{="selected" if str(ser.id)==request.vars.cod_servidor else ""}}>
-                                {{=ser.nombre}}
+                                [{{=ser.nombre}}] {{=ser.ambiente_id.descri}}
                             </option>
                             {{pass}}
                         </select>

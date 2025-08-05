@@ -118,7 +118,7 @@ monitor =[
 			(T('Administrar Parámetros'), URL('default','rutinas_asignadas')==URL(),URL('default','rutinas_asignadas'),[]),
 			(T('Monitor ORACLE'), False, URL('default','monitor_bd', args=['9']), []), #oracle
 			(T('Monitor SQLServer'), False, URL('default','monitor_bd', args=['11']), []), 
-			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['9']), []),
+			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
 			(T('Monitor Compacto'), False, URL('default','monitor_bd_compacto', args=['9']), []),
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),

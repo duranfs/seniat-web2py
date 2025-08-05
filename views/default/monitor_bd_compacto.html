@@ -197,7 +197,7 @@
 <div class="header-controls">
     <select class="filter-select" name="filtro_resultado" onchange="location = this.value;">
         <option value="?filtro_resultado=todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
-        <option value="?filtro_resultado=distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo problemas</option>
+        <option value="?filtro_resultado=distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo alertas</option>
     </select>
     <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">Salir</button>
 </div>
