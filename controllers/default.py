@@ -2476,10 +2476,12 @@ def crear_actividades_sd():
 		
 	proyectos = db(db.proyectos.id >0)(db.proyectos.status != 'COMPLETADO').select(db.proyectos.ALL, orderby=db.proyectos.descri)
 	subproyectos=db(db.subproyectos.id>0).select(db.subproyectos.ALL, orderby=db.subproyectos.descri)
-	servidores=db(db.servidores.id>0)(db.servidores.status=='OPERATIVO')(db.servidores.id==db.basedatos.servidor)\
+
+	servidores=db(db.servidores.id>0)(db.servidores.status=='OPERATIVO')\
     (db.basedatos.ambiente_id==db.ambiente.id)\
     .select(db.servidores.ALL, orderby=db.servidores.ambiente_id|db.servidores.nombre)
-	ambiente=db(db.ambiente.id>0).select()
+    
+	ambientes=db(db.ambiente.id>0).select()
 
 	if request.vars.cod_proy:
 		subproyectos = db(db.subproyectos.proyecto==request.vars.cod_proy).select(db.subproyectos.ALL, orderby=db.subproyectos.descri)
@@ -2507,6 +2509,14 @@ def crear_actividades_sd():
 	appl = db(db.basedatos.id>0)(db.basedatos.appl != 'None').\
 	select(db.basedatos.nombre, db.basedatos.appl, db.basedatos.servidor, distinct=True, orderby="nombre")
 	return locals()
+
+def servidores_por_ambiente():
+    cod_ambiente = request.vars.cod_ambiente
+    servidores = db(db.servidor.ambiente_id == cod_ambiente).select()
+    options = [OPTION(ser.nombre + ' - ' + ser.ambiente_id.descri, _value=ser.id) 
+               for ser in servidores]
+    return XML(SELECT(*options, _name='cod_servidor', _id='cod_servidor', 
+                _class='form-select obligatorio', _required='required'))
 
 def filtrar_servidores():
 	tipo_bd = request.vars.tipo_bd
