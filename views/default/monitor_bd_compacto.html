@@ -184,7 +184,8 @@
 {{ from collections import defaultdict }}
 {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
 {{ for m in mon: }}
- {{ if '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle: continue }}
+ {{  if m.tx_resultado_detalle is not None and '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
+    continue }}
     {{ if m.tx_resultado: }}
         {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
         {{ servidor = m.tx_servidor.upper() }}

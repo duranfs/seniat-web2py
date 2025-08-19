@@ -78,7 +78,7 @@ def consulta_seniatfe():
     try:
         # Consulta para obtener los últimos errores
         sql = """
-            SELECT to_char(REGISTRO_FECHA, 'YYYY-mm-dd') as FECHA, COUNT(1) AS CANTIDAD
+            SELECT /*+ parallel(4) */ to_char(REGISTRO_FECHA, 'YYYY-mm-dd') as FECHA, COUNT(1) AS CANTIDAD
             FROM ITAXUSER.LIB_REPORTEZ lr
             WHERE REGISTRO_FECHA >= TRUNC(ADD_MONTHS(SYSDATE, -1), 'MONTH')
             -- AND REGISTRO_FECHA < TRUNC(SYSDATE, 'MONTH')
@@ -586,7 +586,7 @@ def declaraciones():
     try:
         # Consulta SQL para Oracle
         sql = """
-        SELECT TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY') AS "DAY",
+        SELECT /*+ parallel(4) */ TO_CHAR(FECHA_INGRESO_DECLARACION, 'DD/MON/YYYY') AS "DAY",
                count(*) AS TOTAL,
                SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '00', 1, 0), '99')) "00",
                SUM(TO_NUMBER(DECODE(TO_CHAR(FECHA_INGRESO_DECLARACION, 'HH24'), '01', 1, 0), '99')) "01",
@@ -723,7 +723,7 @@ def declaraciones_por_anio():
 
         # Consulta SQL con formato de mes en español
         sql = """
-        SELECT 
+        SELECT /*+ parallel(8) */
             TRIM(TO_CHAR(TRUNC(FECHA_INGRESO_DECLARACION, 'MM'), 'MONTH', 'NLS_DATE_LANGUAGE=SPANISH')) AS MES_NOMBRE,
             COUNT(*) AS TOTAL_MENSUAL,
             ROUND(COUNT(*) / 
