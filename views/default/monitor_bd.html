@@ -346,16 +346,16 @@
 <!-- Contenedor para todo el contenido - oculto inicialmente -->
 <div id="content-container">
 
-{{if mon:}}
+{{if mon is not None:}}
 
 {{ from collections import defaultdict }}
 {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
 {{ for m in mon: }}
  {{
-    if '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
+    if m.tx_resultado_detalle is not None and '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
     continue
   }}
-    {{ if m.tx_resultado: }}
+    {{ if m.tx_resultado and m.tx_resultado.strip(): }}
         {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
         {{ servidor = m.tx_servidor.upper() }}
         {{ instancia = m.tx_instancia.upper() }}
@@ -365,7 +365,7 @@
     {{ pass }}
 {{ pass }}
 {{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
-{{ mon_set = set((m.tx_servidor.upper(), m.tx_instancia.upper()) for m in mon) }}
+{{ mon_set = set([(m.tx_servidor.upper(), m.tx_instancia.upper()) for m in mon]) }}
 
 {{ for ambiente in orden_ambientes: }}
     {{ if ambiente in agrupado: }}
@@ -484,6 +484,11 @@
     {{ pass }}
 {{ pass }}
 
+{{else:}}
+<div style="color: white; text-align: center; padding: 20px;">
+    <h2>No hay datos de monitoreo disponibles</h2>
+    <p>No se pudo obtener información de las bases de datos monitoreadas.</p>
+</div>
 {{pass}}
 
 </div> <!-- Cierre del content-container -->
