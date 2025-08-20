@@ -99,14 +99,14 @@ jQuery(document).ready(function(){
                     <div class="col-md-3">
                         <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
                         <input type="datetime-local" class="form-control obligatorio" name="fecha_inicio" 
-                               id="fecha_inicio" required onchange="actualiza_actividades(); resta();">
+                               id="fecha_inicio" required onchange="actualiza_actividades(); calcularHoras();">
                         <div class="invalid-feedback">Ingrese fecha válida</div>
                     </div>
                     
                     <div class="col-md-3">
                         <label for="fecha_fin" class="form-label">Fecha Fin</label>
                         <input type="datetime-local" class="form-control obligatorio" name="fecha_fin" 
-                               id="fecha_fin" required onchange="resta();">
+                               id="fecha_fin" required onchange="actualiza_actividades(); calcularHoras();">
                         <div class="invalid-feedback">Ingrese fecha válida</div>
                     </div>
                     
@@ -122,6 +122,10 @@ jQuery(document).ready(function(){
                                id="horas_extras" value="0.00" readonly>
                     </div>
                     
+                    <div id="aviso_finde" style="display:none; color: red; font-weight: bold; margin-top: 5px;"></div>
+                    <div id="detalle_dias" style="margin-top:10px;"></div>
+
+
                     <div class="col-md-2">
                         <label for="tipo" class="form-label">Tipo</label>
                         <select id="tipo" name="tipo" class="form-select obligatorio" required>
@@ -354,65 +358,6 @@ function valida_fechas() {
         }
     }
 
-function resta(){
-
-  var now = new Date();
-  var dia_actual = now.getDate();
-  var inicio = new Date(document.getElementById("fecha_inicio").value);
-  var fin = new Date(document.getElementById("fecha_fin").value);
-
-  //if (dia_actual == inicio.getDate()){
-  
-      var hi = inicio.getTime();
-      var hf = fin.getTime();
-      var extras = 0;
-
-      var first = inicio.getDate() - inicio.getDay(); //domingo del fin de semana
-      var last =  first + 6; //sabado del fin de semana
-
-      var dia_semana = inicio.getDay(); // dia de la semana (0..6) 6-sabado, 0-domingo
-
-      if (dia_semana == 0 || dia_semana == 6 ){
-        //alert('Fin de semana');
-        if (hi <= hf)
-      {
-          var difference = Math.abs(fin-inicio);
-          var horas = difference / 1000 / 60 / 60;
-            document.getElementById("horas_laboradas").value = '0.00';   
-            document.getElementById("horas_extras").value = horas.toFixed(2); 
-            //document.getElementById("horas_extras").value = dia_semana; 
-      
-      } else { 
-            document.getElementById("horas_laboradas").value = '0.00';   
-            document.getElementById("horas_extras").value = '0.00'; 
-      }
-        
-      } 
-      else 
-      {
-      if (hi <= hf)
-      {
-          var difference = Math.abs(fin-inicio);
-          var horas = difference / 1000 / 60 / 60;
-          //horas = convierte_60(horas);
-          //horas = horas / 60 ;
-          extras = extra(); 
-          if (extras > 0)
-          {
-             horas = horas - extras;
-            document.getElementById("horas_laboradas").value = horas.toFixed(2); 
-          } else {
-            document.getElementById("horas_laboradas").value = horas.toFixed(2); 
-            //document.getElementById("horas_extras").value = dia_semana; 
-          }
-      } else { 
-            document.getElementById("horas_laboradas").value = '0.00';   
-            document.getElementById("horas_extras").value = '0.00'; 
-      }
-    }
-}
-
-
 function convierte_60(h){
   h = (h * 60) ;
   return h;
@@ -422,181 +367,6 @@ function pad(n) {
     return n<10 ? '0'+n : n
 }
 
-
-
-function extra(){
-  inicio = new Date(document.getElementById("fecha_inicio").value);
-  fin = new Date(document.getElementById("fecha_fin").value);
- 
-  var i_hora8am = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 8, 0, 0  );
-  var i_hora5pm = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 17, 0, 0  );
-  var i_hora23 = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 23, 59, 59  );
-
-  var f_hora8am = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 8, 0, 0  );
-  var f_hora5pm = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 17, 0, 0  );
-  var f_hora23 = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 23, 59, 59  );
-  var f_hora00 = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 0, 0, 1  );
-  var f_hora7am = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 7, 59, 59  );
-  var diferencia_dias = Math.trunc((fin.getTime() - inicio.getTime())/(1000 * 60 * 60 * 24));
-
-
-  if (inicio.getDate() == fin.getDate()){
-    if (inicio < i_hora8am && (fin >= f_hora8am && fin < f_hora5pm) ){
-      a = calcula_diferencia(i_hora8am, inicio);
-      horas = a;
-    }
-    else if (inicio < i_hora8am && fin >= f_hora5pm){
-      a = calcula_diferencia(i_hora8am, inicio);
-      b  = calcula_diferencia(fin,f_hora5pm);
-      horas = a + b;
-    }
-    else if (fin >= f_hora5pm && (inicio >= i_hora8am && inicio < i_hora5pm)){
-      a = calcula_diferencia(f_hora5pm, fin);
-      horas = a;
-    }
-    else if (inicio < i_hora8am && fin < f_hora8am || inicio >= i_hora5pm && fin >= f_hora5pm){
-        a = calcula_diferencia(fin, inicio);
-        horas = a;  
-    }
-    else{
-      horas=0;
-    }
-
-  }
- 
-
-  else if ( (fin.getDate() - inicio.getDate()) == 1 ){
-     //alert( fin.getDate() - inicio.getDate() )
-    if (inicio <= i_hora8am && fin <= f_hora7am){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7;
-        c = calcula_diferencia(fin, f_hora00);  
-        horas = a + b + c ;
-    }
-    if (inicio <= i_hora8am && ( fin >= f_hora7am && fin <= f_hora5pm) ){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7;
-        c = 8;
-        horas = a + b + c ;
-    }
-    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && fin <= f_hora7am){
-    
-        a = 7;
-        b = calcula_diferencia(fin, f_hora00);  
-        horas = a + b;
-    }
-    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora7am && fin <= f_hora5pm) ){
-        a = 7;
-        b = 8;  
-        horas = a + b;
-    }
-    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora5pm) ){
-        //alert('paso1')
-        a = 7;
-        b = 8;
-        d = calcula_diferencia(fin, f_hora5pm);  
-        horas = a + b + d;
-    }
-    
-   else if (inicio <= i_hora8am && fin >= f_hora5pm ){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7;
-        c = 8;
-        d = calcula_diferencia(fin, f_hora5pm);
-        horas = a + b + c + d;
-    }
-   else if ( inicio >= i_hora5pm && fin <= f_hora7am){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = calcula_diferencia(fin, f_hora00);  
-        horas = a + b;
-    }
-    else if (inicio >= i_hora5pm && (fin >= f_hora8am && fin <= f_hora5pm) ){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = 8;  
-        horas = a + b;  
-    }
-    else if (inicio >= i_hora5pm && ( fin >= f_hora5pm) ){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = 13;
-        c = calcula_diferencia(fin, f_hora5pm);
-        horas = a + b + c;
-    }
-    else if (fin >= f_hora5pm){
-        a = calcula_diferencia(fin, f_hora5pm)
-        b = calcula_diferencia(i_hora8am, inicio);
-        c = calcula_diferencia(f_hora5pm, fin);
-        horas = a + b + c;
-    }
-}
-
-else if ( (fin.getDate() - inicio.getDate()) > 1) {
-   //alert( fin.getDate() - inicio.getDate() )
- 
-    if (inicio <= i_hora8am && fin <= f_hora7am){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7 * diferencia_dias;
-        c = calcula_diferencia(fin, f_hora00);  
-        horas = a + b + c ;
-    }
-    if (inicio <= i_hora8am && ( fin >= f_hora7am && fin <= f_hora5pm) ){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7 * diferencia_dias;
-        c = 8 * diferencia_dias;
-        horas = a + b + c ;
-    }
-    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && fin <= f_hora7am){
-        a = 7 * diferencia_dias;
-        b = calcula_diferencia(fin, f_hora00);  
-        horas = a + b;
-    }
-    else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora7am && fin <= f_hora5pm) ){
-        a = 7 * diferencia_dias;
-        b = 8 * diferencia_dias;  
-        horas = a + b;
-    }
-     else if ( (inicio >= i_hora8am && inicio <= i_hora5pm) && (fin >= f_hora5pm) ){
-        a = 7 * diferencia_dias;
-        b = 8 * diferencia_dias;
-        d = calcula_diferencia(fin, f_hora5pm);  
-        horas = a + b + d;
-    }
-    else if (inicio <= i_hora8am && fin >= f_hora5pm ){
-        a = calcula_diferencia(i_hora8am, inicio);
-        b = 7 * diferencia_dias;
-        c = 8 * diferencia_dias;
-        d = calcula_diferencia(fin, f_hora5pm);
-        horas = a + b + c + d;
-    }
-    else if ( inicio >= i_hora5pm && fin <= f_hora7am){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = calcula_diferencia(fin, f_hora00); 
-        c = 15 * diferencia_dias; 
-        horas = a + b + c ;
-    }
-    else if (inicio >= i_hora5pm && (fin >= f_hora8am && fin <= f_hora5pm) ){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = 8 * diferencia_dias;  
-        horas = a + b;  
-    }
-    else if (inicio >= i_hora5pm && ( fin >= f_hora5pm) ){
-        a = calcula_diferencia(i_hora23, inicio);
-        b = 13 * diferencia_dias;
-        c = calcula_diferencia(fin, f_hora5pm);
-        horas = a + b + c;
-    }
-    else if (fin >= f_hora5pm){
-        //alert('paso')
-        a = calcula_diferencia(fin, f_hora5pm)
-        b = calcula_diferencia(i_hora8am, inicio);
-        c = calcula_diferencia(f_hora5pm, fin);
-        horas = a + b + c;
-    }
-}
-
-  //horas = convierte_60(horas);
-  document.getElementById("horas_extras").value = (horas).toFixed(2) ;
-  return horas;
-}
 
 
 
@@ -649,4 +419,100 @@ function initClock(){
   setTimeout('initClock()', 500);
 
 }
+
+
+
+function calcularHoras() {
+    let inicio = new Date(document.getElementById("fecha_inicio").value);
+    let fin = new Date(document.getElementById("fecha_fin").value);
+
+    if (fin <= inicio) {
+        document.getElementById("horas_laboradas").value = "0.00";
+        document.getElementById("horas_extras").value = "0.00";
+        document.getElementById("detalle_dias").innerHTML = "";
+        return;
+    }
+
+    let horasNormales = 0;
+    let horasExtras = 0;
+    let incluyeFinDeSemana = false;
+    let detalleHTML = `
+        <table class='table table-sm table-bordered' style="border-collapse: collapse; width: 100%; text-align: center;">
+        <thead style="background-color:#cce5ff; font-weight:bold;">
+            <tr>
+                <th>Fecha</th>
+                <th>Día</th>
+                <th>Horas Normales</th>
+                <th>Horas Extras</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    let actual = new Date(inicio);
+    let rowIndex = 0;
+
+    while (actual < fin) {
+        let normalInicio = new Date(actual.getFullYear(), actual.getMonth(), actual.getDate(), 8, 1, 0);
+        let normalFin = new Date(actual.getFullYear(), actual.getMonth(), actual.getDate(), 17, 0, 0);
+
+        let finDia = new Date(actual.getFullYear(), actual.getMonth(), actual.getDate(), 23, 59, 59);
+        if (fin < finDia) finDia = new Date(fin);
+
+        let tramoInicio = (inicio > actual) ? inicio : actual;
+        let tramoFin = finDia;
+
+        let horasDia = (tramoFin - tramoInicio) / 1000 / 60 / 60;
+        let normalesDia = 0;
+        let extrasDia = horasDia;
+
+        let diaSemana = actual.getDay(); // 0=domingo, 6=sábado
+        let nombresDias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+
+        if (diaSemana !== 0 && diaSemana !== 6) {
+            let iniNormal = (tramoInicio > normalInicio) ? tramoInicio : normalInicio;
+            let finNormal = (tramoFin < normalFin) ? tramoFin : normalFin;
+            if (iniNormal < finNormal) {
+                normalesDia = (finNormal - iniNormal) / 1000 / 60 / 60;
+                extrasDia -= normalesDia;
+            }
+        } else {
+            incluyeFinDeSemana = true;
+        }
+
+        horasNormales += normalesDia;
+        horasExtras += extrasDia;
+
+        // colores para la fila
+        let bgColor = (diaSemana === 0 || diaSemana === 6) ? "#fff3cd" : (rowIndex % 2 === 0 ? "#f8f9fa" : "#ffffff");
+
+        let fechaStr = actual.toISOString().slice(0,10);
+        detalleHTML += `
+            <tr style="background-color:${bgColor};">
+                <td>${fechaStr}</td>
+                <td>${nombresDias[diaSemana]}</td>
+                <td>${normalesDia.toFixed(2)}</td>
+                <td>${extrasDia.toFixed(2)}</td>
+            </tr>
+        `;
+
+        actual = new Date(actual.getFullYear(), actual.getMonth(), actual.getDate() + 1, 0, 0, 0);
+        rowIndex++;
+    }
+
+    detalleHTML += "</tbody></table>";
+
+    document.getElementById("horas_laboradas").value = horasNormales.toFixed(2);
+    document.getElementById("horas_extras").value = horasExtras.toFixed(2);
+    document.getElementById("detalle_dias").innerHTML = detalleHTML;
+
+    let aviso = document.getElementById("aviso_finde");
+    if (incluyeFinDeSemana) {
+        aviso.style.display = "block";
+        aviso.innerText = "⚠ Atención: parte de la jornada cayó en fin de semana. Todas esas horas cuentan como extras.";
+    } else {
+        aviso.style.display = "none";
+    }
+}
 </script>
+
