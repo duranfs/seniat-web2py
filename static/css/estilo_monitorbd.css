@@ -1,0 +1,250 @@
+        body {
+            font-family: Arial, sans-serif;
+            background: #bdbde4;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .exit-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .exit-button:hover {
+            background: #c0392b;
+        }
+        .ambiente-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 0px;
+        }
+        .ambiente-title {
+            width: 100%;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ambiente-title-text {
+            flex: 1;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .ambiente-produccion { border-color: #3498db;  }
+        .ambiente-qa { border-color: #f39c12; }
+        .ambiente-desarrollo { border-color: #e74c3c; }
+        .ambiente-otros { border-color: #9b59b6; }
+
+        /* #para que se adapten los cuadros de las instancias a la pantalla */
+        /* */
+         .instancia-card {
+            background: #ffffff;
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 10px;
+            width: 250px;
+            flex-grow: 1;
+            box-shadow: 1px 1px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            
+        }
+        /* # cuadros fijos */
+        .instancia-cardxx {
+            background: #ffffff;
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 10px;
+            width: 200px;
+            box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .instancia-card.produccion { border-color: #3498db; }
+        .instancia-card.qa { border-color: #f39c12; }
+        .instancia-card.desarrollo { border-color: #e74c3c;  }
+        .instancia-card.otros { border-color: #9b59b6; }
+        
+        .instancia-card.alerta {
+            border-color: #f44336 !important;
+            animation: border-blink 1s linear infinite;
+        }
+        .instancia-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+        .acciones {
+            margin-bottom: 5px;
+        }
+        .acciones a {
+            display: inline-block;
+            margin: 2px 3px 2px 0;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 13px;
+        }
+        .rutina-item {
+            margin-left: 10px;
+            padding: 2px 0;
+            font-size: 13px;
+        }
+        .resultado-ok { color: green; font-weight: bold; }
+        .resultado-alerta { 
+            color: red; 
+            /*font-weight: bold;*/
+            animation: blink 1s linear infinite;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        @keyframes border-blink {
+            0% { border-color: #f44336; }
+            50% { border-color: #ff9999; }
+            100% { border-color: #f44336; }
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 24px;
+            z-index: 9999;
+        }
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid #3498db;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .loading-details {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .rutinas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+        .rutinas-table th {
+            text-align: left;
+            padding: 3px;
+            background-color: #f2f2f2;
+            border-bottom: 1px solid #ddd;
+        }
+        .rutinas-table td {
+            padding: 3px;
+            border-bottom: 1px solid #eee;
+            line-height: 1.2; 
+        }
+        .rutinas-table tr:last-child td {
+            border-bottom: none;
+        }
+        #content-container {
+            display: none;
+        }
+        #update-info {
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        #countdown {
+            color: #3498db;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+    
+    .db-version-19 {
+    background-color: #4CAF50; /* Verde */
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    }
+     .db-version-11 {
+    background-color: #752626; /* rojo */
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    }
+    
