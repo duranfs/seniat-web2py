@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+   
+<head>
+
+    <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
+
+    <script>
+        // Variables globales
+        const REFRESH_INTERVAL = 120; // 2 minutos en segundos
+        let countdownTimer;
+        let refreshTimer;
+
+        // Función para actualizar la página
+        function refreshPage() {
+            // Limpiar los timers antes de recargar
+            clearInterval(countdownTimer);
+            clearTimeout(refreshTimer);
+            location.reload();
+        }
+
+        // Función para actualizar el contador
+        function updateCountdown() {
+            let countdown = REFRESH_INTERVAL;
+            const countdownElement = document.getElementById('countdown');
+            
+            // Limpiar timer existente si lo hay
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            // Actualizar el contador cada segundo
+            countdownTimer = setInterval(function() {
+                countdown--;
+                const minutes = Math.floor(countdown / 60);
+                const seconds = countdown % 60;
+                countdownElement.textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                
+                if (countdown <= 0) {
+                    refreshPage();
+                }
+            }, 1000);
+
+            // Programar el refresh
+            refreshTimer = setTimeout(refreshPage, REFRESH_INTERVAL * 1000);
+        }
+
+        // Iniciar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCountdown();
+            
+            // Mostrar el contenido cuando esté listo
+            const contentContainer = document.getElementById('content-container');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const monitoringPopup = document.getElementById('monitoring-popup');
+            
+            if (contentContainer && loadingOverlay && monitoringPopup) {
+                contentContainer.style.display = 'block';
+                loadingOverlay.style.display = 'none';
+                if (loadingOverlay.style.display === 'none') {
+                    monitoringPopup.style.display = 'none';
+                } else {
+                    // Esperar a que el overlay se oculte
+                    const observer = new MutationObserver(function() {
+                        if (loadingOverlay.style.display === 'none') {
+                            monitoringPopup.style.display = 'none';
+                            observer.disconnect();
+                        }
+                    });
+                    observer.observe(loadingOverlay, { attributes: true, attributeFilter: ['style'] });
+                }
+            }
+        });
+    </script>
+
+    <link rel="stylesheet" href="{{=URL('static', 'css/estilo_monitorbd.css')}}">
+</head>
+<body>
+
+<!-- Overlay de carga - aparece inmediatamente -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Procesando información de monitoreo</div>
+    <div class="loading-details">Por favor espere, esto puede tomar unos momentos...</div>
+</div>
+
+<!-- Popup de avance de monitoreo -->
+<div id="monitoring-popup" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:white;padding:40px 60px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.2);text-align:center;min-width:300px;">
+        <div style="margin-bottom:20px;font-size:20px;font-weight:bold;">Consultando instancias, por favor espere...</div>
+        <div id="progreso-monitoreo" style="margin-bottom:10px;font-size:16px;color:#333;">Preparando monitoreo...</div>
+        <div class="spinner" style="margin:auto;width:48px;height:48px;border:6px solid #f3f3f3;border-top:6px solid #3498db;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    </div>
+</div>
+
+<!-- Contenedor para todo el contenido - oculto inicialmente -->
+<div id="content-container">
+
+{{if mon is not None:}}
+
+{{ from collections import defaultdict }}
+{{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
+{{ for m in mon: }}
+ {{
+    if m.tx_resultado_detalle is not None and '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
+    continue
+  }}
+    {{ if m.tx_resultado and m.tx_resultado.strip(): }}
+        {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
+        {{ servidor = m.tx_servidor.upper() }}
+        {{ instancia = m.tx_instancia.upper() }}
+        {{ agrupado[ambiente][servidor][instancia].append(m) }}
+    {{ else:}}
+        {{ "Problemas en la conexion" }}    
+    {{ pass }}
+{{ pass }}
+{{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
+{{ mon_set = set([(m.tx_servidor.upper(), m.tx_instancia.upper()) for m in mon]) }}
+
+{{ for ambiente in orden_ambientes: }}
+    {{ if ambiente in agrupado: }}
+    <div class="ambiente-container">
+        <div class="ambiente-title {{='ambiente-'+ambiente}}">
+            <span class="ambiente-title-text">{{=ambiente.upper()}}</span>
+            {{if ambiente.upper()=='PRODUCCION':}} 
+                <!-- combo Ok o tistintos_ok -->
+                <div class="header-controls">
+                    <form method="get" id="filtroForm" class="mb-3">
+                     <label for="filtro_resultado" class="form-label">Parámetros a mostrar:</label>
+                        <select name="filtro_resultado" id="filtro_resultado" class="form-select form-select-sm w-auto d-inline-block" onchange="document.getElementById('filtroForm').submit();">
+                            <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
+                           <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo alertas</option>
+                        </select>
+                    </form>
+                
+              
+                    <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">
+                        Volver a la aplicación principal 
+                    </button>
+                    <span id="update-info">
+                        Última actualización: {{=ultima_actualizacion.strftime('%H:%M:%S')}}
+                        <span id="countdown">2:00</span>
+                    </span>
+                </div>
+            {{pass}}        
+        </div>
+        {{# Agrupar instancias por tipo de base de datos #}}
+        {{ tipobd_dict = dict() }}
+        {{ for servidor, instancias in agrupado[ambiente].items(): }}
+            {{ for instancia, rutinas in instancias.items(): }}
+                {{ tipobd = rutinas[0].tx_tipobd.upper() if rutinas and hasattr(rutinas[0], 'tx_tipobd') else 'OTRO' }}
+                {{ if tipobd not in tipobd_dict: tipobd_dict[tipobd] = [] }}
+                {{ tipobd_dict[tipobd].append((servidor, instancia, rutinas)) }}
+            {{ pass }}
+        {{ pass }}
+        {{ # Orden deseado de tipos de base de datos }}
+        {{ orden_tipobd = ['ORACLE', 'MSSQLSERVER', 'POSTGRES', 'SQLSERVER', 'MYSQL', 'OTRO'] }}
+        {{ # Mostrar primero los de la lista, luego el resto }}
+        {{ for tipobd in orden_tipobd + [k for k in tipobd_dict.keys() if k not in orden_tipobd]: }}
+            {{ if tipobd in tipobd_dict: }}
+                <div class="ambiente-title" style="font-size:18px; color:#666; border:none; margin-top:10px;">{{=tipobd}}</div>
+                {{ for servidor, instancia, rutinas in tipobd_dict[tipobd]: }}
+                    {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
+                    <div class="instancia-card {{='alertaxxx' if alerta else ''}} {{=ambiente}}">
+                        <div class="instancia-header">
+                            {{=instancia}}({{=rutinas[0].tx_servidor}}) {{=nombre_appl(instancia, func_id_servidor(rutinas[0].tx_servidor.upper())) }} <br>
+                            <span class="{{='db-version-11' if int(version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri.split('.')[0]) < 12 else 'db-version-19'}}">
+                                ({{=I(show_status(rutinas[0].tx_tipobd.lower()))}} - {{=rutinas[0].tx_puerto}}) - {{=version_bd(rutinas[0].tx_instancia.upper(), func_id_servidor(rutinas[0].tx_servidor.upper())).descri}}
+                            </span>
+                        </div>
+                        <div class="acciones">
+                            {{ id_servidor = func_id_servidor(rutinas[0].tx_servidor.upper()) }}
+                            {{ id_basedatos = func_id_basedatos(rutinas[0].tx_instancia.upper(), id_servidor) }}
+                        </div>
+                        <table class="rutinas-table">
+                            <thead>
+                                <tr>
+                                    <th>Rutina</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ for r in rutinas: }}
+                                <tr>
+                                    <td>{{=r.tx_rutina.capitalize()}}</td>
+                                    <td>
+                                        {{if r.tx_resultado == "OK":}}
+                                            <span class="tooltip">
+                                                <span style="text-align: center" class="resultado-ok">🟢</span>
+                                                <span class="tooltiptext">Estado: Correcto</span>
+                                            </span>
+                                        {{else:}}
+                                            <span class="tooltip">
+                                                <span class="resultado-alerta">🔴 {{=r.tx_resultado.lower()}}</span>
+                                                <span class="tooltiptext">Estado: Error o Alerta</span>
+                                            </span>
+                                        {{pass}}
+                                    </td>
+                                </tr>
+                                {{ pass }}
+                            </tbody>
+                        </table>
+                    </div>
+                {{ pass }}
+                {{ if basedatos_mon: }}
+                    {{ for bd in basedatos_mon: }}
+                        {{ amb_bd = bd.ambiente_id.descri.lower() if hasattr(bd.ambiente_id, 'descri') else 'otros' }}
+                        {{ servidor_bd = bd.servidor.nombre.upper() if hasattr(bd.servidor, 'nombre') else str(bd.servidor).upper() }}
+                        {{ instancia_bd = bd.nombre.upper() }}
+                        {{ tipobd_bd = bd.tipobd_id.descri.upper() if hasattr(bd.tipobd_id, 'descri') else 'OTRO' }}
+                        {{ if amb_bd == ambiente and tipobd_bd == tipobd and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
+                            <div class="instancia-card alerta {{=ambiente}}">
+                                <div class="instancia-header">
+                                    {{=instancia_bd}} ({{=servidor_bd}})<br>
+                                    {{if (db(db.bdmon.tx_instancia == instancia_bd)(db.bdmon.tx_servidor == servidor_bd)(db.bdmon.tx_resultado == 'OK').select(limitby=(0,1))):}}
+                                        <span class="db-versionxx-11">Totos los Parametros OK 🟢</span>
+                                    {{else:}}
+                                        <span class="db-version-11">No disponible / No se puede conectar</span>
+                                          <div class="acciones">
+                                    <!-- Aquí puedes agregar acciones deshabilitadas o información adicional -->
+                                </div>
+                                <div style="color: #f44336; font-weight: bold; padding: 10px;">La base de datos no está disponible o no se pudo conectar.</div>
+                                    {{pass}}
+                               </div>
+                              
+                            </div>
+                        {{pass}}
+                    {{pass}}
+                {{pass}}
+            {{ pass }}
+        {{ pass }}
+        {{# Fin agrupación por tipo de BD #}}
+    </div>
+    {{ pass }}
+{{ pass }}
+
+{{else:}}
+<div style="color: white; text-align: center; padding: 20px;">
+    <h2>No hay datos de monitoreo disponibles</h2>
+    <p>No se pudo obtener información de las bases de datos monitoreadas.</p>
+</div>
+{{pass}}
+
+</div> <!-- Cierre del content-container -->
+
+<script>
+// Variable para controlar si se necesita recargar
+let necesitaRecarga = true;
+let ultimaActualizacion = new Date("{{=ultima_actualizacion.isoformat()}}");
+
+// Mostrar el overlay inmediatamente
+document.addEventListener('DOMContentLoaded', function() {
+    $('#loading-overlay').show();
+    
+    // Calcular tiempo desde última actualización
+    const ahora = new Date();
+    const diferenciaMs = ahora - ultimaActualizacion;
+    const diferenciaMin = Math.floor(diferenciaMs / (1000 * 120));
+    
+    // Actualizar el texto de última actualización
+    const updateInfo = document.getElementById('update-info');
+    if (updateInfo) {
+        updateInfo.textContent += ` (Hace ${diferenciaMin} minuto${diferenciaMin !== 1 ? 's' : ''})`;
+    }
+    
+    // No recargar si los datos tienen menos de 1 minuto
+    if (diferenciaMin < 1) {
+        necesitaRecarga = false;
+        console.log("Datos recientes - No se requiere recarga");
+        
+        // Mostrar contenido inmediatamente
+        setTimeout(function() {
+            $('#loading-overlay').fadeOut(300, function() {
+                $('#content-container').fadeIn(300);
+            });
+        }, 500);
+    }
+});
+
+// Cuando la página esté completamente cargada
+$(window).on('load', function() {
+    setTimeout(function() {
+        // Ocultar el overlay
+        $('#loading-overlay').fadeOut(300, function() {
+            // Mostrar el contenido
+            $('#content-container').fadeIn(300);
+            
+            // Iniciar el refresco automático solo si es necesario y la pestaña está visible
+            if (necesitaRecarga && !document.hidden) {
+                startAutoRefresh();
+            }
+        });
+    }, 500);
+});
+
+// Variable para controlar el intervalo de recarga
+let refreshInterval;
+
+// Función para verificar y recargar si es necesario
+function reloadPage() {
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const ahora = new Date();
+        const nuevaActualizacion = new Date(data.ultima_actualizacion);
+        const diferenciaMs = ahora - nuevaActualizacion;
+        
+        if (diferenciaMs >= 120000) { // 1 minuto en milisegundos
+            location.reload();
+        } else {
+            console.log("Datos aún recientes - Posponiendo recarga");
+            // Actualizar el marcador de tiempo
+            ultimaActualizacion = nuevaActualizacion;
+            // Reprogramar la próxima verificación
+            startAutoRefresh();
+        }
+    })
+    .catch(() => {
+        // En caso de error, recargar de todos modos
+        location.reload();
+    });
+}
+
+// Función para iniciar el refresco automático
+function startAutoRefresh() {
+    // Limpiar intervalo existente si lo hay
+    clearInterval(refreshInterval);
+    // Establecer nuevo intervalo (120 segundos)
+    refreshInterval = setInterval(reloadPage, 120000);
+}
+
+// Controlar la visibilidad de la pestaña
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Pestaña no visible - detener recarga automática
+        console.log("Pestaña inactiva - Deteniendo recarga automática");
+        clearInterval(refreshInterval);
+    } else if (necesitaRecarga) {
+        // Pestaña visible - iniciar recarga automática si es necesario
+        console.log("Pestaña activa - Reanudando recarga automática");
+        startAutoRefresh();
+    }
+});
+
+// Detener el refresco al salir de la página
+window.addEventListener('beforeunload', function() {
+    clearInterval(refreshInterval);
+});
+
+function actualizarProgresoMonitoreo() {
+    $.ajax({
+        url: "{{=URL('default', 'progreso_monitoreo')}}",
+        method: "GET",
+        cache: false,
+        success: function(data) {
+            try {
+                var progreso = JSON.parse(data);
+                if (progreso && progreso.base_datos) {
+                    $('#progreso-monitoreo').html(
+                        '<b>Base de datos:</b> ' + progreso.base_datos +
+                        '<br><b>Servidor:</b> ' + progreso.servidor +
+                        '<br><b>Consulta:</b> ' + progreso.consulta
+                    );
+                } else {
+                    $('#progreso-monitoreo').html('Preparando monitoreo...');
+                }
+            } catch (e) {
+                $('#progreso-monitoreo').html('Preparando monitoreo...');
+            }
+        },
+        complete: function() {
+            setTimeout(actualizarProgresoMonitoreo, 500);
+        }
+    });
+}
+
+$(document).ready(function() {
+    actualizarProgresoMonitoreo();
+});
+</script>
+
+</body>
+</html>

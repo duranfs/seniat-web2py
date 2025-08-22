@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
+    <style>
+     .ambiente-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 30px;
+    padding: 20px;
+    margin-bottom: 40px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.db-node {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: auto;
+    background: #f9f9f9;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.node-center {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #3498db;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.parameter-ray {
+    position: absolute;
+    width: 90px;
+    height: 2px;
+    top: 100px;
+    left: 100px;
+    transform-origin: 0 0;
+    background: transparent;
+}
+.parameter-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    position: absolute;
+    right: -8px;
+    top: -7px;
+}
+.parameter-name {
+    font-size: 10px;
+    position: absolute;
+    right: 22px;
+    top: -12px;
+    background: white;
+    padding: 1px 3px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+
+        .parameter-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            position: absolute;
+            right: -8px;
+            top: -6px;
+        }
+        .parameter-name {
+            font-size: 10px;
+            position: absolute;
+            right: 20px;
+            top: -10px;
+            background: white;
+            padding: 1px 3px;
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        .param-ok { background: #2ecc71; }
+        .param-error { background: #e74c3c; }
+        .param-alert { background: #f39c12; }
+        .debug { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="content-container">
+
+<h2>DEBUG: Monitor BD tipo estrella</h2>
+
+{{if mon is not None:}}
+    <p>DEBUG → Número de registros en <b>mon</b>: {{=len(mon)}}</p>
+
+    {{ from collections import defaultdict }}
+    {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
+    {{ for m in mon: }}
+        {{ if m.tx_resultado and m.tx_resultado.strip(): }}
+            {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
+            {{ servidor = m.tx_servidor.upper() }}
+            {{ instancia = m.tx_instancia.upper() }}
+            {{ agrupado[ambiente][servidor][instancia].append(m) }}
+        {{ pass }}
+    {{ pass }}
+
+    {{ orden_ambientes = ['produccion','calidad','desarrollo','dataguard','otros'] }}
+
+    {{ for ambiente in orden_ambientes: }}
+        {{ if ambiente in agrupado: }}
+        <div class="ambiente-container">
+            <h3>DEBUG: Ambiente = {{=ambiente.upper()}}</h3>
+
+            {{ for servidor, instancias in agrupado[ambiente].items(): }}
+                {{ for instancia, rutinas in instancias.items(): }}
+                    <p>DEBUG: Instancia={{=instancia}}, Servidor={{=servidor}}, Parámetros={{=len(rutinas)}}</p>
+
+                    <div class="db-node {{=ambiente}}">
+                        <div class="node-center">
+                            <div class="node-name">{{=instancia}}</div>
+                            <div class="node-server">{{=servidor}}</div>
+                        </div>
+                        {{ total = len(rutinas) }}
+                        {{ for i, r in enumerate(rutinas): }}
+                            {{ estado = r.tx_resultado.upper() if r.tx_resultado else 'ALERTA' }}
+                            <div class="parameter-ray" style="transform: rotate({{=(360/total)*i}}deg);">
+                                <div class="parameter-dot 
+                                    {{='param-ok' if estado=='OK' else ('param-error' if estado=='FALLO' else 'param-alert')}}">
+                                </div>
+                                <div class="parameter-name">{{=r.tx_rutina}} ({{=estado}})</div>
+                            </div>
+                        {{ pass }}
+                    </div>
+                {{ pass }}
+            {{ pass }}
+        </div>
+        {{else:}}
+            <p class="debug">DEBUG: Ambiente {{=ambiente}} no tiene instancias.</p>
+        {{ pass }}
+    {{ pass }}
+{{else:}}
+    <div class="debug">⚠ No hay datos en mon (mon es None)</div>
+{{pass}}
+
+</div>
+</body>
+</html>

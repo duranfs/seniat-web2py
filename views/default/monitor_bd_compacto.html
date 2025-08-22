@@ -1,253 +1,384 @@
-{{extend 'layout.html'}}
-
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor BD Compacto</title>
     <script src="{{=URL('static','js/jquery-3.6.0.min.js')}}"></script>
-
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background: #f5f5f5;
-            padding: 10px;
-            margin: 0;
-            font-size: 10px;
-        }
-        
         .ambiente-container {
-            margin-bottom: 15px;
-        }
-        
-        .ambiente-title {
-            color: #333;
-            font-size: 16px;
-            font-weight: 600;
-            margin: 10px 0 5px 0;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .instancias-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 40px;
+            padding: 20px;
+            margin-bottom: 40px;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            background: #fafafa;
         }
-        
-        .instancia-card {
-            background: white;
-            border-radius: 6px;
-            padding: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 3px solid;
-        }
-        
-        /* Colores por ambiente */
-        .produccion { border-left-color: #3498db; background-color: #eaf2f8; }
-        .calidad { border-left-color: #f39c12; background-color: #fef5e7; }
-        .desarrollo { border-left-color: #2ecc71; background-color: #eafaf1; }
-        .dataguard { border-left-color: #9b59b6; background-color: #f5eef8; }
-        .otros { border-left-color: #95a5a6; background-color: #f2f4f4; }
-        
-        .instancia-card.alerta {
-            animation: pulse-alert 2s infinite;
-        }
-        
-        @keyframes pulse-alert {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.3); }
-            70% { box-shadow: 0 0 0 5px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
-        
-        .instancia-header {
-            margin-bottom: 5px;
-            line-height: 1.3;
-        }
-        
-        .instancia-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .instancia-server {
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-        
-        .parametros-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 5px;
-        }
-        
-        .parametro {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        
-        .param-icon {
-            width: 12px;
-            height: 12px;
+
+        .db-node {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: auto;
+            background: linear-gradient(135deg, #f9f9f9, #e8e8e8);
             border-radius: 50%;
-        }
-        
-        .icon-ok {
-            background: #2ecc71;
-        }
-        
-        .icon-error {
-            background: #e74c3c;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        .param-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(245,245,245,0.9);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
-        .spinner {
-            border: 3px solid rgba(0,0,0,0.1);
+
+        .db-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .node-center {
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            border-top: 3px solid #3498db;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        #content-container {
-            display: none;
-        }
-        
-        .header-controls {
+            background: linear-gradient(135deg, #3498db, #2980b9);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .exit-button {
-            background: #e74c3c;
             color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
+            font-weight: bold;
+            position: absolute;
+            top: 55px;
+            left: 55px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .node-name {
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .node-server {
             font-size: 12px;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .parameter-ray {
+            position: absolute;
+            width: 110px;
+            height: 3px;
+            top: 125px;
+            left: 125px;
+            transform-origin: 0 0;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1));
+            transition: all 0.3s ease;
+        }
+
+        .parameter-ray:hover {
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.3));
+            transform: scale(1.1);
+        }
+
+        .parameter-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            position: absolute;
+            right: -9px;
+            top: -8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .parameter-dot:hover {
+            transform: scale(1.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .parameter-name {
+            font-size: 11px;
+            position: absolute;
+            right: 25px;
+            top: -15px;
+            background: transparent
+            padding: 3px 6px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            font-weight: 500;
+            color: #333;
+            opacity: 1; /* Cambiado de 0 a 1 para que siempre sea visible */
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            max-width: 120px; /* Limitar el ancho para evitar desbordamiento */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Ajustar posición para diferentes ángulos */
+        .parameter-ray:nth-child(4n+1) .parameter-name {
+            right: 25px;
+            top: -15px;
         }
         
-        .filter-select {
-            padding: 5px;
-            border-radius: 3px;
-            border: 1px solid #ddd;
+        .parameter-ray:nth-child(4n+2) .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+        
+        .parameter-ray:nth-child(4n+3) .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+        
+        .parameter-ray:nth-child(4n+4) .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+
+        /* Ajustar posición para parámetros en diferentes cuadrantes */
+        .parameter-ray[style*="rotate(0deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(90deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(180deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(270deg)"] .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+
+        /* Para parámetros en el lado izquierdo, ajustar posición */
+        .parameter-ray[style*="rotate(135deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(225deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(315deg)"] .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+
+        /* Para parámetros en el lado derecho, ajustar posición */
+        .parameter-ray[style*="rotate(45deg)"] .parameter-name,
+        .parameter-ray[style*="rotate(315deg)"] .parameter-name {
+            right: 25px;
+            top: -15px;
+        }
+
+        .param-ok { 
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border-color: #27ae60;
+        }
+        
+        .param-error { 
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-color: #c0392b;
+        }
+        
+        .param-alert { 
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-color: #e67e22;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
             font-size: 12px;
+            max-width: 200px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .tooltip-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #3498db;
+        }
+
+        .tooltip-content {
+            line-height: 1.4;
+        }
+
+        .ambiente-title {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .debug { 
+            color: red; 
+            font-weight: bold; 
+        }
+
+        /* Colores por ambiente */
+        .produccion .node-center {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .calidad .node-center {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        
+        .desarrollo .node-center {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        
+        .dataguard .node-center {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        
+        .otros .node-center {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
         }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-    <div class="spinner"></div>
-</div>
-
 <div id="content-container">
+    <h2 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">
+        Monitor de Base de Datos 
+    </h2>
 
-{{if mon:}}
+    {{if mon is not None:}}
+        <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+            Total de registros monitoreados: <strong>{{=len(mon)}}</strong>
+        </p>
 
-{{ from collections import defaultdict }}
-{{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
-{{ for m in mon: }}
- {{  if m.tx_resultado_detalle is not None and '500 INTERNAL SERVER ERROR' in m.tx_resultado_detalle:
-    continue }}
-    {{ if m.tx_resultado: }}
-        {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
-        {{ servidor = m.tx_servidor.upper() }}
-        {{ instancia = m.tx_instancia.upper() }}
-        {{ agrupado[ambiente][servidor][instancia].append(m) }}
-    {{ pass }}
-{{ pass }}
-{{ orden_ambientes = ['produccion', 'calidad', 'desarrollo', 'dataguard','otros'] }}
+        {{ from collections import defaultdict }}
+        {{ agrupado = defaultdict(lambda: defaultdict(lambda: defaultdict(list))) }}
+        {{ for m in mon: }}
+            {{ if m.tx_resultado and m.tx_resultado.strip(): }}
+                {{ ambiente = m.tx_ambiente.lower() if m.tx_ambiente else 'otros' }}
+                {{ servidor = m.tx_servidor.upper() }}
+                {{ instancia = m.tx_instancia.upper() }}
+                {{ agrupado[ambiente][servidor][instancia].append(m) }}
+            {{ pass }}
+        {{ pass }}
 
-<div class="header-controls">
-    <select class="filter-select" name="filtro_resultado" onchange="location = this.value;">
-        <option value="?filtro_resultado=todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
-        <option value="?filtro_resultado=distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo alertas</option>
-    </select>
-    <button class="exit-button" onclick="window.location.href='{{=URL(r=request, c='default', f='index')}}'">Salir</button>
-</div>
+        {{ orden_ambientes = ['produccion','calidad','desarrollo'] }}
 
-{{ for ambiente in orden_ambientes: }}
-    {{ if ambiente in agrupado: }}
-    <div class="ambiente-container">
-        <div class="ambiente-title">{{=ambiente.upper()}}</div>
-        <div class="instancias-grid">
-            {{ for servidor, instancias in agrupado[ambiente].items(): }}
-                {{ for instancia, rutinas in instancias.items(): }}
-                    {{ alerta = any(r.tx_resultado in ("FALLO", "ALERTA") for r in rutinas) }}
-                    <div class="instancia-card {{=ambiente}} {{='alerta' if alerta else ''}}">
-                        <div class="instancia-header">
-                            <div class="instancia-name">{{=instancia}}</div>
-                            <div class="instancia-server">{{=servidor}} ({{=rutinas[0].tx_puerto}})</div>
-                        </div>
-                        <div class="parametros-grid">
-                            {{ for r in rutinas: }}
-                            <div class="parametro">
-                                <div class="param-icon {{='icon-ok' if r.tx_resultado == 'OK' else 'icon-error'}}"></div>
-                                <span class="param-name">{{=r.tx_rutina[:12]}}</span>
+        {{ for ambiente in orden_ambientes: }}
+            {{ if ambiente in agrupado: }}
+            <h3 class="ambiente-title">{{=ambiente.upper()}}</h3>
+            <div class="ambiente-container">
+              
+
+                {{ for servidor, instancias in agrupado[ambiente].items(): }}
+                    {{ for instancia, rutinas in instancias.items(): }}
+                        <div class="db-node {{=ambiente}}" 
+                             data-servidor="{{=servidor}}" 
+                             data-instancia="{{=instancia}}"
+                             data-ambiente="{{=ambiente}}">
+                            
+                            <div class="node-center">
+                                <div class="node-name">{{=instancia}}</div>
+                                <div class="node-server">{{=servidor}}</div>
                             </div>
+                            
+                            {{ total = len(rutinas) }}
+                            {{ for i, r in enumerate(rutinas): }}
+                                {{ estado = r.tx_resultado.upper() if r.tx_resultado else 'ALERTA' }}
+                                {{ angulo = (360/total)*i }}
+                                <div class="parameter-ray" 
+                                     style="transform: rotate({{=angulo}}deg);"
+                                     data-rutina="{{=r.tx_rutina}}"
+                                     data-estado="{{=estado}}"
+                                     data-resultado="{{=r.tx_resultado or 'Sin resultado'}}"
+                                     data-ultima-ejecucion="{{=r.f_corrida.strftime('%Y-%m-%d %H:%M:%S') if r.f_corrida else 'N/A'}}"
+                                     data-puerto="{{=r.tx_puerto or 'N/A'}}"
+                                     data-tipo="{{=r.tx_tipobd or 'N/A'}}">
+                                    
+                                    <div class="parameter-dot 
+                                        {{='param-ok' if estado=='OK' else ('param-error' if estado=='FALLO' else 'param-alert')}}">
+                                    </div>
+                                    <div class="parameter-name" title="{{=r.tx_rutina}}">{{=r.tx_rutina}}</div>
+                                </div>
                             {{ pass }}
                         </div>
-                    </div>
+                    {{ pass }}
                 {{ pass }}
+            </div>
+            {{else:}}
+                <p class="debug">Ambiente {{=ambiente}} no tiene instancias.</p>
             {{ pass }}
+        {{ pass }}
+    {{else:}}
+        <div class="debug" style="text-align: center; font-size: 18px;">
+            ⚠ No hay datos de monitoreo disponibles
         </div>
-    </div>
-    {{ pass }}
-{{ pass }}
+    {{pass}}
 
-{{pass}}
-
+    <!-- Tooltip flotante -->
+    <div id="tooltip" class="tooltip"></div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-        $('#loading-overlay').fadeOut(200, function() {
-            $('#content-container').fadeIn(200);
+$(document).ready(function() {
+    // Función para mostrar tooltip con información detallada
+    function showTooltip(element, event) {
+        const tooltip = $('#tooltip');
+        const data = element.data();
+        
+        let content = `
+            <div class="tooltip-title">${data.rutina}</div>
+            <div class="tooltip-content">
+                <strong>Estado:</strong> ${data.estado}<br>
+               
+            </div>
+        `;
+        
+        tooltip.html(content);
+        tooltip.addClass('show');
+        
+        // Posicionar tooltip
+        const rect = event.target.getBoundingClientRect();
+        tooltip.css({
+            left: rect.right + 10 + 'px',
+            top: rect.top - 10 + 'px'
         });
-    }, 500);
+    }
     
-    // Actualización automática cada 2 minutos
+    // Función para ocultar tooltip
+    function hideTooltip() {
+        $('#tooltip').removeClass('show');
+    }
+    
+    // Eventos para mostrar/ocultar tooltip
+    $('.parameter-dot').on('mouseenter', function(e) {
+        showTooltip($(this).closest('.parameter-ray'), e);
+    });
+    
+    $('.parameter-dot').on('mouseleave', function() {
+        hideTooltip();
+    });
+    
+    // Eventos para el nodo completo
+    $('.db-node').on('mouseenter', function() {
+        $(this).addClass('hover');
+    });
+    
+    $('.db-node').on('mouseleave', function() {
+        $(this).removeClass('hover');
+        hideTooltip();
+    });
+    
+    // Actualización automática cada 30 segundos
     setInterval(function() {
         location.reload();
-    }, 120000);
+    }, 30000);
 });
 </script>
 

@@ -248,3 +248,70 @@
     border-radius: 3px;
     }
     
+    .db-node {
+    position: relative;
+    display: inline-block;
+    margin: 40px;
+    width: 120px;
+    height: 120px;
+}
+
+.node-center {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #3498db;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.node-name {
+    font-size: 12px;
+}
+
+.node-server {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.parameter-ray {
+    position: absolute;
+    width: 60px;
+    height: 2px;
+    top: 60px;
+    left: 60px;
+    transform-origin: 0 0;
+    background: transparent;
+}
+
+.parameter-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: gray;
+    position: absolute;
+    right: -10px;
+    top: -6px;
+}
+
+.parameter-name {
+    font-size: 10px;
+    position: absolute;
+    right: 20px;
+    top: -10px;
+    background: white;
+    padding: 1px 3px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+
+.param-ok { background: #2ecc71; }
+.param-error { background: #e74c3c; }

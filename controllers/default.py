@@ -548,7 +548,7 @@ def monitor_bd_compacto():
 
 	# 3. Procesamiento asíncrono si es necesario
 	if necesita_actualizar:
-		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=300)
+		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=900)
 		if not task_running:
 			try:
 				scheduler = Scheduler(db)
@@ -559,7 +559,7 @@ def monitor_bd_compacto():
 						sync_output=5,
 						immediate=True
 					)
-					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=300)
+					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=900)
 					mensajes = "Los datos se están actualizando en segundo plano..."
 				else:
 					mensajes = "Actualización en progreso... (por favor espere)"
@@ -588,7 +588,7 @@ def monitor_bd_compacto():
 			cacheable=False
 		)
 
-	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=3600)
+	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=5600)
 
 	return dict(
 		mon=mon, 
