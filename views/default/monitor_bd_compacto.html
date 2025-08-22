@@ -104,7 +104,7 @@
             position: absolute;
             right: 25px;
             top: -15px;
-            background: transparent
+            background: transparent;
             padding: 3px 6px;
             border-radius: 4px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
@@ -336,7 +336,10 @@ $(document).ready(function() {
             <div class="tooltip-title">${data.rutina}</div>
             <div class="tooltip-content">
                 <strong>Estado:</strong> ${data.estado}<br>
-               
+                <strong>Resultado:</strong> ${data.resultado}<br>
+                <strong>Última ejecución:</strong> ${data.ultimaEjecucion}<br>
+                <strong>Puerto:</strong> ${data.puerto}<br>
+                <strong>Tipo BD:</strong> ${data.tipo}
             </div>
         `;
         
@@ -375,10 +378,10 @@ $(document).ready(function() {
         hideTooltip();
     });
     
-    // Actualización automática cada 30 segundos
+    // Actualización automática cada 5 minutos (en lugar de 30 segundos)
     setInterval(function() {
         location.reload();
-    }, 30000);
+    }, 300000); // 300000ms = 5 minutos
 });
 </script>
 

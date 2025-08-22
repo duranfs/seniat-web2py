@@ -21,9 +21,10 @@ def actualizar_monitoreo_async():
     if not monitoreos:
         return "No hay monitoreos configurados"
     
-    # 3. Configurar ThreadPool con límites dinámicos
-    max_workers = min(10, total_monitoreos)
-    timeout_per_task = 300  # 5 minutos por tarea
+    # 3. Configurar ThreadPool con límites dinámicos y delays
+    max_workers = min(5, total_monitoreos)  # Reducido de 10 a 5 workers
+    timeout_per_task = 600  # 10 minutos por tarea
+    delay_between_tasks = 2  # 2 segundos de delay entre tareas
     
     resultados = {
         'exitosas': 0,
@@ -31,18 +32,25 @@ def actualizar_monitoreo_async():
         'detalles': []
     }
     
-    # 4. Ejecución paralela optimizada
+    # 4. Ejecución paralela optimizada con delays
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(
+        futures = {}
+        for i, m in enumerate(monitoreos):
+            # Agregar delay progresivo entre tareas para evitar sobrecarga
+            if i > 0:
+                import time
+                time.sleep(delay_between_tasks)
+            
+            future = executor.submit(
                 execute_single_monitor_optimized, 
                 m, db, 
                 get_oracle_connection, 
                 get_sqlserver_connection
-            ): m.id for m in monitoreos
-        }
+            )
+            futures[future] = m.id
         
-        for future in as_completed(futures, timeout=timeout_per_task):
+        # Procesar resultados con timeout más conservador
+        for future in as_completed(futures, timeout=timeout_per_task * 2):
             m_id = futures[future]
             try:
                 _, mensaje, success = future.result()
@@ -60,6 +68,10 @@ def actualizar_monitoreo_async():
     end_time = datetime.datetime.now()
     duracion = (end_time - start_time).total_seconds()
     
+    # Agregar delay final para evitar ejecuciones consecutivas muy rápidas
+    import time
+    time.sleep(5)  # 5 segundos de pausa al final
+    
     resumen = (
         f"Actualización completada en {duracion:.2f} segundos. "
         f"Total: {total_monitoreos}, Exitosas: {resultados['exitosas']}, "
@@ -75,10 +87,15 @@ def execute_single_monitor_optimized(m, db, get_oracle_connection, get_sqlserver
     - Mejor manejo de conexiones
     - Timeouts configurados
     - Reutilización de recursos
+    - Delays para evitar sobrecarga
     """
     import threading
     import logging
     from functools import partial
+    import time
+    
+    # Agregar delay aleatorio para evitar ejecuciones simultáneas
+    time.sleep(0.5 + (threading.current_thread().ident % 1000) / 1000.0)
     
     logger = logging.getLogger("web2py.app.seniat_python3.scheduler")
     thread_id = threading.current_thread().ident

@@ -504,7 +504,8 @@ def monitor_bd_compacto():
 		descri = db(db.tipobd.id == tipo_bd).select(db.tipobd.descri.upper()).first()
 		return descri._extra['UPPER("tipobd"."descri")'] if descri else None
 
-	tipo_bd_descri = cache.ram(f'tipo_bd_descri_{tipo_bd}', get_tipo_bd_descri, time_expire=3600)
+	# AUMENTADO: De 1 hora a 4 horas para reducir frecuencia de consultas
+	tipo_bd_descri = cache.ram(f'tipo_bd_descri_{tipo_bd}', get_tipo_bd_descri, time_expire=14400)
 	
 	# Inicializar variables
 	now = datetime.datetime.now()
@@ -512,14 +513,16 @@ def monitor_bd_compacto():
 
 	# 1. Obtener datos de monitoreo con filtro (con caché)
 	def obtener_datos_actualizados():
-		query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=5))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
+		# AUMENTADO: De 5 minutos a 30 minutos para reducir consultas frecuentes
+		query = (db.bdmon.f_corrida >= (now - datetime.timedelta(minutes=30))) & (db.bdmon.tx_tipobd == tipo_bd_descri)
 		if filtro_resultado == 'distinto_ok':
 			query &= (db.bdmon.tx_resultado != 'OK')
 		return db(query).select(
 			orderby=db.bdmon.tx_servidor|db.bdmon.tx_tipobd|db.bdmon.tx_puerto|db.bdmon.tx_instancia|db.bdmon.tx_rutina
 		)
 
-	mon = cache.ram(f'datos_mon_{cache_key}', obtener_datos_actualizados, time_expire=60)
+	# AUMENTADO: De 1 minuto a 5 minutos para reducir carga en BD
+	mon = cache.ram(f'datos_mon_{cache_key}', obtener_datos_actualizados, time_expire=300)
 
 	# 2. Verificar si necesitamos actualización (con caché)
 	def verificar_actualizacion_necesaria():
@@ -540,15 +543,18 @@ def monitor_bd_compacto():
 			ultima_actualizacion_dt = ultima_actualizacion.f_corrida
 			
 		diferencia = now - ultima_actualizacion_dt
-		return diferencia.total_seconds() > 1000
+		# AUMENTADO: De 1000 segundos (16.7 min) a 1800 segundos (30 min)
+		return diferencia.total_seconds() > 1800
 
+	# AUMENTADO: De 30 segundos a 5 minutos para reducir verificaciones
 	necesita_actualizar = cache.ram(f'actualizacion_necesaria_{cache_key}', 
 								   verificar_actualizacion_necesaria, 
-								   time_expire=30)
+								   time_expire=300)
 
 	# 3. Procesamiento asíncrono si es necesario
 	if necesita_actualizar:
-		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=900)
+		# AUMENTADO: De 15 minutos a 30 minutos para reducir verificaciones
+		task_running = cache.ram(f'task_running_{cache_key}', lambda: False, time_expire=1800)
 		if not task_running:
 			try:
 				scheduler = Scheduler(db)
@@ -559,7 +565,8 @@ def monitor_bd_compacto():
 						sync_output=5,
 						immediate=True
 					)
-					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=900)
+					# AUMENTADO: De 15 minutos a 30 minutos para reducir verificaciones
+					cache.ram(f'task_running_{cache_key}', lambda: True, time_expire=1800)
 					mensajes = "Los datos se están actualizando en segundo plano..."
 				else:
 					mensajes = "Actualización en progreso... (por favor espere)"
@@ -588,7 +595,8 @@ def monitor_bd_compacto():
 			cacheable=False
 		)
 
-	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=5600)
+	# AUMENTADO: De 1.5 horas a 6 horas para reducir consultas
+	basedatos_mon = cache.ram(f'basedatos_{tipo_bd}', obtener_basedatos, time_expire=21600)
 
 	return dict(
 		mon=mon, 
@@ -818,7 +826,7 @@ def actualizar_y_mostrar_monitor_parallel(tipobd=None):
 	import logging
 	logging.basicConfig(level=logging.INFO)
 	thread_id = threading.current_thread().ident
-	logging.info(f"[THREAD-{thread_id}] Iniciando monitoreo en paralelo: --------------------------------------")
+	logging.error(f"Iniciando monitoreo en paralelo ")
 	
 	"""Función principal para monitoreo paralelo multi-BD"""
 	logging.info("[MAIN] Iniciando monitoreo paralelo de instancias");
