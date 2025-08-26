@@ -128,7 +128,7 @@
                     <form method="get" id="filtroForm" class="mb-3">
                      <label for="filtro_resultado" class="form-label">Parámetros a mostrar:</label>
                         <select name="filtro_resultado" id="filtro_resultado" class="form-select form-select-sm w-auto d-inline-block" onchange="document.getElementById('filtroForm').submit();">
-                            <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
+                           <option value="todos" {{='selected' if request.vars.filtro_resultado=='todos' else ''}}>Todos</option>
                            <option value="distinto_ok" {{='selected' if request.vars.filtro_resultado=='distinto_ok' else ''}}>Solo alertas</option>
                         </select>
                     </form>
@@ -211,9 +211,9 @@
                         {{ if amb_bd == ambiente and tipobd_bd == tipobd and (servidor_bd not in agrupado[ambiente] or instancia_bd not in agrupado[ambiente][servidor_bd]): }}
                             <div class="instancia-card alerta {{=ambiente}}">
                                 <div class="instancia-header">
-                                    {{=instancia_bd}} ({{=servidor_bd}})<br>
+                                    {{=instancia_bd}} ({{=servidor_bd}})
                                     {{if (db(db.bdmon.tx_instancia == instancia_bd)(db.bdmon.tx_servidor == servidor_bd)(db.bdmon.tx_resultado == 'OK').select(limitby=(0,1))):}}
-                                        <span class="db-versionxx-11">Totos los Parametros OK 🟢</span>
+                                        <span class="db-versionxx-11">🟢</span>
                                     {{else:}}
                                         <span class="db-version-11">No disponible / No se puede conectar</span>
                                           <div class="acciones">
