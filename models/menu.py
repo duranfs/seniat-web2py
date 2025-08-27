@@ -119,6 +119,7 @@ monitor =[
 			(T('Monitor ORACLE'), False, URL('default','monitor_bd', args=['9']), []), #oracle
 			(T('Monitor SQLServer'), False, URL('default','monitor_bd', args=['11']), []), 
 			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
+   			(T('Monitor MySQL'), False, URL('default','monitor_bd', args=['10']), []),
 			(T('Monitor Compacto'), False, URL('default','monitor_bd_compacto', args=['9']), []),
 			(T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),

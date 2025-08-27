@@ -750,11 +750,14 @@ def execute_single_monitor(m, db, get_oracle_connection, get_sqlserver_connectio
 				cursor = connection.cursor()
 								
 			elif tipo_bd in ['MYSQL', 'MARIADB', 'DOCKER-KUBERNETES-MYSQL']:
-				# Configuración para MySQL/MariaDB (requiere implementación)
-				error_msg = f"Conexión MySQL/MariaDB no implementada aún para: {m.tx_instancia}"
-				logging.error(f"[THREAD-{thread_id}] {error_msg}")
-				update_monitor_record(db, m, None, error_msg, False)
-				return m.id, error_msg, False
+				# Configuración para MySQL/MariaDB
+				logging.info(f"[THREAD-{thread_id}] Conectando a MySQL: {servidor.ip}:{bdatos.puerto}/{m.tx_instancia}")
+				connection = get_mysql_connection(
+					host=servidor.ip,
+					database=m.tx_instancia,
+					port=bdatos.puerto
+				)
+				cursor = connection.cursor()
 				
 			elif tipo_bd == 'MONGODB':
 				# Configuración para MongoDB (requiere implementación)
