@@ -137,6 +137,7 @@ monitor_OPERADOR =[
             (T('Monitor ORACLE'), False, URL('default','monitor_bd', args=['9']), []),
 			(T('Monitor SQLServer'), False, URL('default','monitor_bd', args=['11']), []),
 			(T('Monitor PostgreSQL'), False, URL('default','monitor_bd', args=['8']), []),
+			(T('Monitor MySQL'), False, URL('default','monitor_bd', args=['10']), []),
             (T('Estadisticas Rep Z seniatfe'), URL('oracle','consulta_seniatfe')==URL(),URL('oracle','consulta_seniatfe'),[]),
             (T('ErrorLog CYGNUS'), URL('oracle','consulta_log_error')==URL(),URL('oracle','consulta_log_error'),[]),
             (T('Dashboard'), URL('default','dashboard')==URL(),URL('default','dashboard'),[]),
