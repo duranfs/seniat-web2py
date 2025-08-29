@@ -1,6 +1,6 @@
    body {
             font-family: Arial, sans-serif;
-            background: #1a1a2e;
+            background: #a4a4f5;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -69,6 +69,7 @@
             padding: 10px;
             width: 250px;
             flex-grow: 1;
+            max-width: 350px;  /* límite máximo */
             box-shadow: 1px 1px 8px rgba(0,0,0,0.1);
             transition: all 0.2s;
             display: flex;
